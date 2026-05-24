@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+.env
+*.log
+mina_bot.log
+defense_levels.json
+tp_levels.json
+max_prices.json
+.vscode/
+.idea/
