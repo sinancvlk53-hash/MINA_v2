@@ -14,6 +14,12 @@ import json
 from datetime import datetime
 import logging
 
+try:
+    from telegram_bot import send_notification
+except Exception:
+    def send_notification(_):
+        return False
+
 # ═══════════════════════════════════════════════
 # LOGGING KURULUMU
 # ═══════════════════════════════════════════════
@@ -336,11 +342,18 @@ def main():
     logger.info(f"📊 Kaldıraçlar: 1x, 2x, 3x, 4x⭐, 5x, 10x")
     logger.info(f"🛑 Stop Loss: 1x=%2, 2x=%3, 3x=%2, 4x=YOK, 5x=%2, 10x=%1")
     logger.info(f"💰 TP: Standard (%3,%5) | Fast 10x (%2,%4)")
-    logger.info(f"🛡️  Savunma: 2x(2), 4x(3)⭐, 5x(3), 10x(2)")
+    logger.info(f"🛡️  Savunma: 2x(0), 4x(3)⭐, 5x(0), 10x(0)")
     logger.info(f"🎯 Trailing: TP2 sonrası %1")
     logger.info(f"📝 Log Dosyası: mina_bot.log")
     logger.info("=" * 70)
-    
+
+    send_notification(
+        f"🚀 *MİNA v2 ENGINE BAŞLADI*\n"
+        f"📅 {datetime.now().strftime('%d.%m.%Y %H:%M')}\n"
+        f"⚙️ Check interval: {30}s\n"
+        f"✅ Sistem aktif!"
+    )
+
     config = BinanceConfig()
     client = config.get_client()
     
@@ -348,7 +361,7 @@ def main():
     tp_levels = load_json(TP_FILE)
     
     last_message_time = 0
-    check_interval = 5
+    check_interval = 15
     
     while True:
         try:
@@ -409,6 +422,13 @@ def main():
                                 print(f"   ⚠️ Pozisyon zaten kapalıydı, takipten silindi: {symbol} {side}")
                             else:
                                 print(f"   ✅ {message}")
+                                send_notification(
+                                    f"🛑 *STOP LOSS!*\n"
+                                    f"📌 {symbol} {side} {leverage}x\n"
+                                    f"💰 Giriş: ${entry_price:.4f}\n"
+                                    f"📊 Fiyat: ${current_price:.4f}\n"
+                                    f"📉 PnL: {pnl_percent:+.2f}% (${unrealized_pnl:+.2f})"
+                                )
                             if pos_key in tp_levels:
                                 del tp_levels[pos_key]
                             if pos_key in defense_levels:
@@ -422,7 +442,7 @@ def main():
                         else:
                             print(f"   ❌ {message}")
                         continue
-                    
+
                     # Trailing Stop
                     trailing_trigger, trailing_msg, max_price = check_trailing_stop(
                         current_price, pos_key, current_tp, side
@@ -442,6 +462,14 @@ def main():
                                 print(f"   ⚠️ Pozisyon zaten kapalıydı, takipten silindi: {symbol} {side}")
                             else:
                                 print(f"   ✅ {message}")
+                                send_notification(
+                                    f"🎯 *TRAILING STOP!*\n"
+                                    f"📌 {symbol} {side} {leverage}x\n"
+                                    f"💰 Giriş: ${entry_price:.4f}\n"
+                                    f"📊 Fiyat: ${current_price:.4f}\n"
+                                    f"📈 PnL: {pnl_percent:+.2f}% (${unrealized_pnl:+.2f})\n"
+                                    f"✅ Tüm pozisyon kapatıldı"
+                                )
                             if pos_key in tp_levels:
                                 del tp_levels[pos_key]
                             if pos_key in defense_levels:
@@ -455,7 +483,7 @@ def main():
                         else:
                             print(f"   ❌ {message}")
                         continue
-                    
+
                     # TP
                     if pnl_percent > 0:
                         tp_trigger, tp_msg = check_tp_trigger(pnl_percent, current_tp, leverage)
@@ -470,7 +498,14 @@ def main():
                                 print(f"   ✅ {message}")
                                 tp_levels[pos_key] = tp_trigger
                                 save_json(TP_FILE, tp_levels)
-
+                                send_notification(
+                                    f"💰 *TP{tp_trigger} HIT!*\n"
+                                    f"📌 {symbol} {side} {leverage}x\n"
+                                    f"💰 Giriş: ${entry_price:.4f}\n"
+                                    f"📊 Fiyat: ${current_price:.4f}\n"
+                                    f"📈 PnL: {pnl_percent:+.2f}% (${unrealized_pnl:+.2f})\n"
+                                    f"✅ %50 kapatıldı" + ("\n🎯 Trailing aktif!" if tp_trigger == 2 else "")
+                                )
                                 if tp_trigger == 2:
                                     max_prices = load_json(MAX_PRICE_FILE)
                                     max_prices[pos_key] = current_price
@@ -508,6 +543,14 @@ def main():
                             print(f"   ✅ {message}")
                             defense_levels[pos_key] = defense_trigger
                             save_json(DEFENSE_FILE, defense_levels)
+                            send_notification(
+                                f"🛡️ *SAVUNMA {defense_trigger}!*\n"
+                                f"📌 {symbol} {side} {leverage}x\n"
+                                f"💰 Giriş: ${entry_price:.4f}\n"
+                                f"📊 Fiyat: ${current_price:.4f}\n"
+                                f"📉 PnL: {pnl_percent:+.2f}% (${unrealized_pnl:+.2f})\n"
+                                f"✅ {message}"
+                            )
                         else:
                             print(f"   ❌ {message}")
                 
@@ -517,6 +560,10 @@ def main():
             
         except KeyboardInterrupt:
             logger.info("🛑 Engine kullanıcı tarafından durduruldu")
+            send_notification(
+                f"🛑 *MİNA v2 ENGINE DURDURULDU*\n"
+                f"📅 {datetime.now().strftime('%d.%m.%Y %H:%M')}"
+            )
             break
         except Exception as e:
             logger.error(f"❌ KRİTİK HATA: {e}")
