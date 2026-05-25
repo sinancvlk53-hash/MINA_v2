@@ -4,7 +4,13 @@
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\User\\\\Desktop\\\\MINA_v2\" -Recurse -Force)",
       "Bash(Select-Object FullName)",
       "Bash(Sort-Object FullName)",
-      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\User\\\\Desktop\\\\MINA_v2\" -Recurse -ErrorAction SilentlyContinue | Where-Object { -not $_.PSIsContainer } | Sort-Object LastWriteTime -Descending | Select-Object -First 20 | Select-Object FullName, LastWriteTime, Length | Format-Table -AutoSize)"
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\User\\\\Desktop\\\\MINA_v2\" -Recurse -ErrorAction SilentlyContinue | Where-Object { -not $_.PSIsContainer } | Sort-Object LastWriteTime -Descending | Select-Object -First 20 | Select-Object FullName, LastWriteTime, Length | Format-Table -AutoSize)",
+      "Bash(venv/Scripts/python.exe backend/open_multiple_positions.py)",
+      "Bash(PYTHONIOENCODING=utf-8 PYTHONUTF8=1 echo \"EVET\")",
+      "Bash(venv/Scripts/python.exe -X utf8 backend/open_multiple_positions.py)",
+      "PowerShell(Get-Content \"c:\\\\Users\\\\User\\\\Desktop\\\\MINA_v2\\\\mina_bot.log\" -Encoding UTF8 | Where-Object { $_ -match \"TP1|TP2|TRAILING|SAVUNMA|STOP LOSS|POSITION_CLOSED|rate limit|-1003|-1106|KRITIK\" } | Select-Object -Last 60)",
+      "PowerShell(Get-WmiObject Win32_Process -Filter \"name='python.exe'\" | Select-Object ProcessId, @{N='RAM_MB';E={[math]::Round\\($_.WorkingSetSize/1MB,1\\)}}, CreationDate | Format-Table)",
+      "PowerShell(w32tm /resync 2>&1)"
     ]
   }
 }
