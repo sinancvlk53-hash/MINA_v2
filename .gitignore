@@ -7,5 +7,6 @@ mina_bot.log
 defense_levels.json
 tp_levels.json
 max_prices.json
+initial_margins.json
 .vscode/
 .idea/

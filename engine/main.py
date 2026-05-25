@@ -52,6 +52,7 @@ logger.addHandler(console_handler)
 DEFENSE_FILE = "defense_levels.json"
 TP_FILE = "tp_levels.json"
 MAX_PRICE_FILE = "max_prices.json"
+INITIAL_MARGIN_FILE = "initial_margins.json"
 
 # Özel kaldıraç kuralları
 LEVERAGE_RULES = {
@@ -218,7 +219,7 @@ def send_defense_order(client, symbol, side, defense_level, leverage):
 
         max_defense = rules.get('defense_count', 0)
         if defense_level == max_defense:
-            client.futures_change_margin(
+            client.futures_change_position_margin(
                 symbol=symbol,
                 amount=amount_usdt,
                 type=1
@@ -245,8 +246,15 @@ def send_defense_order(client, symbol, side, defense_level, leverage):
         return True, f"Savunma {defense_level}: {quantity} eklendi (${amount_usdt:.2f})"
         
     except Exception as e:
-        logger.error(f"❌ SAVUNMA {defense_level} HATASI: {symbol} {side} - {str(e)}")
-        return False, f"Hata: {str(e)}"
+        error_str = str(e)
+        if '-1106' in error_str:
+            logger.warning(f"⚠️ SAVUNMA {defense_level} ATILDI: {symbol} {side} - Pozisyon kapalı, temizleniyor.")
+            return False, "POSITION_CLOSED"
+        if '-4054' in error_str:
+            logger.warning(f"⚠️ SAVUNMA {defense_level} MARGIN BAŞARISIZ: {symbol} {side} - Margin eklenemedi (pozisyon mevcut).")
+            return False, "MARGIN_FAILED"
+        logger.error(f"❌ SAVUNMA {defense_level} HATASI: {symbol} {side} - {error_str}")
+        return False, f"Hata: {error_str}"
 
 def check_trailing_stop(current_price, pos_key, tp_level, side):
     """Trailing Stop kontrolü"""
@@ -313,26 +321,25 @@ def check_stop_loss(pnl_percent, leverage):
     
     return False, None
 
-def check_defense_trigger(pnl_percent, defense_level, leverage):
-    """Savunma tetikleme"""
+def check_defense_trigger(unrealized_pnl, initial_margin, defense_level, leverage):
+    """Savunma tetikleme - ROE bazlı (unrealized_pnl / initial_margin * 100)"""
     rules = LEVERAGE_RULES.get(leverage)
-    
+
     if not rules or not rules.get('defense_count'):
         return 0, None
-    
-    if leverage in [4, 5]:
-        if defense_level == 0 and pnl_percent <= -5:
-            return 1, "🚨 SAVUNMA 1! (%5 düşüş)"
-        if defense_level == 1 and pnl_percent <= -10:
-            return 2, "🚨 SAVUNMA 2! (%10 düşüş)"
-        if defense_level == 2 and pnl_percent <= -15:
-            return 3, "🚨 SAVUNMA 3! (%15 düşüş)"
-    elif leverage in [2, 10]:
-        if defense_level == 0 and pnl_percent <= -5:
-            return 1, "🚨 SAVUNMA 1! (%5 düşüş)"
-        if defense_level == 1 and pnl_percent <= -10:
-            return 2, "🚨 SAVUNMA 2! (%10 düşüş)"
-    
+    if initial_margin <= 0:
+        return 0, None
+
+    roe = (unrealized_pnl / initial_margin) * 100  # negatif = zarar
+
+    if leverage == 4:
+        if defense_level == 0 and roe <= -5:
+            return 1, f"🚨 SAVUNMA 1! (ROE {roe:.1f}%)"
+        if defense_level == 1 and roe <= -10:
+            return 2, f"🚨 SAVUNMA 2! (ROE {roe:.1f}%)"
+        if defense_level == 2 and roe <= -15:
+            return 3, f"🚨 SAVUNMA 3! (ROE {roe:.1f}%)"
+
     return 0, None
 
 def main():
@@ -359,6 +366,7 @@ def main():
     
     defense_levels = load_json(DEFENSE_FILE)
     tp_levels = load_json(TP_FILE)
+    initial_margins = load_json(INITIAL_MARGIN_FILE)
     
     last_message_time = 0
     check_interval = 15
@@ -389,25 +397,33 @@ def main():
                     current_price = float(ticker['price'])
                     
                     pnl_percent = calculate_pnl_percent(entry_price, current_price, side)
-                    
+
                     pos_key = f"{symbol}_{side}"
                     current_defense = defense_levels.get(pos_key, 0)
                     current_tp = tp_levels.get(pos_key, 0)
-                    
+
+                    # Initial margin takibi — ilk görüldüğünde kaydet
+                    if pos_key not in initial_margins:
+                        initial_margins[pos_key] = round((entry_price * amount) / leverage, 4)
+                        save_json(INITIAL_MARGIN_FILE, initial_margins)
+
+                    init_margin = initial_margins[pos_key]
+                    roe = (unrealized_pnl / init_margin) * 100 if init_margin > 0 else 0.0
+
                     rules = LEVERAGE_RULES.get(leverage, {})
                     tp_type = "FAST" if rules.get('tp_type') == 'fast' else "STD"
-                    
-                    pnl_icon = "📈" if pnl_percent > 0 else "📉"
+
+                    pnl_icon = "📈" if unrealized_pnl > 0 else "📉"
                     side_icon = "🟢" if side == 'LONG' else "🔴"
-                    
+
                     max_def = rules.get('defense_count', 0)
-                    
+
                     print(f"\n{side_icon} {symbol} - {side} {leverage}x ({tp_type})")
                     print(f"   💰 Giriş: ${entry_price:.4f}")
                     print(f"   📊 Şimdi: ${current_price:.4f}")
                     print(f"   📦 Miktar: {amount}")
-                    print(f"   {pnl_icon} PnL: {pnl_percent:+.2f}% (${unrealized_pnl:+.2f})")
-                    print(f"   🛡️  Savunma Seviyesi: {current_defense}/{max_def}")
+                    print(f"   {pnl_icon} PnL: {pnl_percent:+.2f}% | ROE: {roe:+.2f}% (${unrealized_pnl:+.2f})")
+                    print(f"   🛡️  Savunma: {current_defense}/{max_def} | Margin: ${init_margin:.2f}")
                     
                     # Stop Loss
                     sl_trigger, sl_msg = check_stop_loss(pnl_percent, leverage)
@@ -427,17 +443,20 @@ def main():
                                     f"📌 {symbol} {side} {leverage}x\n"
                                     f"💰 Giriş: ${entry_price:.4f}\n"
                                     f"📊 Fiyat: ${current_price:.4f}\n"
-                                    f"📉 PnL: {pnl_percent:+.2f}% (${unrealized_pnl:+.2f})"
+                                    f"📉 ROE: {roe:+.2f}% (${unrealized_pnl:+.2f})"
                                 )
                             if pos_key in tp_levels:
                                 del tp_levels[pos_key]
                             if pos_key in defense_levels:
                                 del defense_levels[pos_key]
+                            if pos_key in initial_margins:
+                                del initial_margins[pos_key]
                             max_prices = load_json(MAX_PRICE_FILE)
                             if pos_key in max_prices:
                                 del max_prices[pos_key]
                             save_json(TP_FILE, tp_levels)
                             save_json(DEFENSE_FILE, defense_levels)
+                            save_json(INITIAL_MARGIN_FILE, initial_margins)
                             save_json(MAX_PRICE_FILE, max_prices)
                         else:
                             print(f"   ❌ {message}")
@@ -467,18 +486,21 @@ def main():
                                     f"📌 {symbol} {side} {leverage}x\n"
                                     f"💰 Giriş: ${entry_price:.4f}\n"
                                     f"📊 Fiyat: ${current_price:.4f}\n"
-                                    f"📈 PnL: {pnl_percent:+.2f}% (${unrealized_pnl:+.2f})\n"
+                                    f"📈 ROE: {roe:+.2f}% (${unrealized_pnl:+.2f})\n"
                                     f"✅ Tüm pozisyon kapatıldı"
                                 )
                             if pos_key in tp_levels:
                                 del tp_levels[pos_key]
                             if pos_key in defense_levels:
                                 del defense_levels[pos_key]
+                            if pos_key in initial_margins:
+                                del initial_margins[pos_key]
                             max_prices = load_json(MAX_PRICE_FILE)
                             if pos_key in max_prices:
                                 del max_prices[pos_key]
                             save_json(TP_FILE, tp_levels)
                             save_json(DEFENSE_FILE, defense_levels)
+                            save_json(INITIAL_MARGIN_FILE, initial_margins)
                             save_json(MAX_PRICE_FILE, max_prices)
                         else:
                             print(f"   ❌ {message}")
@@ -517,18 +539,21 @@ def main():
                                     del tp_levels[pos_key]
                                 if pos_key in defense_levels:
                                     del defense_levels[pos_key]
+                                if pos_key in initial_margins:
+                                    del initial_margins[pos_key]
                                 max_prices = load_json(MAX_PRICE_FILE)
                                 if pos_key in max_prices:
                                     del max_prices[pos_key]
                                 save_json(TP_FILE, tp_levels)
                                 save_json(DEFENSE_FILE, defense_levels)
+                                save_json(INITIAL_MARGIN_FILE, initial_margins)
                                 save_json(MAX_PRICE_FILE, max_prices)
                             else:
                                 print(f"   ❌ {message}")
                     
                     # Savunma
                     defense_trigger, defense_msg = check_defense_trigger(
-                        pnl_percent, current_defense, leverage
+                        unrealized_pnl, init_margin, current_defense, leverage
                     )
                     
                     if defense_trigger:
@@ -548,9 +573,29 @@ def main():
                                 f"📌 {symbol} {side} {leverage}x\n"
                                 f"💰 Giriş: ${entry_price:.4f}\n"
                                 f"📊 Fiyat: ${current_price:.4f}\n"
-                                f"📉 PnL: {pnl_percent:+.2f}% (${unrealized_pnl:+.2f})\n"
+                                f"📉 ROE: {roe:+.2f}% (${unrealized_pnl:+.2f})\n"
                                 f"✅ {message}"
                             )
+                        elif message == "POSITION_CLOSED":
+                            print(f"   ⚠️ Pozisyon zaten kapalı, savunma atlandı: {symbol} {side}")
+                            if pos_key in defense_levels:
+                                del defense_levels[pos_key]
+                            if pos_key in initial_margins:
+                                del initial_margins[pos_key]
+                            if pos_key in tp_levels:
+                                del tp_levels[pos_key]
+                            max_prices = load_json(MAX_PRICE_FILE)
+                            if pos_key in max_prices:
+                                del max_prices[pos_key]
+                            save_json(DEFENSE_FILE, defense_levels)
+                            save_json(INITIAL_MARGIN_FILE, initial_margins)
+                            save_json(TP_FILE, tp_levels)
+                            save_json(MAX_PRICE_FILE, max_prices)
+                        elif message == "MARGIN_FAILED":
+                            # Margin eklenemedi ama pozisyon açık — seviyeyi ilerlet, tekrar deneme
+                            print(f"   ⚠️ Margin eklenemedi, savunma seviyesi ilerletildi: {symbol} {side}")
+                            defense_levels[pos_key] = defense_trigger
+                            save_json(DEFENSE_FILE, defense_levels)
                         else:
                             print(f"   ❌ {message}")
                 
