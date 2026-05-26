@@ -5,6 +5,8 @@ MİNA v2 - Execution Engine - LOGGING İLE
 
 import sys
 import os
+sys.stdout.reconfigure(encoding='utf-8')
+sys.stderr.reconfigure(encoding='utf-8')
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backend.config import BinanceConfig, AccountManager
@@ -27,7 +29,7 @@ except Exception:
 # Log formatı
 log_format = '[%(asctime)s] %(levelname)s - %(message)s'
 date_format = '%Y-%m-%d %H:%M:%S'
-
+""
 # Logger oluştur
 logger = logging.getLogger('MİNA_v2')
 logger.setLevel(logging.INFO)
@@ -183,18 +185,82 @@ def send_tp_order(client, symbol, side, current_amount, tp_level):
         logger.error(f"❌ TP{tp_level} HATASI: {symbol} {side} - {error_str}")
         return False, f"Hata: {error_str}"
 
+MAX_RETRY      = 3    # Sipariş yeniden deneme sayısı
+RETRY_DELAY    = 5    # Denemeler arası bekleme (saniye)
+SLOT_CAP_RATIO = 0.98 # Slot'un kullanılabilir oranı (%98 — %2 güvenlik tamponu)
+
+def _slot_limit_check(client, symbol, side, amount_usdt, label):
+    """
+    v1.4 Slot limit kontrolü:
+    Bakiyeyi taze çek → slot = bakiye/10 * 0.98
+    Mevcut margin + yeni miktar > slot ise False döner.
+    """
+    account = AccountManager(client)
+    fresh_balance = account.get_usdt_balance()
+    slot_cap = (fresh_balance / 10) * SLOT_CAP_RATIO
+
+    pos_info = client.futures_position_information(symbol=symbol)
+    current_margin = 0.0
+    for p in pos_info:
+        amt = float(p.get('positionAmt', 0))
+        pos_side = 'LONG' if amt > 0 else 'SHORT'
+        if p['symbol'] == symbol and pos_side == side and amt != 0:
+            current_margin = float(p.get('isolatedMargin', 0))
+            break
+
+    projected = current_margin + amount_usdt
+    if projected > slot_cap:
+        logger.warning(
+            f"⛔ {label} SLOT LİMİTİ v1.4: {symbol} {side} — "
+            f"Margin {current_margin:.2f}$ + {amount_usdt:.2f}$ = {projected:.2f}$ "
+            f"> Slot cap {slot_cap:.2f}$ (bakiye {fresh_balance:.2f}$ × 0.98/10). İptal."
+        )
+        return False, slot_cap
+    return True, slot_cap
+
+
+def _execute_with_retry(fn, label, symbol, side):
+    """
+    Fix 2 — Yeniden deneme:
+    Başarısız sipariş → 5sn bekle → tekrar dene → 3 denemede olmadı → alarm.
+    """
+    last_err = None
+    for attempt in range(1, MAX_RETRY + 1):
+        try:
+            return fn()
+        except Exception as e:
+            last_err = str(e)
+            if attempt < MAX_RETRY:
+                logger.warning(
+                    f"⏳ {label} DENEME {attempt}/{MAX_RETRY}: {symbol} {side} — "
+                    f"{last_err[:80]}. {RETRY_DELAY}s bekleniyor..."
+                )
+                time.sleep(RETRY_DELAY)
+            else:
+                logger.error(
+                    f"❌ {label} {MAX_RETRY} DENEMEDE BAŞARISIZ: {symbol} {side} — {last_err}"
+                )
+                send_notification(
+                    f"🚨 *ALARM — {label} BAŞARISIZ!*\n"
+                    f"📌 {symbol} {side}\n"
+                    f"❌ {MAX_RETRY} denemede gerçekleşmedi\n"
+                    f"🔴 Son hata: {last_err[:120]}"
+                )
+    raise Exception(last_err)
+
+
 def send_defense_order(client, symbol, side, defense_level, leverage):
-    """Savunma emri gönder"""
+    """Savunma emri gönder — v1.4 (slot limit + retry + alarm)"""
     try:
         account = AccountManager(client)
         balance = account.get_usdt_balance()
         slot_size = balance / 10
-        
+
         rules = LEVERAGE_RULES.get(leverage)
-        
+
         if not rules or not rules.get('defense_count'):
             return False, "Bu kaldıraçta savunma yok"
-        
+
         if leverage in [4, 5]:
             defense_amounts = {
                 1: slot_size * 0.20,
@@ -208,50 +274,67 @@ def send_defense_order(client, symbol, side, defense_level, leverage):
             }
         else:
             return False, "Savunma tanımsız"
-        
+
         amount_usdt = defense_amounts.get(defense_level, 0)
-        
         if amount_usdt == 0:
             return False, "Geçersiz defense level"
-        
+
+        # ── FIX 1+3: SLOT LİMİTİ v1.4 — taze bakiye + %2 tampon ────────────
+        label = f"SAVUNMA {defense_level}"
+        ok, slot_cap = _slot_limit_check(client, symbol, side, amount_usdt, label)
+        if not ok:
+            return False, "SLOT_LIMIT"
+        # ─────────────────────────────────────────────────────────────────────
+
         ticker = client.futures_symbol_ticker(symbol=symbol)
         price = float(ticker['price'])
-
         max_defense = rules.get('defense_count', 0)
+
         if defense_level == max_defense:
-            client.futures_change_position_margin(
-                symbol=symbol,
-                amount=amount_usdt,
-                type=1
-            )
+            # D3 — margin ekle
+            pos_side = 'LONG' if side == 'LONG' else 'SHORT'
+
+            def do_margin():
+                return client.futures_change_position_margin(
+                    symbol=symbol,
+                    positionSide=pos_side,
+                    amount=amount_usdt,
+                    type=1
+                )
+
+            # FIX 2 — retry
+            _execute_with_retry(do_margin, label, symbol, side)
             logger.info(f"🛡️  SAVUNMA {defense_level}: {symbol} {side} - {amount_usdt:.2f} USDT MARGIN eklendi")
             return True, f"Savunma {defense_level}: {amount_usdt:.2f} USDT margin eklendi"
 
+        # D1/D2 — kontrakt ekle
         position_size = amount_usdt * leverage
         raw_qty = position_size / price
         precision = get_symbol_precision(client, symbol)
         quantity = round(raw_qty, precision)
-        
         order_side = SIDE_BUY if side == 'LONG' else SIDE_SELL
-        
-        order = client.futures_create_order(
-            symbol=symbol,
-            side=order_side,
-            type=ORDER_TYPE_MARKET,
-            quantity=quantity,
-            positionSide='LONG' if side == 'LONG' else 'SHORT'
-        )
-        
+
+        def do_order():
+            return client.futures_create_order(
+                symbol=symbol,
+                side=order_side,
+                type=ORDER_TYPE_MARKET,
+                quantity=quantity,
+                positionSide='LONG' if side == 'LONG' else 'SHORT'
+            )
+
+        # FIX 2 — retry
+        order = _execute_with_retry(do_order, label, symbol, side)
         logger.info(f"🛡️  SAVUNMA {defense_level}: {symbol} {side} - {quantity} eklendi (${amount_usdt:.2f}) - Order: {order['orderId']}")
         return True, f"Savunma {defense_level}: {quantity} eklendi (${amount_usdt:.2f})"
-        
+
     except Exception as e:
         error_str = str(e)
         if '-1106' in error_str:
             logger.warning(f"⚠️ SAVUNMA {defense_level} ATILDI: {symbol} {side} - Pozisyon kapalı, temizleniyor.")
             return False, "POSITION_CLOSED"
         if '-4054' in error_str:
-            logger.warning(f"⚠️ SAVUNMA {defense_level} MARGIN BAŞARISIZ: {symbol} {side} - Margin eklenemedi (pozisyon mevcut).")
+            logger.error(f"❌ SAVUNMA {defense_level} MARGIN HATASI -4054: {symbol} {side} - {error_str}")
             return False, "MARGIN_FAILED"
         logger.error(f"❌ SAVUNMA {defense_level} HATASI: {symbol} {side} - {error_str}")
         return False, f"Hata: {error_str}"
@@ -342,7 +425,34 @@ def check_defense_trigger(unrealized_pnl, initial_margin, defense_level, leverag
 
     return 0, None
 
+LOCK_FILE = "engine.lock"
+
+def acquire_lock():
+    """Tek instance garantisi — PID lock dosyası."""
+    if os.path.exists(LOCK_FILE):
+        try:
+            with open(LOCK_FILE) as f:
+                old_pid = int(f.read().strip())
+            import psutil
+            if psutil.pid_exists(old_pid):
+                logger.error(f"❌ ENGINE ZATEN ÇALIŞIYOR! PID={old_pid}. Çıkılıyor.")
+                return False
+        except Exception:
+            pass  # Eski/bozuk lock — üzerine yaz
+    with open(LOCK_FILE, 'w') as f:
+        f.write(str(os.getpid()))
+    return True
+
+def release_lock():
+    try:
+        os.remove(LOCK_FILE)
+    except Exception:
+        pass
+
 def main():
+    if not acquire_lock():
+        return
+
     logger.info("=" * 70)
     logger.info("🚀 MİNA v2 - EXECUTION ENGINE BAŞLATILDI (LOGGING AKTİF)")
     logger.info("=" * 70)
@@ -369,7 +479,7 @@ def main():
     initial_margins = load_json(INITIAL_MARGIN_FILE)
     
     last_message_time = 0
-    check_interval = 15
+    check_interval = 30
     
     while True:
         try:
@@ -592,8 +702,10 @@ def main():
                             save_json(TP_FILE, tp_levels)
                             save_json(MAX_PRICE_FILE, max_prices)
                         elif message == "MARGIN_FAILED":
-                            # Margin eklenemedi ama pozisyon açık — seviyeyi ilerlet, tekrar deneme
-                            print(f"   ⚠️ Margin eklenemedi, savunma seviyesi ilerletildi: {symbol} {side}")
+                            print(f"   ❌ D{defense_trigger} margin eklenemedi, bir sonraki döngüde tekrar denenecek: {symbol} {side}")
+                        elif message == "SLOT_LIMIT":
+                            # Slot limiti doldu — seviyeyi ilerlet ki tekrar denemesin
+                            logger.warning(f"⛔ SLOT LİMİTİ: {symbol} {side} D{defense_trigger} iptal — seviye ilerletildi.")
                             defense_levels[pos_key] = defense_trigger
                             save_json(DEFENSE_FILE, defense_levels)
                         else:
@@ -615,6 +727,8 @@ def main():
             import traceback
             logger.error(traceback.format_exc())
             time.sleep(check_interval)
+
+    release_lock()
 
 if __name__ == "__main__":
     main()
