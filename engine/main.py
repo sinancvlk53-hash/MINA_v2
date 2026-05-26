@@ -638,11 +638,14 @@ def main():
                                     f"📈 PnL: {pnl_percent:+.2f}% (${unrealized_pnl:+.2f})\n"
                                     f"✅ %50 kapatıldı" + ("\n🎯 Trailing aktif!" if tp_trigger == 2 else "")
                                 )
+                                max_prices = load_json(MAX_PRICE_FILE)
+                                max_prices[pos_key] = current_price
+                                save_json(MAX_PRICE_FILE, max_prices)
                                 if tp_trigger == 2:
-                                    max_prices = load_json(MAX_PRICE_FILE)
-                                    max_prices[pos_key] = current_price
-                                    save_json(MAX_PRICE_FILE, max_prices)
                                     print(f"   🎯 Trailing aktif!")
+                                else:
+                                    be_price = entry_price * (1.0008 if side == 'LONG' else 0.9992)
+                                    print(f"   🛡️  Başabaş modu aktif! BE: ${be_price:.6f}")
                             elif message == "POSITION_CLOSED":
                                 print(f"   ⚠️ Pozisyon zaten kapalıydı, takipten silindi: {symbol} {side}")
                                 if pos_key in tp_levels:
@@ -661,6 +664,45 @@ def main():
                             else:
                                 print(f"   ❌ {message}")
                     
+                    # Başabaş kapama (TP1 sonrası fiyat geri döndüyse)
+                    if current_tp == 1:
+                        be_price = entry_price * (1.0008 if side == 'LONG' else 0.9992)
+                        be_hit = (current_price <= be_price) if side == 'LONG' else (current_price >= be_price)
+                        if be_hit:
+                            logger.info(f"🛡️  BAŞABAŞ KAPAMA: {symbol} {side} — fiyat ${current_price:.6f} BE ${be_price:.6f}")
+                            print(f"\n   🛡️  BAŞABAŞ! Fiyat başabaş seviyesine döndü: ${current_price:.6f} (BE: ${be_price:.6f})")
+                            print(f"   ⚡ Kalan pozisyon kapatılıyor...")
+                            success, message = send_stop_loss_order(client, symbol, side, amount)
+                            if success or message == "POSITION_CLOSED":
+                                if message == "POSITION_CLOSED":
+                                    print(f"   ⚠️ Pozisyon zaten kapalıydı, takipten silindi: {symbol} {side}")
+                                else:
+                                    print(f"   ✅ {message}")
+                                    send_notification(
+                                        f"🛡️ *BAŞABAŞ KAPAMA!*\n"
+                                        f"📌 {symbol} {side} {leverage}x\n"
+                                        f"💰 Giriş: ${entry_price:.4f}\n"
+                                        f"📊 Fiyat: ${current_price:.4f}\n"
+                                        f"🛡️ BE: ${be_price:.4f}\n"
+                                        f"✅ Kalan pozisyon kapatıldı"
+                                    )
+                                if pos_key in tp_levels:
+                                    del tp_levels[pos_key]
+                                if pos_key in defense_levels:
+                                    del defense_levels[pos_key]
+                                if pos_key in initial_margins:
+                                    del initial_margins[pos_key]
+                                max_prices = load_json(MAX_PRICE_FILE)
+                                if pos_key in max_prices:
+                                    del max_prices[pos_key]
+                                save_json(TP_FILE, tp_levels)
+                                save_json(DEFENSE_FILE, defense_levels)
+                                save_json(INITIAL_MARGIN_FILE, initial_margins)
+                                save_json(MAX_PRICE_FILE, max_prices)
+                            else:
+                                print(f"   ❌ {message}")
+                            continue
+
                     # Savunma
                     defense_trigger, defense_msg = check_defense_trigger(
                         unrealized_pnl, init_margin, current_defense, leverage
