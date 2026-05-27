@@ -418,9 +418,9 @@ def check_defense_trigger(unrealized_pnl, initial_margin, defense_level, leverag
     if leverage == 4:
         if defense_level == 0 and roe <= -5:
             return 1, f"🚨 SAVUNMA 1! (ROE {roe:.1f}%)"
-        if defense_level == 1 and roe <= -10:
+        if defense_level == 1 and roe <= -15:
             return 2, f"🚨 SAVUNMA 2! (ROE {roe:.1f}%)"
-        if defense_level == 2 and roe <= -15:
+        if defense_level == 2 and roe <= -25:
             return 3, f"🚨 SAVUNMA 3! (ROE {roe:.1f}%)"
 
     return 0, None
@@ -502,7 +502,9 @@ def main():
                     amount = abs(float(pos['positionAmt']))
                     leverage = int(pos['leverage'])
                     unrealized_pnl = float(pos['unRealizedProfit'])
-                    
+                    liquidation_price = float(pos.get('liquidationPrice', 0))
+                    iso_margin = float(pos.get('isolatedMargin', 0))
+
                     ticker = client.futures_symbol_ticker(symbol=symbol)
                     current_price = float(ticker['price'])
                     
@@ -516,6 +518,13 @@ def main():
                     if pos_key not in initial_margins:
                         initial_margins[pos_key] = round((entry_price * amount) / leverage, 4)
                         save_json(INITIAL_MARGIN_FILE, initial_margins)
+                        _icon = "🟢" if side == 'LONG' else "🔴"
+                        send_notification(
+                            f"{_icon} *POZİSYON TESPİT EDİLDİ*\n"
+                            f"📌 {symbol} {side} {leverage}x\n"
+                            f"💰 Giriş: ${entry_price:.4f} | Marj: ${iso_margin:.2f}\n"
+                            f"🔴 Likidasyon: ${liquidation_price:.4f}"
+                        )
 
                     init_margin = initial_margins[pos_key]
                     roe = (unrealized_pnl / init_margin) * 100 if init_margin > 0 else 0.0
@@ -549,11 +558,12 @@ def main():
                             else:
                                 print(f"   ✅ {message}")
                                 send_notification(
-                                    f"🛑 *STOP LOSS!*\n"
-                                    f"📌 {symbol} {side} {leverage}x\n"
+                                    f"🛑 *STOP LOSS — {symbol} {side}*\n"
+                                    f"📌 {leverage}x | ROE: {roe:+.2f}%\n"
                                     f"💰 Giriş: ${entry_price:.4f}\n"
                                     f"📊 Fiyat: ${current_price:.4f}\n"
-                                    f"📉 ROE: {roe:+.2f}% (${unrealized_pnl:+.2f})"
+                                    f"📉 Zarar: ${unrealized_pnl:+.2f}\n"
+                                    f"✅ Pozisyon kapatıldı"
                                 )
                             if pos_key in tp_levels:
                                 del tp_levels[pos_key]
@@ -592,11 +602,11 @@ def main():
                             else:
                                 print(f"   ✅ {message}")
                                 send_notification(
-                                    f"🎯 *TRAILING STOP!*\n"
-                                    f"📌 {symbol} {side} {leverage}x\n"
+                                    f"🎯 *TRAİLİNG STOP — {symbol} {side}*\n"
+                                    f"📌 {leverage}x | ROE: {roe:+.2f}%\n"
                                     f"💰 Giriş: ${entry_price:.4f}\n"
                                     f"📊 Fiyat: ${current_price:.4f}\n"
-                                    f"📈 ROE: {roe:+.2f}% (${unrealized_pnl:+.2f})\n"
+                                    f"📈 Kâr: ${unrealized_pnl:+.2f}\n"
                                     f"✅ Tüm pozisyon kapatıldı"
                                 )
                             if pos_key in tp_levels:
@@ -631,12 +641,12 @@ def main():
                                 tp_levels[pos_key] = tp_trigger
                                 save_json(TP_FILE, tp_levels)
                                 send_notification(
-                                    f"💰 *TP{tp_trigger} HIT!*\n"
-                                    f"📌 {symbol} {side} {leverage}x\n"
+                                    f"💰 *KÂR AL {tp_trigger} — {symbol} {side}*\n"
+                                    f"📌 {leverage}x | PnL: {pnl_percent:+.2f}%\n"
                                     f"💰 Giriş: ${entry_price:.4f}\n"
                                     f"📊 Fiyat: ${current_price:.4f}\n"
-                                    f"📈 PnL: {pnl_percent:+.2f}% (${unrealized_pnl:+.2f})\n"
-                                    f"✅ %50 kapatıldı" + ("\n🎯 Trailing aktif!" if tp_trigger == 2 else "")
+                                    f"📈 Kâr: ${unrealized_pnl:+.2f}\n"
+                                    f"✅ %50 kapatıldı" + ("\n🎯 Trailing aktif!" if tp_trigger == 2 else "\n🛡️ Başabaş modu aktif!")
                                 )
                                 max_prices = load_json(MAX_PRICE_FILE)
                                 max_prices[pos_key] = current_price
@@ -679,12 +689,12 @@ def main():
                                 else:
                                     print(f"   ✅ {message}")
                                     send_notification(
-                                        f"🛡️ *BAŞABAŞ KAPAMA!*\n"
-                                        f"📌 {symbol} {side} {leverage}x\n"
+                                        f"🛡️ *BAŞABAŞ KAPAMA — {symbol} {side}*\n"
+                                        f"📌 {leverage}x | ROE: {roe:+.2f}%\n"
                                         f"💰 Giriş: ${entry_price:.4f}\n"
                                         f"📊 Fiyat: ${current_price:.4f}\n"
-                                        f"🛡️ BE: ${be_price:.4f}\n"
-                                        f"✅ Kalan pozisyon kapatıldı"
+                                        f"🛡️ Başabaş: ${be_price:.4f}\n"
+                                        f"✅ Kalan %50 kapatıldı"
                                     )
                                 if pos_key in tp_levels:
                                     del tp_levels[pos_key]
@@ -720,13 +730,26 @@ def main():
                             print(f"   ✅ {message}")
                             defense_levels[pos_key] = defense_trigger
                             save_json(DEFENSE_FILE, defense_levels)
+                            try:
+                                upd = client.futures_position_information(symbol=symbol)
+                                new_liq = next((float(p['liquidationPrice']) for p in upd
+                                    if p['symbol'] == symbol and float(p['positionAmt']) != 0
+                                    and (float(p['positionAmt']) > 0) == (side == 'LONG')), 0)
+                                new_mrg = next((float(p['isolatedMargin']) for p in upd
+                                    if p['symbol'] == symbol and float(p['positionAmt']) != 0
+                                    and (float(p['positionAmt']) > 0) == (side == 'LONG')), 0)
+                            except Exception:
+                                new_liq, new_mrg = 0, 0
+                            liq_line = (
+                                f"🔴 Eski likidasyon: ${liquidation_price:.4f}\n"
+                                f"🔴 Yeni likidasyon: ~${new_liq:.4f}"
+                            ) if new_liq > 0 else f"🔴 Likidasyon: ${liquidation_price:.4f}"
                             send_notification(
-                                f"🛡️ *SAVUNMA {defense_trigger}!*\n"
-                                f"📌 {symbol} {side} {leverage}x\n"
-                                f"💰 Giriş: ${entry_price:.4f}\n"
-                                f"📊 Fiyat: ${current_price:.4f}\n"
-                                f"📉 ROE: {roe:+.2f}% (${unrealized_pnl:+.2f})\n"
-                                f"✅ {message}"
+                                f"🛡️ *SAVUNMA {defense_trigger} — {symbol} {side}*\n"
+                                f"📌 {leverage}x | ROE: {roe:+.2f}%\n"
+                                f"💰 Giriş: ${entry_price:.4f} | Fiyat: ${current_price:.4f}\n"
+                                f"➕ {message} | Yeni marj: ${new_mrg:.2f}\n"
+                                f"{liq_line}"
                             )
                         elif message == "POSITION_CLOSED":
                             print(f"   ⚠️ Pozisyon zaten kapalı, savunma atlandı: {symbol} {side}")
@@ -765,10 +788,29 @@ def main():
             )
             break
         except Exception as e:
-            logger.error(f"❌ KRİTİK HATA: {e}")
+            err_str = str(e)
+            logger.error(f"❌ KRİTİK HATA: {err_str}")
             import traceback
             logger.error(traceback.format_exc())
-            time.sleep(check_interval)
+
+            if '-1003' in err_str or 'Too many requests' in err_str:
+                logger.warning("⚠️ RATE LİMİT! 60 saniye bekleniyor...")
+                time.sleep(60)
+            elif 'banned until' in err_str:
+                import re
+                match = re.search(r'banned until (\d+)', err_str)
+                if match:
+                    ban_until = int(match.group(1)) / 1000
+                    wait = max(0, ban_until - time.time()) + 5
+                    logger.warning(f"⛔ IP BAN! {int(wait)} saniye bekleniyor...")
+                    time.sleep(wait)
+                else:
+                    time.sleep(60)
+            elif 'Connection' in err_str or 'ConnectionError' in err_str:
+                logger.warning("🔌 Bağlantı hatası, 15 saniye sonra tekrar denenecek...")
+                time.sleep(15)
+            else:
+                time.sleep(check_interval)
 
     release_lock()
 

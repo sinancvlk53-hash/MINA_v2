@@ -25,18 +25,16 @@ JSON_FILES = [
 MAX_SLOTS = 10  # Maksimum açık pozisyon sayısı
 
 POSITIONS = [
-    {"no": 1,  "symbol": "AKTUSDT",   "side": "LONG",  "leverage": 1,  "not": "SL %3"},
-    {"no": 2,  "symbol": "DEXEUSDT",  "side": "SHORT", "leverage": 2,  "not": "SL %3"},
-    {"no": 3,  "symbol": "SAGAUSDT",  "side": "LONG",  "leverage": 3,  "not": "SL %2"},
-    {"no": 4,  "symbol": "SKYUSDT",   "side": "LONG",  "leverage": 4,  "not": "HEDGE LONG"},
-    {"no": 5,  "symbol": "SKYUSDT",   "side": "SHORT", "leverage": 4,  "not": "HEDGE SHORT"},
-    {"no": 6,  "symbol": "PHAUSDT",   "side": "SHORT", "leverage": 5,  "not": "SL %2"},
-    {"no": 7,  "symbol": "PLUMEUSDT", "side": "LONG",  "leverage": 10, "not": "SL %1, Fast TP"},
-    {"no": 8,  "symbol": "AGTUSDT",   "side": "LONG",  "leverage": 4,  "not": "3 Savunma, SL yok"},
-    {"no": 9,  "symbol": "PLAYUSDT",  "side": "LONG",  "leverage": 4,  "not": "3 Savunma, SL yok"},
-    {"no": 10, "symbol": "GUAUSDT",   "side": "LONG",  "leverage": 4,  "not": "3 Savunma, SL yok"},
-    # 11. pozisyon — slot limiti testi, REDDEDİLMELİ
-    {"no": 11, "symbol": "BTCUSDT",   "side": "LONG",  "leverage": 4,  "not": "SLOT LİMİT TESTİ"},
+    {"no": 1,  "symbol": "MUUSDT",   "side": "SHORT", "leverage": 4, "not": "4x SHORT"},
+    {"no": 2,  "symbol": "USUSDT",   "side": "SHORT", "leverage": 4, "not": "4x SHORT"},
+    {"no": 3,  "symbol": "PLAYUSDT", "side": "SHORT", "leverage": 4, "not": "4x SHORT"},
+    {"no": 4,  "symbol": "BEATUSDT", "side": "SHORT", "leverage": 4, "not": "4x SHORT"},
+    {"no": 5,  "symbol": "ICPUSDT",  "side": "SHORT", "leverage": 4, "not": "4x SHORT"},
+    {"no": 6,  "symbol": "SEIUSDT",  "side": "SHORT", "leverage": 4, "not": "4x SHORT"},
+    {"no": 7,  "symbol": "BASUSDT",  "side": "SHORT", "leverage": 4, "not": "4x SHORT"},
+    {"no": 8,  "symbol": "ALTUSDT",  "side": "LONG",  "leverage": 4, "not": "HEDGE LONG"},
+    {"no": 9,  "symbol": "ALTUSDT",  "side": "SHORT", "leverage": 4, "not": "HEDGE SHORT"},
+    {"no": 10, "symbol": "BTCUSDT",  "side": "LONG",  "leverage": 4, "not": "4x LONG"},
 ]
 
 # ─── YARDIMCI FONKSİYONLAR ───────────────────────────────────────────────────
@@ -72,8 +70,12 @@ def open_position(client, account, symbol, side, leverage, max_retry=3):
         pass
 
     # Quantity (sadece bir kez hesapla)
-    ticker = client.futures_symbol_ticker(symbol=symbol)
-    price = float(ticker['price'])
+    try:
+        ticker = client.futures_symbol_ticker(symbol=symbol)
+        price = float(ticker['price'])
+    except Exception as e:
+        return False, f"Sembol bulunamadı: {e}"
+
     position_size = amount_usdt * leverage
     raw_qty = position_size / price
     precision = get_symbol_step_size(client, symbol)
