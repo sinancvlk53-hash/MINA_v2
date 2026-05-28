@@ -527,7 +527,33 @@ def main():
     while True:
         try:
             positions = get_open_positions(client)
-            
+
+            # ── Reconciliation: harici kapanma / likidasyonu tespit et ──────
+            binance_keys = {
+                f"{p['symbol']}_{'LONG' if float(p['positionAmt']) > 0 else 'SHORT'}"
+                for p in positions
+            }
+            all_tracked = set(defense_levels) | set(initial_margins) | set(tp_levels)
+            orphaned    = all_tracked - binance_keys
+
+            if orphaned:
+                max_prices = load_json(MAX_PRICE_FILE)
+                for pos_key in orphaned:
+                    for _d in [defense_levels, initial_margins, tp_levels]:
+                        _d.pop(pos_key, None)
+                    max_prices.pop(pos_key, None)
+                    logger.info(f"🔄 MUTABAKAT: {pos_key} Binance'te yok — takipten silindi")
+                    send_notification(
+                        f"⚡ *HARICI KAPANMA — {pos_key.replace('_', ' ')}*\n"
+                        f"📌 Binance'te pozisyon bulunamadı\n"
+                        f"🗑️ Takip verisi temizlendi"
+                    )
+                save_json(DEFENSE_FILE, defense_levels)
+                save_json(INITIAL_MARGIN_FILE, initial_margins)
+                save_json(TP_FILE, tp_levels)
+                save_json(MAX_PRICE_FILE, max_prices)
+            # ─────────────────────────────────────────────────────────────────
+
             if len(positions) == 0:
                 current_time = time.time()
                 if current_time - last_message_time > 30:
