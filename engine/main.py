@@ -84,6 +84,24 @@ def save_json(filename, data):
 
 # exchange_info cache — her pozisyon için tekrar çekilmemesi için
 _exchange_info_cache = {}
+_max_qty_cache = {}
+
+def get_symbol_max_qty(client, symbol):
+    """Sembol için MARKET_LOT_SIZE maxQty'yi cache'li getir"""
+    if symbol in _max_qty_cache:
+        return _max_qty_cache[symbol]
+    exchange_info = client.futures_exchange_info()
+    for s in exchange_info['symbols']:
+        sym = s['symbol']
+        max_qty = float('inf')
+        for f in s['filters']:
+            if f['filterType'] == 'MARKET_LOT_SIZE':
+                mq = float(f['maxQty'])
+                if mq > 0:
+                    max_qty = mq
+                break
+        _max_qty_cache[sym] = max_qty
+    return _max_qty_cache.get(symbol, float('inf'))
 
 def get_symbol_precision(client, symbol):
     """Sembol için lot size precision'ını cache'li getir"""
@@ -118,22 +136,41 @@ def calculate_pnl_percent(entry_price, current_price, side):
         return ((entry_price - current_price) / entry_price) * 100
 
 def send_stop_loss_order(client, symbol, side, amount):
-    """Stop Loss emri gönder"""
+    """Stop Loss emri gönder — max qty aşılırsa chunk'lara böler"""
     try:
         precision = get_symbol_precision(client, symbol)
-        quantity = round(amount, precision)
-        
-        order_side = SIDE_SELL if side == 'LONG' else SIDE_BUY
-        
-        order = client.futures_create_order(
-            symbol=symbol,
-            side=order_side,
-            type=ORDER_TYPE_MARKET,
-            quantity=quantity,
-            positionSide='LONG' if side == 'LONG' else 'SHORT'
-        )
+        max_qty   = get_symbol_max_qty(client, symbol)
+        quantity  = round(amount, precision)
 
-        logger.info(f"🛑 STOP LOSS: {symbol} {side} - Tüm pozisyon kapatıldı ({quantity}) - Order: {order['orderId']}")
+        order_side = SIDE_SELL if side == 'LONG' else SIDE_BUY
+        pos_side   = 'LONG' if side == 'LONG' else 'SHORT'
+
+        if quantity <= max_qty:
+            chunks = [quantity]
+        else:
+            chunk = round(max_qty, precision)
+            chunks = []
+            remaining = quantity
+            while remaining > 0:
+                c = round(min(chunk, remaining), precision)
+                if c == 0:
+                    break
+                chunks.append(c)
+                remaining = round(remaining - c, precision)
+
+        order_ids = []
+        for c in chunks:
+            order = client.futures_create_order(
+                symbol=symbol,
+                side=order_side,
+                type=ORDER_TYPE_MARKET,
+                quantity=c,
+                positionSide=pos_side,
+            )
+            order_ids.append(str(order['orderId']))
+
+        ids_str = ', '.join(order_ids)
+        logger.info(f"🛑 STOP LOSS: {symbol} {side} - {quantity} kapatıldı ({len(chunks)} emir) - Orders: {ids_str}")
         return True, f"🛑 STOP LOSS: Tüm pozisyon kapatıldı ({quantity})"
 
     except Exception as e:
@@ -182,6 +219,9 @@ def send_tp_order(client, symbol, side, current_amount, tp_level):
         if '-1106' in error_str:
             logger.warning(f"⚠️ TP{tp_level} ATILDI: {symbol} {side} - Pozisyon zaten kapalı veya reduceOnly geçersiz. Takipten siliniyor.")
             return False, "POSITION_CLOSED"
+        elif '-1109' in error_str:
+            logger.warning(f"⚠️ {symbol} {side} hedge mode desteklemiyor (-1109), pozisyon takipten çıkarılıyor")
+            return False, "HEDGE_NOT_SUPPORTED"
         logger.error(f"❌ TP{tp_level} HATASI: {symbol} {side} - {error_str}")
         return False, f"Hata: {error_str}"
 
@@ -263,8 +303,8 @@ def send_defense_order(client, symbol, side, defense_level, leverage):
 
         if leverage in [4, 5]:
             defense_amounts = {
-                1: slot_size * 0.20,
-                2: slot_size * 0.30,
+                1: slot_size * 0.15,
+                2: slot_size * 0.25,
                 3: slot_size * 0.30
             }
         elif leverage in [2, 10]:
@@ -425,6 +465,9 @@ def check_defense_trigger(unrealized_pnl, initial_margin, defense_level, leverag
 
     return 0, None
 
+# Aynı engine oturumunda SLOT_LIMIT'e takılan (pos_key, defense_level) çiftleri
+_slot_limit_blocked = set()
+
 LOCK_FILE = "engine.lock"
 
 def acquire_lock():
@@ -479,7 +522,7 @@ def main():
     initial_margins = load_json(INITIAL_MARGIN_FILE)
     
     last_message_time = 0
-    check_interval = 30
+    check_interval = 60
     
     while True:
         try:
@@ -671,6 +714,17 @@ def main():
                                 save_json(DEFENSE_FILE, defense_levels)
                                 save_json(INITIAL_MARGIN_FILE, initial_margins)
                                 save_json(MAX_PRICE_FILE, max_prices)
+                            elif message == "HEDGE_NOT_SUPPORTED":
+                                if pos_key in tp_levels:
+                                    del tp_levels[pos_key]
+                                if pos_key in initial_margins:
+                                    del initial_margins[pos_key]
+                                if pos_key in defense_levels:
+                                    del defense_levels[pos_key]
+                                save_json(TP_FILE, tp_levels)
+                                save_json(INITIAL_MARGIN_FILE, initial_margins)
+                                save_json(DEFENSE_FILE, defense_levels)
+                                print(f"   ⚠️ {symbol} {side} takipten çıkarıldı (hedge mode kısıtı)")
                             else:
                                 print(f"   ❌ {message}")
                     
@@ -713,22 +767,53 @@ def main():
                                 print(f"   ❌ {message}")
                             continue
 
-                    # Savunma
-                    defense_trigger, defense_msg = check_defense_trigger(
-                        unrealized_pnl, init_margin, current_defense, leverage
-                    )
-                    
-                    if defense_trigger:
+                    # D3 sonrası başabaş kapama
+                    if current_defense == 3 and roe >= -2:
+                        logger.info(f"🛡️  D3 BAŞABAŞ: {symbol} {side} ROE {roe:+.1f}% → kapatılıyor")
+                        print(f"\n   🛡️  D3 BAŞABAŞ! ROE {roe:+.1f}% — pozisyon kapatılıyor...")
+                        success, message = send_stop_loss_order(client, symbol, side, amount)
+                        if success or message == "POSITION_CLOSED":
+                            if message != "POSITION_CLOSED":
+                                send_notification(
+                                    f"🛡️ *D3 BAŞABAŞ — {symbol} {side}*\n"
+                                    f"📌 {leverage}x | ROE: {roe:+.2f}%\n"
+                                    f"💰 Giriş: ${entry_price:.4f}\n"
+                                    f"📊 Fiyat: ${current_price:.4f}\n"
+                                    f"✅ Pozisyon kapatıldı"
+                                )
+                            for _d in [tp_levels, defense_levels, initial_margins]:
+                                _d.pop(pos_key, None)
+                            max_prices = load_json(MAX_PRICE_FILE)
+                            max_prices.pop(pos_key, None)
+                            save_json(TP_FILE, tp_levels)
+                            save_json(DEFENSE_FILE, defense_levels)
+                            save_json(INITIAL_MARGIN_FILE, initial_margins)
+                            save_json(MAX_PRICE_FILE, max_prices)
+                        else:
+                            print(f"   ❌ {message}")
+                        continue
+
+                    # Savunma — aynı döngüde zincirleme tetikleme (BUG5)
+                    while True:
+                        defense_trigger, defense_msg = check_defense_trigger(
+                            unrealized_pnl, init_margin, current_defense, leverage
+                        )
+                        if not defense_trigger:
+                            break
+                        if (pos_key, defense_trigger) in _slot_limit_blocked:
+                            break
+
                         print(f"\n   {defense_msg}")
                         print(f"   ⚡ Savunma emri gönderiliyor...")
-                        
+
                         success, message = send_defense_order(
                             client, symbol, side, defense_trigger, leverage
                         )
-                        
+
                         if success:
                             print(f"   ✅ {message}")
-                            defense_levels[pos_key] = defense_trigger
+                            current_defense = defense_trigger
+                            defense_levels[pos_key] = current_defense
                             save_json(DEFENSE_FILE, defense_levels)
                             try:
                                 upd = client.futures_position_information(symbol=symbol)
@@ -740,6 +825,11 @@ def main():
                                     and (float(p['positionAmt']) > 0) == (side == 'LONG')), 0)
                             except Exception:
                                 new_liq, new_mrg = 0, 0
+                            # BUG3: init_margin'i Binance'ten gelen gerçek marjla güncelle
+                            if new_mrg > 0:
+                                init_margin = new_mrg
+                                initial_margins[pos_key] = round(new_mrg, 4)
+                                save_json(INITIAL_MARGIN_FILE, initial_margins)
                             liq_line = (
                                 f"🔴 Eski likidasyon: ${liquidation_price:.4f}\n"
                                 f"🔴 Yeni likidasyon: ~${new_liq:.4f}"
@@ -753,28 +843,25 @@ def main():
                             )
                         elif message == "POSITION_CLOSED":
                             print(f"   ⚠️ Pozisyon zaten kapalı, savunma atlandı: {symbol} {side}")
-                            if pos_key in defense_levels:
-                                del defense_levels[pos_key]
-                            if pos_key in initial_margins:
-                                del initial_margins[pos_key]
-                            if pos_key in tp_levels:
-                                del tp_levels[pos_key]
+                            for _d in [defense_levels, initial_margins, tp_levels]:
+                                _d.pop(pos_key, None)
                             max_prices = load_json(MAX_PRICE_FILE)
-                            if pos_key in max_prices:
-                                del max_prices[pos_key]
+                            max_prices.pop(pos_key, None)
                             save_json(DEFENSE_FILE, defense_levels)
                             save_json(INITIAL_MARGIN_FILE, initial_margins)
                             save_json(TP_FILE, tp_levels)
                             save_json(MAX_PRICE_FILE, max_prices)
+                            break
                         elif message == "MARGIN_FAILED":
                             print(f"   ❌ D{defense_trigger} margin eklenemedi, bir sonraki döngüde tekrar denenecek: {symbol} {side}")
+                            break
                         elif message == "SLOT_LIMIT":
-                            # Slot limiti doldu — seviyeyi ilerlet ki tekrar denemesin
-                            logger.warning(f"⛔ SLOT LİMİTİ: {symbol} {side} D{defense_trigger} iptal — seviye ilerletildi.")
-                            defense_levels[pos_key] = defense_trigger
-                            save_json(DEFENSE_FILE, defense_levels)
+                            _slot_limit_blocked.add((pos_key, defense_trigger))
+                            logger.warning(f"⛔ SLOT LİMİTİ: {symbol} {side} D{defense_trigger} iptal — bu oturumda tekrar denenmeyecek.")
+                            break
                         else:
                             print(f"   ❌ {message}")
+                            break
                 
                 print(f"{'='*70}\n")
             

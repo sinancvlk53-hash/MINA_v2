@@ -10,3 +10,6 @@ max_prices.json
 initial_margins.json
 .vscode/
 .idea/
+*.session
+*.session-journal
+engine.lock

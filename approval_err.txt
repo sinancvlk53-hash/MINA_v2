@@ -1,0 +1,162 @@
+2026-05-28 13:35:36,851 (__init__.py:1254 MainThread) ERROR - TeleBot: "Threaded polling exception: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running"
+2026-05-28 13:35:36,854 (__init__.py:1256 MainThread) ERROR - TeleBot: "Exception traceback:
+Traceback (most recent call last):
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\__init__.py", line 1247, in __threaded_polling
+    polling_thread.raise_exceptions()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\util.py", line 116, in raise_exceptions
+    raise self.exception_info
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\util.py", line 98, in run
+    task(*args, **kwargs)
+    ~~~~^^^^^^^^^^^^^^^^^
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\__init__.py", line 689, in __retrieve_updates
+    updates = self.get_updates(offset=(self.last_update_id + 1),
+                               allowed_updates=allowed_updates,
+                               timeout=timeout, long_polling_timeout=long_polling_timeout)
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\__init__.py", line 661, in get_updates
+    json_updates = apihelper.get_updates(
+        self.token, offset=offset, limit=limit, timeout=timeout, allowed_updates=allowed_updates,
+        long_polling_timeout=long_polling_timeout)
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\apihelper.py", line 339, in get_updates
+    return _make_request(token, method_url, params=payload)
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\apihelper.py", line 168, in _make_request
+    json_result = _check_result(method_name, result)
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\apihelper.py", line 197, in _check_result
+    raise ApiTelegramException(method_name, result, result_json)
+telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+"
+2026-05-28 13:35:40,488 (__init__.py:1254 MainThread) ERROR - TeleBot: "Threaded polling exception: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running"
+2026-05-28 13:35:40,491 (__init__.py:1256 MainThread) ERROR - TeleBot: "Exception traceback:
+Traceback (most recent call last):
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\__init__.py", line 1247, in __threaded_polling
+    polling_thread.raise_exceptions()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\util.py", line 116, in raise_exceptions
+    raise self.exception_info
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\util.py", line 98, in run
+    task(*args, **kwargs)
+    ~~~~^^^^^^^^^^^^^^^^^
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\__init__.py", line 689, in __retrieve_updates
+    updates = self.get_updates(offset=(self.last_update_id + 1),
+                               allowed_updates=allowed_updates,
+                               timeout=timeout, long_polling_timeout=long_polling_timeout)
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\__init__.py", line 661, in get_updates
+    json_updates = apihelper.get_updates(
+        self.token, offset=offset, limit=limit, timeout=timeout, allowed_updates=allowed_updates,
+        long_polling_timeout=long_polling_timeout)
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\apihelper.py", line 339, in get_updates
+    return _make_request(token, method_url, params=payload)
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\apihelper.py", line 168, in _make_request
+    json_result = _check_result(method_name, result)
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\apihelper.py", line 197, in _check_result
+    raise ApiTelegramException(method_name, result, result_json)
+telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+"
+2026-05-28 13:35:44,983 (__init__.py:1254 MainThread) ERROR - TeleBot: "Threaded polling exception: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running"
+2026-05-28 13:35:44,986 (__init__.py:1256 MainThread) ERROR - TeleBot: "Exception traceback:
+Traceback (most recent call last):
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\__init__.py", line 1247, in __threaded_polling
+    polling_thread.raise_exceptions()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\util.py", line 116, in raise_exceptions
+    raise self.exception_info
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\util.py", line 98, in run
+    task(*args, **kwargs)
+    ~~~~^^^^^^^^^^^^^^^^^
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\__init__.py", line 689, in __retrieve_updates
+    updates = self.get_updates(offset=(self.last_update_id + 1),
+                               allowed_updates=allowed_updates,
+                               timeout=timeout, long_polling_timeout=long_polling_timeout)
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\__init__.py", line 661, in get_updates
+    json_updates = apihelper.get_updates(
+        self.token, offset=offset, limit=limit, timeout=timeout, allowed_updates=allowed_updates,
+        long_polling_timeout=long_polling_timeout)
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\apihelper.py", line 339, in get_updates
+    return _make_request(token, method_url, params=payload)
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\apihelper.py", line 168, in _make_request
+    json_result = _check_result(method_name, result)
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\apihelper.py", line 197, in _check_result
+    raise ApiTelegramException(method_name, result, result_json)
+telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+"
+2026-05-28 13:35:50,114 (__init__.py:1254 MainThread) ERROR - TeleBot: "Threaded polling exception: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running"
+2026-05-28 13:35:50,117 (__init__.py:1256 MainThread) ERROR - TeleBot: "Exception traceback:
+Traceback (most recent call last):
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\__init__.py", line 1247, in __threaded_polling
+    polling_thread.raise_exceptions()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\util.py", line 116, in raise_exceptions
+    raise self.exception_info
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\util.py", line 98, in run
+    task(*args, **kwargs)
+    ~~~~^^^^^^^^^^^^^^^^^
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\__init__.py", line 689, in __retrieve_updates
+    updates = self.get_updates(offset=(self.last_update_id + 1),
+                               allowed_updates=allowed_updates,
+                               timeout=timeout, long_polling_timeout=long_polling_timeout)
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\__init__.py", line 661, in get_updates
+    json_updates = apihelper.get_updates(
+        self.token, offset=offset, limit=limit, timeout=timeout, allowed_updates=allowed_updates,
+        long_polling_timeout=long_polling_timeout)
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\apihelper.py", line 339, in get_updates
+    return _make_request(token, method_url, params=payload)
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\apihelper.py", line 168, in _make_request
+    json_result = _check_result(method_name, result)
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\apihelper.py", line 197, in _check_result
+    raise ApiTelegramException(method_name, result, result_json)
+telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+"
+2026-05-28 13:35:57,501 (__init__.py:1254 MainThread) ERROR - TeleBot: "Threaded polling exception: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running"
+2026-05-28 13:35:57,508 (__init__.py:1256 MainThread) ERROR - TeleBot: "Exception traceback:
+Traceback (most recent call last):
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\__init__.py", line 1247, in __threaded_polling
+    polling_thread.raise_exceptions()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\util.py", line 116, in raise_exceptions
+    raise self.exception_info
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\util.py", line 98, in run
+    task(*args, **kwargs)
+    ~~~~^^^^^^^^^^^^^^^^^
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\__init__.py", line 689, in __retrieve_updates
+    updates = self.get_updates(offset=(self.last_update_id + 1),
+                               allowed_updates=allowed_updates,
+                               timeout=timeout, long_polling_timeout=long_polling_timeout)
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\__init__.py", line 661, in get_updates
+    json_updates = apihelper.get_updates(
+        self.token, offset=offset, limit=limit, timeout=timeout, allowed_updates=allowed_updates,
+        long_polling_timeout=long_polling_timeout)
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\apihelper.py", line 339, in get_updates
+    return _make_request(token, method_url, params=payload)
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\apihelper.py", line 168, in _make_request
+    json_result = _check_result(method_name, result)
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\apihelper.py", line 197, in _check_result
+    raise ApiTelegramException(method_name, result, result_json)
+telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+"
+2026-05-28 13:36:05,644 (__init__.py:1254 MainThread) ERROR - TeleBot: "Threaded polling exception: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running"
+2026-05-28 13:36:05,647 (__init__.py:1256 MainThread) ERROR - TeleBot: "Exception traceback:
+Traceback (most recent call last):
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\__init__.py", line 1247, in __threaded_polling
+    polling_thread.raise_exceptions()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\util.py", line 116, in raise_exceptions
+    raise self.exception_info
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\util.py", line 98, in run
+    task(*args, **kwargs)
+    ~~~~^^^^^^^^^^^^^^^^^
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\__init__.py", line 689, in __retrieve_updates
+    updates = self.get_updates(offset=(self.last_update_id + 1),
+                               allowed_updates=allowed_updates,
+                               timeout=timeout, long_polling_timeout=long_polling_timeout)
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\__init__.py", line 661, in get_updates
+    json_updates = apihelper.get_updates(
+        self.token, offset=offset, limit=limit, timeout=timeout, allowed_updates=allowed_updates,
+        long_polling_timeout=long_polling_timeout)
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\apihelper.py", line 339, in get_updates
+    return _make_request(token, method_url, params=payload)
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\apihelper.py", line 168, in _make_request
+    json_result = _check_result(method_name, result)
+  File "c:\Users\User\Desktop\MINA_v2\venv\Lib\site-packages\telebot\apihelper.py", line 197, in _check_result
+    raise ApiTelegramException(method_name, result, result_json)
+telebot.apihelper.ApiTelegramException: A request to the Telegram API was unsuccessful. Error code: 409. Description: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+"

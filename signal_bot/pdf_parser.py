@@ -1,0 +1,57 @@
+import sys
+import os
+sys.path.append('C:\\Users\\User\\Desktop\\MINA_v2')
+
+from dotenv import load_dotenv
+load_dotenv('C:\\Users\\User\\Desktop\\MINA_v2\\.env')
+
+import anthropic
+import base64
+
+def parse_pdf_for_signals(pdf_path):
+    with open(pdf_path, 'rb') as f:
+        pdf_data = base64.standard_b64encode(f.read()).decode('utf-8')
+
+    client = anthropic.Anthropic()
+
+    message = client.messages.create(
+        model="claude-opus-4-5",
+        max_tokens=1024,
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "document",
+                        "source": {
+                            "type": "base64",
+                            "media_type": "application/pdf",
+                            "data": pdf_data
+                        }
+                    },
+                    {
+                        "type": "text",
+                        "text": """Bu PDF bir kripto trading analiz raporu.
+Sadece şunları çıkar ve JSON formatında ver:
+- coin: sembol (örn: BTCUSDT, XRPUSDT)
+- side: LONG veya SHORT
+- entry: giriş fiyatı veya bölgesi
+- tp1: birinci hedef
+- tp2: ikinci hedef (varsa)
+- stop: stop loss (varsa)
+- leverage: kaldıraç (varsa)
+
+Sadece JSON array döndür, başka hiçbir şey yazma.
+Örnek: [{"coin":"BTCUSDT","side":"LONG","entry":"75000","tp1":"78000","tp2":"81000","stop":"72000","leverage":"3x"}]"""
+                    }
+                ]
+            }
+        ]
+    )
+
+    return message.content[0].text
+
+if __name__ == '__main__':
+    pdf_path = sys.argv[1] if len(sys.argv) > 1 else 'signal_bot/pdfs/last_20260526_060416.pdf'
+    result = parse_pdf_for_signals(pdf_path)
+    print(result)
