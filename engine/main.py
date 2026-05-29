@@ -92,19 +92,27 @@ _exchange_info_cache = {}
 _max_qty_cache = {}
 
 def get_symbol_max_qty(client, symbol):
-    """Sembol için MARKET_LOT_SIZE maxQty'yi cache'li getir"""
+    """Sembol için maxQty'yi cache'li getir.
+    MARKET_LOT_SIZE maxQty=0 ise LOT_SIZE maxQty'ye fallback yapar.
+    Bazı semboller (DYMUSDT vb.) MARKET_LOT_SIZE'da 0 döndürür → -4005 hatası."""
     if symbol in _max_qty_cache:
         return _max_qty_cache[symbol]
     exchange_info = client.futures_exchange_info()
     for s in exchange_info['symbols']:
         sym = s['symbol']
-        max_qty = float('inf')
+        market_max = 0.0
+        lot_max    = 0.0
         for f in s['filters']:
             if f['filterType'] == 'MARKET_LOT_SIZE':
-                mq = float(f['maxQty'])
-                if mq > 0:
-                    max_qty = mq
-                break
+                market_max = float(f['maxQty'])
+            elif f['filterType'] == 'LOT_SIZE':
+                lot_max = float(f['maxQty'])
+        if market_max > 0:
+            max_qty = market_max
+        elif lot_max > 0:
+            max_qty = lot_max
+        else:
+            max_qty = float('inf')
         _max_qty_cache[sym] = max_qty
     return _max_qty_cache.get(symbol, float('inf'))
 
