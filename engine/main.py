@@ -53,10 +53,11 @@ logger.addHandler(console_handler)
 # ═══════════════════════════════════════════════
 
 # Tracking dosyaları
-DEFENSE_FILE = "defense_levels.json"
-TP_FILE = "tp_levels.json"
-MAX_PRICE_FILE = "max_prices.json"
+DEFENSE_FILE       = "defense_levels.json"
+TP_FILE            = "tp_levels.json"
+MAX_PRICE_FILE     = "max_prices.json"
 INITIAL_MARGIN_FILE = "initial_margins.json"
+STOP_LEVELS_FILE   = "stop_levels.json"
 
 # Özel kaldıraç kuralları
 LEVERAGE_RULES = {
@@ -521,6 +522,18 @@ def check_defense_trigger(unrealized_pnl, initial_margin, defense_level, leverag
 
     return 0, None
 
+def check_d1_price_trigger(current_price: float, pos_key: str,
+                            stop_levels: dict, side: str):
+    """PDF stop seviyesine göre D1 tetikleme — ROE yetersiz olsa bile çalışır."""
+    stop_px = stop_levels.get(pos_key)
+    if stop_px is None:
+        return False, None
+    if side == 'LONG' and current_price <= stop_px:
+        return True, f"🎯 D1 FİYAT TETİKLENDİ: ${current_price:.4f} ≤ Stop ${stop_px:.4f}"
+    if side == 'SHORT' and current_price >= stop_px:
+        return True, f"🎯 D1 FİYAT TETİKLENDİ: ${current_price:.4f} ≥ Stop ${stop_px:.4f}"
+    return False, None
+
 # Aynı engine oturumunda SLOT_LIMIT'e takılan (pos_key, defense_level) çiftleri
 _slot_limit_blocked = set()
 
@@ -573,9 +586,10 @@ def main():
     config = BinanceConfig()
     client = config.get_client()
     
-    defense_levels = load_json(DEFENSE_FILE)
-    tp_levels = load_json(TP_FILE)
+    defense_levels  = load_json(DEFENSE_FILE)
+    tp_levels       = load_json(TP_FILE)
     initial_margins = load_json(INITIAL_MARGIN_FILE)
+    stop_levels     = load_json(STOP_LEVELS_FILE)
     
     last_message_time = 0
     check_interval = 60
@@ -598,6 +612,7 @@ def main():
                     for _d in [defense_levels, initial_margins, tp_levels]:
                         _d.pop(pos_key, None)
                     max_prices.pop(pos_key, None)
+                    stop_levels.pop(pos_key, None)
                     logger.info(f"🔄 MUTABAKAT: {pos_key} Binance'te yok — takipten silindi")
                     send_notification(
                         f"⚡ *HARICI KAPANMA — {pos_key.replace('_', ' ')}*\n"
@@ -608,6 +623,7 @@ def main():
                 save_json(INITIAL_MARGIN_FILE, initial_margins)
                 save_json(TP_FILE, tp_levels)
                 save_json(MAX_PRICE_FILE, max_prices)
+                save_json(STOP_LEVELS_FILE, stop_levels)
             # ─────────────────────────────────────────────────────────────────
 
             if len(positions) == 0:
@@ -915,6 +931,14 @@ def main():
                         defense_trigger, defense_msg = check_defense_trigger(
                             unrealized_pnl, init_margin, current_defense, leverage
                         )
+                        # ROE tetiklemediyse PDF stop seviyesi bazlı D1 kontrolü
+                        if not defense_trigger and current_defense == 0:
+                            price_d1, price_msg = check_d1_price_trigger(
+                                current_price, pos_key, stop_levels, side
+                            )
+                            if price_d1:
+                                defense_trigger = 1
+                                defense_msg     = price_msg
                         if not defense_trigger:
                             break
                         if (pos_key, defense_trigger) in _slot_limit_blocked:
@@ -932,6 +956,10 @@ def main():
                             current_defense = defense_trigger
                             defense_levels[pos_key] = current_defense
                             save_json(DEFENSE_FILE, defense_levels)
+                            # D1 tetiklendi: stop seviyesi artık gereksiz
+                            if defense_trigger == 1 and pos_key in stop_levels:
+                                stop_levels.pop(pos_key, None)
+                                save_json(STOP_LEVELS_FILE, stop_levels)
                             # D2: mevcut TP emirlerini iptal et, break-even moduna geç
                             if defense_trigger == 2:
                                 tp_levels[pos_key] = "BREAKEVEN"

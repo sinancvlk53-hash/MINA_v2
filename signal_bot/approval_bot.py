@@ -62,9 +62,62 @@ def get_precision(client, symbol):
     return 3
 
 
-def open_position(client, account, symbol, side):
-    bal       = account.get_usdt_balance()
-    margin    = round((bal / 10) * 0.20, 2)
+def get_price_precision(client, symbol: str) -> int:
+    """tickSize'dan fiyat ondalık basamak sayısını döndür."""
+    info = client.futures_exchange_info()
+    for s in info['symbols']:
+        if s['symbol'] == symbol:
+            for f in s['filters']:
+                if f['filterType'] == 'PRICE_FILTER':
+                    tick_str = str(float(f['tickSize'])).rstrip('0')
+                    return len(tick_str.split('.')[-1]) if '.' in tick_str else 0
+    return 2
+
+
+# stop_levels.json → kök dizinde, engine ile paylaşılan D1 tetik fiyatları
+STOP_LEVELS_FILE = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'stop_levels.json'
+)
+
+def _load_stop_levels() -> dict:
+    try:
+        with open(STOP_LEVELS_FILE, encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def _save_stop_levels(data: dict) -> None:
+    try:
+        with open(STOP_LEVELS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2)
+    except Exception:
+        pass
+
+def _parse_price(val) -> float | None:
+    """'75000' veya '74000-76000' formatındaki fiyatı float'a çevir (midpoint)."""
+    if val is None:
+        return None
+    s = str(val).replace(',', '.').strip()
+    if not s or s == '—':
+        return None
+    range_m = re.match(r'^(\d[\d.]*)\s*-\s*(\d[\d.]*)$', s)
+    if range_m:
+        try:
+            lo, hi = float(range_m.group(1)), float(range_m.group(2))
+            return (lo + hi) / 2
+        except ValueError:
+            pass
+    try:
+        return float(s)
+    except ValueError:
+        return None
+
+
+def open_position(client, account, symbol, side, limit_price=None, stop_d1_price=None):
+    """Pozisyon aç. limit_price verilirse LİMİT GTC, verilmezse MARKET emri kullanılır.
+    stop_d1_price verilirse stop_levels.json'a D1 tetik fiyatı kaydedilir."""
+    bal    = account.get_usdt_balance()
+    margin = round((bal / 10) * 0.20, 2)
 
     try:
         client.futures_change_leverage(symbol=symbol, leverage=LEVERAGE)
@@ -76,28 +129,57 @@ def open_position(client, account, symbol, side):
         pass
 
     try:
-        ticker = client.futures_symbol_ticker(symbol=symbol)
-        price  = float(ticker['price'])
+        ticker       = client.futures_symbol_ticker(symbol=symbol)
+        market_price = float(ticker['price'])
     except Exception as e:
         return False, f"Fiyat alınamadı: {e}"
 
     prec  = get_precision(client, symbol)
-    qty   = round((margin * LEVERAGE) / price, prec)
-    oside = SIDE_BUY if side == 'LONG' else SIDE_SELL
-    pside = 'LONG' if side == 'LONG' else 'SHORT'
+    oside = SIDE_BUY if side == 'LONG'  else SIDE_SELL
+    pside = 'LONG'   if side == 'LONG'  else 'SHORT'
+
+    parsed_limit = _parse_price(limit_price)
+    use_limit    = parsed_limit is not None and parsed_limit > 0
 
     try:
-        order = client.futures_create_order(
-            symbol=symbol, side=oside,
-            type=ORDER_TYPE_MARKET,
-            quantity=qty, positionSide=pside
-        )
-        return True, f"OrderID:{order['orderId']} Qty:{qty} @{round(price,4)}"
+        if use_limit:
+            price_prec = get_price_precision(client, symbol)
+            limit_px   = round(parsed_limit, price_prec)
+            qty        = round((margin * LEVERAGE) / limit_px, prec)
+            order      = client.futures_create_order(
+                symbol=symbol, side=oside,
+                type=ORDER_TYPE_LIMIT,
+                price=limit_px,
+                quantity=qty,
+                positionSide=pside,
+                timeInForce='GTC',
+            )
+            type_str = f"LİMİT @{limit_px}"
+        else:
+            qty   = round((margin * LEVERAGE) / market_price, prec)
+            order = client.futures_create_order(
+                symbol=symbol, side=oside,
+                type=ORDER_TYPE_MARKET,
+                quantity=qty,
+                positionSide=pside,
+            )
+            type_str = f"MARKET @{round(market_price, 4)}"
     except Exception as e:
         err = str(e)
         if '-1109' in err:
             return False, "ATLANDI (-1109)"
         return False, err[:80]
+
+    # D1 tetik fiyatını engine için kaydet
+    if stop_d1_price is not None:
+        parsed_stop = _parse_price(stop_d1_price)
+        if parsed_stop and parsed_stop > 0:
+            pos_key    = f"{symbol}_{side}"
+            sl         = _load_stop_levels()
+            sl[pos_key] = float(round(parsed_stop, 8))
+            _save_stop_levels(sl)
+
+    return True, f"OrderID:{order['orderId']} Qty:{qty} {type_str}"
 
 
 # ---------------------------------------------------------------------------
@@ -178,10 +260,13 @@ def handle_reply(message, signals):
 
     results = []
     for i in selected:
-        s = signals[i]
+        s      = signals[i]
         symbol = s['coin']
         side   = s['side']
-        ok, detail = open_position(client, account, symbol, side)
+        entry  = s.get('entry')
+        stop   = s.get('stop')
+        ok, detail = open_position(client, account, symbol, side,
+                                   limit_price=entry, stop_d1_price=stop)
         icon = "✅" if ok else "❌"
         results.append(f"{icon} {symbol} {side}: {detail}")
         time.sleep(0.4)
