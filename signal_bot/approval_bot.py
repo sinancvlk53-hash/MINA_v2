@@ -260,6 +260,11 @@ def ask_approval(signals: list, pdf_time: str = None, source: str = 'PDF'):
 
 
 def handle_reply(message, signals):
+    # Komut gelirse next_step'i bypass et, normal handler'a ilet
+    if message.text and message.text.startswith('/'):
+        bot.process_new_messages([message])
+        return
+
     text = message.text.strip().upper()
 
     if text == 'HAYIR':
@@ -347,7 +352,9 @@ def process_new_pdf(pdf_path: str):
 
 
 def _handle_news_alarm(message, pdf_path: str, pdf_time: str):
-    """Haber alarmı sonrası kullanıcı DEVAM veya HAYIR yazabilir."""
+    if message.text and message.text.startswith('/'):
+        bot.process_new_messages([message])
+        return
     text = message.text.strip().upper()
     if text == 'DEVAM':
         bot.send_message(CHAT_ID, "✅ Manuel onay verildi. Sinyaller yeniden işleniyor...")
@@ -531,6 +538,9 @@ def cmd_kapat(message):
 
 def _handle_kapat_confirm(message, client, positions):
     if not _only_owner(message):
+        return
+    if message.text and message.text.startswith('/'):
+        bot.process_new_messages([message])
         return
     if message.text.strip().upper() != 'ONAYLA':
         bot.send_message(CHAT_ID, "Iptal edildi.")
