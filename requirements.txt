@@ -1,0 +1,7 @@
+python-binance==1.0.19
+pyTelegramBotAPI==4.33.0
+telethon==1.43.2
+anthropic==0.104.1
+python-dotenv==1.0.0
+requests==2.34.2
+psutil==7.2.2
