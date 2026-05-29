@@ -75,9 +75,9 @@ def get_price_precision(client, symbol: str) -> int:
 
 
 # stop_levels.json → kök dizinde, engine ile paylaşılan D1 tetik fiyatları
-STOP_LEVELS_FILE = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'stop_levels.json'
-)
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+STOP_LEVELS_FILE    = os.path.join(_ROOT, 'stop_levels.json')
+PENDING_ORDERS_FILE = os.path.join(_ROOT, 'pending_orders.json')
 
 def _load_stop_levels() -> dict:
     try:
@@ -89,6 +89,20 @@ def _load_stop_levels() -> dict:
 def _save_stop_levels(data: dict) -> None:
     try:
         with open(STOP_LEVELS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2)
+    except Exception:
+        pass
+
+def _load_pending_orders() -> dict:
+    try:
+        with open(PENDING_ORDERS_FILE, encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def _save_pending_orders(data: dict) -> None:
+    try:
+        with open(PENDING_ORDERS_FILE, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2)
     except Exception:
         pass
@@ -170,14 +184,26 @@ def open_position(client, account, symbol, side, limit_price=None, stop_d1_price
             return False, "ATLANDI (-1109)"
         return False, err[:80]
 
+    pos_key = f"{symbol}_{side}"
+
     # D1 tetik fiyatını engine için kaydet
     if stop_d1_price is not None:
         parsed_stop = _parse_price(stop_d1_price)
         if parsed_stop and parsed_stop > 0:
-            pos_key    = f"{symbol}_{side}"
-            sl         = _load_stop_levels()
+            sl          = _load_stop_levels()
             sl[pos_key] = float(round(parsed_stop, 8))
             _save_stop_levels(sl)
+
+    # Limit emir ise 48h iptal takibine al
+    if use_limit:
+        po          = _load_pending_orders()
+        po[pos_key] = {
+            'order_id':  order['orderId'],
+            'symbol':    symbol,
+            'side':      side,
+            'placed_at': time.time(),
+        }
+        _save_pending_orders(po)
 
     return True, f"OrderID:{order['orderId']} Qty:{qty} {type_str}"
 

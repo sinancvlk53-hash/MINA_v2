@@ -57,7 +57,9 @@ DEFENSE_FILE       = "defense_levels.json"
 TP_FILE            = "tp_levels.json"
 MAX_PRICE_FILE     = "max_prices.json"
 INITIAL_MARGIN_FILE = "initial_margins.json"
-STOP_LEVELS_FILE   = "stop_levels.json"
+STOP_LEVELS_FILE    = "stop_levels.json"
+PENDING_ORDERS_FILE = "pending_orders.json"
+LIMIT_ORDER_TTL_H   = 48
 
 # Özel kaldıraç kuralları
 LEVERAGE_RULES = {
@@ -534,6 +536,48 @@ def check_d1_price_trigger(current_price: float, pos_key: str,
         return True, f"🎯 D1 FİYAT TETİKLENDİ: ${current_price:.4f} ≥ Stop ${stop_px:.4f}"
     return False, None
 
+def cancel_stale_limit_orders(client, pending_orders: dict, stop_levels: dict) -> bool:
+    """LIMIT_ORDER_TTL_H saatte dolmayan limit emirlerini iptal et.
+    Değişiklik olduysa True döner (kaydetmek için)."""
+    now     = time.time()
+    changed = False
+    stale   = [pk for pk, info in pending_orders.items()
+               if (now - info.get('placed_at', now)) / 3600 >= LIMIT_ORDER_TTL_H]
+
+    for pos_key in stale:
+        info     = pending_orders[pos_key]
+        symbol   = info['symbol']
+        order_id = info['order_id']
+        age_h    = (now - info['placed_at']) / 3600
+
+        cancelled = False
+        try:
+            client.futures_cancel_order(symbol=symbol, orderId=order_id)
+            cancelled = True
+            logger.info(f"⏰ LİMİT İPTAL: {pos_key} — {age_h:.1f}h dolmadı, emir iptal edildi (#{order_id})")
+        except Exception as e:
+            err = str(e)
+            if '-2011' in err:
+                # Emir zaten dolmuş veya iptal edilmiş — stop_levels korunur
+                logger.info(f"⚠️ LİMİT İPTAL: {pos_key} — emir #{order_id} zaten kapanmış (-2011), takip temizlendi")
+            else:
+                logger.error(f"❌ LİMİT İPTAL HATASI: {pos_key} — {err[:80]}")
+            # Her durumda pending listesinden çıkar
+            cancelled = True  # cleanup için
+
+        if cancelled:
+            pending_orders.pop(pos_key, None)
+            stop_levels.pop(pos_key, None)
+            changed = True
+            send_notification(
+                f"⏰ *LİMİT EMİR İPTAL — {pos_key.replace('_', ' ')}*\n"
+                f"📌 {LIMIT_ORDER_TTL_H}h içinde dolmadı\n"
+                f"🗑️ Slot serbest bırakıldı"
+            )
+
+    return changed
+
+
 # Aynı engine oturumunda SLOT_LIMIT'e takılan (pos_key, defense_level) çiftleri
 _slot_limit_blocked = set()
 
@@ -590,6 +634,7 @@ def main():
     tp_levels       = load_json(TP_FILE)
     initial_margins = load_json(INITIAL_MARGIN_FILE)
     stop_levels     = load_json(STOP_LEVELS_FILE)
+    pending_orders  = load_json(PENDING_ORDERS_FILE)
     
     last_message_time = 0
     check_interval = 60
@@ -597,6 +642,12 @@ def main():
     while True:
         try:
             positions = get_open_positions(client)
+
+            # ── 48h dolmayan limit emirleri iptal et ─────────────────────────
+            if cancel_stale_limit_orders(client, pending_orders, stop_levels):
+                save_json(PENDING_ORDERS_FILE, pending_orders)
+                save_json(STOP_LEVELS_FILE, stop_levels)
+            # ─────────────────────────────────────────────────────────────────
 
             # ── Reconciliation: harici kapanma / likidasyonu tespit et ──────
             binance_keys = {
@@ -659,6 +710,10 @@ def main():
                     if pos_key not in initial_margins:
                         initial_margins[pos_key] = round((entry_price * amount) / leverage, 4)
                         save_json(INITIAL_MARGIN_FILE, initial_margins)
+                        # Limit emir doldu: pending takibinden çıkar
+                        if pos_key in pending_orders:
+                            pending_orders.pop(pos_key, None)
+                            save_json(PENDING_ORDERS_FILE, pending_orders)
                         _icon = "🟢" if side == 'LONG' else "🔴"
                         send_notification(
                             f"{_icon} *POZİSYON TESPİT EDİLDİ*\n"
