@@ -417,6 +417,147 @@ def _ht_queue_checker():
 
 
 # ---------------------------------------------------------------------------
+# Telegram komut işleyicileri (/snapshot /durum /kapat /bakiye)
+# ---------------------------------------------------------------------------
+
+def _only_owner(message):
+    return message.chat.id == CHAT_ID
+
+
+@bot.message_handler(commands=['snapshot'])
+def cmd_snapshot(message):
+    if not _only_owner(message):
+        return
+    try:
+        config    = BinanceConfig()
+        client    = config.get_client()
+        account   = AccountManager(client)
+        bal       = account.get_usdt_balance()
+        positions = [p for p in client.futures_position_information()
+                     if float(p['positionAmt']) != 0]
+        if not positions:
+            bot.send_message(CHAT_ID, f"*Bakiye: ${bal:.2f}*\nAcik pozisyon yok.", parse_mode='Markdown')
+            return
+        lines = [f"*Bakiye: ${bal:.2f} | {len(positions)} pozisyon*\n"]
+        for p in sorted(positions, key=lambda x: x['symbol']):
+            sym   = p['symbol']
+            side  = 'LONG' if float(p['positionAmt']) > 0 else 'SHORT'
+            lev   = int(p['leverage'])
+            entry = float(p['entryPrice'])
+            pnl   = float(p['unRealizedProfit'])
+            iso   = float(p['isolatedMargin'])
+            roe   = (pnl / iso * 100) if iso > 0 else 0
+            icon  = '🟢' if pnl >= 0 else '🔴'
+            lines.append(
+                f"{icon} *{sym}* {side} {lev}x\n"
+                f"   Giris: {entry:.4f} | PnL: ${pnl:+.2f} | ROE: {roe:+.1f}%"
+            )
+        bot.send_message(CHAT_ID, "\n".join(lines), parse_mode='Markdown')
+    except Exception as e:
+        bot.send_message(CHAT_ID, f"Snapshot hatasi: {e}")
+
+
+@bot.message_handler(commands=['bakiye'])
+def cmd_bakiye(message):
+    if not _only_owner(message):
+        return
+    try:
+        config  = BinanceConfig()
+        client  = config.get_client()
+        account = AccountManager(client)
+        bal     = account.get_usdt_balance()
+        bot.send_message(CHAT_ID, f"*Bakiye: ${bal:.2f} USDT*", parse_mode='Markdown')
+    except Exception as e:
+        bot.send_message(CHAT_ID, f"Bakiye hatasi: {e}")
+
+
+@bot.message_handler(commands=['durum'])
+def cmd_durum(message):
+    if not _only_owner(message):
+        return
+    try:
+        import psutil
+        targets = {
+            'engine':         'engine/main.py',
+            'approval_bot':   'approval_bot.py',
+            'ht_listener':    'ht_listener.py',
+            'pdf_listener':   'pdf_listener.py',
+            'listener':       'signal_bot/listener.py',
+            'merter_tracker': 'merter_tracker.py',
+        }
+        running = set()
+        for proc in psutil.process_iter(['pid', 'cmdline']):
+            try:
+                cmdline = ' '.join(proc.info['cmdline'] or [])
+                for key, script in targets.items():
+                    if script in cmdline:
+                        running.add(key)
+            except Exception:
+                pass
+        lines = ['*Servis Durumu:*\n']
+        for key in targets:
+            icon  = '🟢' if key in running else '🔴'
+            state = 'aktif' if key in running else 'KAPALI'
+            lines.append(f"{icon} {key}: {state}")
+        bot.send_message(CHAT_ID, "\n".join(lines), parse_mode='Markdown')
+    except Exception as e:
+        bot.send_message(CHAT_ID, f"Durum hatasi: {e}")
+
+
+@bot.message_handler(commands=['kapat'])
+def cmd_kapat(message):
+    if not _only_owner(message):
+        return
+    try:
+        config    = BinanceConfig()
+        client    = config.get_client()
+        positions = [p for p in client.futures_position_information()
+                     if float(p['positionAmt']) != 0]
+        if not positions:
+            bot.send_message(CHAT_ID, "Acik pozisyon yok.")
+            return
+        lines = [f"*{len(positions)} pozisyon kapatilacak:*\n"]
+        for p in sorted(positions, key=lambda x: x['symbol']):
+            sym  = p['symbol']
+            side = 'LONG' if float(p['positionAmt']) > 0 else 'SHORT'
+            pnl  = float(p['unRealizedProfit'])
+            lines.append(f"• {sym} {side} | PnL: ${pnl:+.2f}")
+        lines.append("\nOnaylamak icin *ONAYLA* yaz.")
+        msg = bot.send_message(CHAT_ID, "\n".join(lines), parse_mode='Markdown')
+        bot.register_next_step_handler(msg, lambda m: _handle_kapat_confirm(m, client, positions))
+    except Exception as e:
+        bot.send_message(CHAT_ID, f"Kapat hatasi: {e}")
+
+
+def _handle_kapat_confirm(message, client, positions):
+    if not _only_owner(message):
+        return
+    if message.text.strip().upper() != 'ONAYLA':
+        bot.send_message(CHAT_ID, "Iptal edildi.")
+        return
+    results = []
+    for p in positions:
+        sym    = p['symbol']
+        amt    = float(p['positionAmt'])
+        side   = 'LONG' if amt > 0 else 'SHORT'
+        qty    = abs(amt)
+        oside  = SIDE_SELL if side == 'LONG' else SIDE_BUY
+        pside  = side
+        try:
+            order = client.futures_create_order(
+                symbol=sym, side=oside,
+                type=ORDER_TYPE_MARKET,
+                quantity=qty,
+                positionSide=pside,
+            )
+            results.append(f"✅ {sym} {side} kapatildi")
+        except Exception as e:
+            results.append(f"❌ {sym}: {str(e)[:60]}")
+        time.sleep(0.3)
+    bot.send_message(CHAT_ID, "\n".join(results))
+
+
+# ---------------------------------------------------------------------------
 # Bağımsız çalıştırma — bot polling
 # ---------------------------------------------------------------------------
 
