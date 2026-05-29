@@ -32,16 +32,22 @@ def process_signal(coin, side, source):
 
     if existing and existing['source'] != source and existing['side'] == side:
         # Confluence: same coin, same side, different source
-        print(f"[VURKAÇ] CONFLUENCE! {coin} {side} - {existing['source']} + {source} ONAYLADI!")
+        combined = f"{existing['source']}+{source}"
+        print(f"[VURKAÇ] CONFLUENCE! {coin} {side} - {combined} ONAYLADI!")
         log_confluence(coin, side, existing['source'], source)
         del pending_signals[coin]
         send_notification(
             f"🎯 *VURKAÇ SİNYALİ!*\n"
             f"📌 {coin} | {side} | 4x\n"
             f"📊 EI + RSI ONAYLADI\n"
-            f"⏰ {datetime.now().strftime('%H:%M:%S')}\n"
-            f"🔮 Hayali işlem açıldı!"
+            f"⏰ {datetime.now().strftime('%H:%M:%S')}"
         )
+        # Simülasyon pozisyonu aç (merter_tracker)
+        try:
+            from merter_tracker import open_simulated_position
+            open_simulated_position(coin, side, combined)
+        except Exception as _te:
+            print(f"[TRACKER] Simülasyon açılamadı: {_te}")
     else:
         pending_signals[coin] = {'side': side, 'source': source, 'time': now}
         print(f"[BEKLİYOR] {source} | {coin} | {side} - Çift onay bekleniyor...")
