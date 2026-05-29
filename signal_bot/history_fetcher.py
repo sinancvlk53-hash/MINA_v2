@@ -4,7 +4,8 @@ import sys
 import os
 from datetime import datetime, timezone, timedelta
 
-sys.path.append('C:\\Users\\User\\Desktop\\MINA_v2')
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(_ROOT)
 
 from telethon import TelegramClient
 from telethon.errors import FloodWaitError

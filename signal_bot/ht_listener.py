@@ -8,9 +8,10 @@ import re
 import sys
 from datetime import datetime
 
-sys.path.append('C:\\Users\\User\\Desktop\\MINA_v2')
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(_ROOT)
 from dotenv import load_dotenv
-load_dotenv('C:\\Users\\User\\Desktop\\MINA_v2\\.env')
+load_dotenv(os.path.join(_ROOT, '.env'))
 
 import anthropic
 from telethon import TelegramClient, events

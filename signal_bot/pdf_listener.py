@@ -5,7 +5,8 @@ import threading
 from datetime import datetime
 from telethon import TelegramClient, events
 from telethon.tl.types import DocumentAttributeFilename
-sys.path.append('C:\\Users\\User\\Desktop\\MINA_v2')
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(_ROOT)
 
 api_id = 38446219
 api_hash = '72a15e6baf9f4f79893dd122258e8bea'

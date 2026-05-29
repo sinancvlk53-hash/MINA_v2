@@ -3,7 +3,8 @@ import re
 import sys
 from datetime import datetime, timedelta
 from telethon import TelegramClient, events
-sys.path.append('C:\\Users\\User\\Desktop\\MINA_v2')
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(_ROOT)
 from telegram_bot import send_notification
 
 api_id = 38446219

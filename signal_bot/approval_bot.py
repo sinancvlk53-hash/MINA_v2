@@ -7,8 +7,9 @@ import re
 import datetime
 import atexit
 import threading
-sys.path.append('C:\\Users\\User\\Desktop\\MINA_v2')
-sys.path.append('C:\\Users\\User\\Desktop\\MINA_v2\\backend')
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(_ROOT)
+sys.path.append(os.path.join(_ROOT, 'backend'))
 
 LOCK_FILE = os.path.join(os.path.dirname(__file__), 'approval_bot.lock')
 
@@ -32,7 +33,7 @@ def _release_lock():
         pass
 
 from dotenv import load_dotenv
-load_dotenv('C:\\Users\\User\\Desktop\\MINA_v2\\.env')
+load_dotenv(os.path.join(_ROOT, '.env'))
 
 import telebot
 from binance.enums import *
