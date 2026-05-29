@@ -141,6 +141,26 @@
 - Grafik + giriş kutusu + stop seviyesi varsa → **aç**
 - "Pas", "şu an değil" yazsa bile grafik varsa → **aç**
 - TOTAL, OTHERS, BRENT, XCU → **asla açma**
+
+---
+
+## PDF SİNYAL FİLTRELERİ
+
+### Haber Şalteri
+Metin içinde aşağıdaki ifadelerden biri geçerse:
+- `FlashCrash`
+- `Mayın Tarlası`
+- `Balina Satışı`
+
+→ Otomatik işlemi **durdur**, Telegram'dan **manuel onay** iste.
+
+### UPDATE Tuzağı
+Görsel açıklama veya metin içinde aşağıdakilerden biri varsa:
+- `UPDATE`
+- `RETEST`
+- `DURUM`
+
+→ **Yeni pozisyon açma.** Bu mesajlar mevcut pozisyon güncellemesidir, giriş sinyali değildir.
 ## GENEL BİLGİLER
 - **Platform:** Binance Futures (Testnet)
 - **Para Birimi:** SADECE USDT (BTC, USDC, diğerleri kullanılmaz)
