@@ -5,8 +5,30 @@ import json
 import time
 import re
 import datetime
+import atexit
 sys.path.append('C:\\Users\\User\\Desktop\\MINA_v2')
 sys.path.append('C:\\Users\\User\\Desktop\\MINA_v2\\backend')
+
+LOCK_FILE = os.path.join(os.path.dirname(__file__), 'approval_bot.lock')
+
+def _acquire_lock():
+    if os.path.exists(LOCK_FILE):
+        try:
+            with open(LOCK_FILE) as f:
+                pid = f.read().strip()
+        except Exception:
+            pid = '?'
+        print(f"approval_bot zaten çalışıyor (PID {pid}). Çıkılıyor.")
+        sys.exit(1)
+    with open(LOCK_FILE, 'w') as f:
+        f.write(str(os.getpid()))
+    atexit.register(_release_lock)
+
+def _release_lock():
+    try:
+        os.remove(LOCK_FILE)
+    except Exception:
+        pass
 
 from dotenv import load_dotenv
 load_dotenv('C:\\Users\\User\\Desktop\\MINA_v2\\.env')
@@ -164,7 +186,7 @@ def handle_reply(message, signals):
 # ---------------------------------------------------------------------------
 
 def process_new_pdf(pdf_path: str):
-    """PDF'i parse et ve onay akışını başlat."""
+    """PDF'i parse et, filtrelerden geçir, onay akışını başlat."""
     pdf_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
     bot.send_message(CHAT_ID, f"📥 Yeni PDF alındı, analiz ediliyor...\n`{os.path.basename(pdf_path)}`",
                      parse_mode='Markdown')
@@ -172,9 +194,82 @@ def process_new_pdf(pdf_path: str):
         raw     = parse_pdf_for_signals(pdf_path)
         raw     = raw.strip().lstrip('```json').lstrip('```').rstrip('```').strip()
         signals = json.loads(raw)
-        ask_approval(signals, pdf_time=pdf_time)
     except Exception as e:
         bot.send_message(CHAT_ID, f"❌ PDF parse hatası: {e}")
+        return
+
+    # Filtre kontrolü — tek elemanlı liste ve blocked:true ise
+    if len(signals) == 1 and signals[0].get('blocked'):
+        reason  = signals[0].get('reason', '?')
+        keyword = signals[0].get('keyword', '?')
+
+        if reason == 'haber_alarmi':
+            msg = bot.send_message(
+                CHAT_ID,
+                f"⚠️ *HABER ALARMI* — Otomatik işlem durduruldu!\n"
+                f"Tetikleyen: `{keyword}`\n\n"
+                f"Devam etmek için `DEVAM` yaz, atlamak için `HAYIR` yaz.",
+                parse_mode='Markdown'
+            )
+            bot.register_next_step_handler(msg, lambda m: _handle_news_alarm(m, pdf_path, pdf_time))
+
+        elif reason == 'update_mesaji':
+            bot.send_message(
+                CHAT_ID,
+                f"ℹ️ *UPDATE/RETEST mesajı* — Yeni pozisyon açılmadı.\n"
+                f"Tetikleyen: `{keyword}`",
+                parse_mode='Markdown'
+            )
+        return
+
+    ask_approval(signals, pdf_time=pdf_time)
+
+
+def _handle_news_alarm(message, pdf_path: str, pdf_time: str):
+    """Haber alarmı sonrası kullanıcı DEVAM veya HAYIR yazabilir."""
+    text = message.text.strip().upper()
+    if text == 'DEVAM':
+        bot.send_message(CHAT_ID, "✅ Manuel onay verildi. Sinyaller yeniden işleniyor...")
+        try:
+            raw     = _reparse_signals(pdf_path)
+            signals = json.loads(raw.strip().lstrip('```json').lstrip('```').rstrip('```').strip())
+            ask_approval(signals, pdf_time=pdf_time)
+        except Exception as e:
+            bot.send_message(CHAT_ID, f"❌ Yeniden parse hatası: {e}")
+    else:
+        bot.send_message(CHAT_ID, "❌ İşlem atlandı.")
+
+
+def _reparse_signals(pdf_path: str) -> str:
+    """Filtre atlayarak sadece sinyal çıkarımı yapar (haber alarmı sonrası DEVAM için)."""
+    import base64
+    import anthropic as _ant
+    with open(pdf_path, 'rb') as f:
+        pdf_data = base64.standard_b64encode(f.read()).decode('utf-8')
+    client = _ant.Anthropic()
+    msg = client.messages.create(
+        model="claude-opus-4-5",
+        max_tokens=1024,
+        messages=[{
+            "role": "user",
+            "content": [
+                {"type": "document", "source": {"type": "base64", "media_type": "application/pdf", "data": pdf_data}},
+                {"type": "text", "text": """Bu PDF bir kripto trading analiz raporu.
+Sadece şunları çıkar ve JSON formatında ver:
+- coin: sembol (örn: BTCUSDT, XRPUSDT)
+- side: LONG veya SHORT
+- entry: giriş fiyatı veya bölgesi
+- tp1: birinci hedef
+- tp2: ikinci hedef (varsa)
+- stop: stop loss (varsa)
+- leverage: kaldıraç (varsa)
+
+Sadece JSON array döndür, başka hiçbir şey yazma.
+Örnek: [{"coin":"BTCUSDT","side":"LONG","entry":"75000","tp1":"78000","tp2":"81000","stop":"72000","leverage":"3x"}]"""}
+            ]
+        }]
+    )
+    return msg.content[0].text
 
 
 # ---------------------------------------------------------------------------
@@ -183,7 +278,8 @@ def process_new_pdf(pdf_path: str):
 
 if __name__ == '__main__':
     import sys as _sys
-    print("Onay botu başlatıldı, polling...")
+    _acquire_lock()
+    print(f"Onay botu başlatıldı (PID {os.getpid()}), polling...")
 
     if len(_sys.argv) > 1:
         # Doğrudan PDF verilebilir: python approval_bot.py dosya.pdf
