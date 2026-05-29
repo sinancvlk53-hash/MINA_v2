@@ -14,6 +14,7 @@ from datetime import datetime
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(_ROOT)
+sys.path.append(os.path.join(_ROOT, 'backend'))
 
 from dotenv import load_dotenv
 load_dotenv(os.path.join(_ROOT, '.env'))
