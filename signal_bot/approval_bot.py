@@ -6,6 +6,7 @@ import time
 import re
 import datetime
 import atexit
+import threading
 sys.path.append('C:\\Users\\User\\Desktop\\MINA_v2')
 sys.path.append('C:\\Users\\User\\Desktop\\MINA_v2\\backend')
 
@@ -38,9 +39,10 @@ from binance.enums import *
 from config import BinanceConfig, AccountManager
 from signal_bot.pdf_parser import parse_pdf_for_signals
 
-TOKEN   = os.getenv('TELEGRAM_BOT_TOKEN')
-CHAT_ID = int(os.getenv('TELEGRAM_CHAT_ID'))
-LEVERAGE = 4
+TOKEN        = os.getenv('TELEGRAM_BOT_TOKEN')
+CHAT_ID      = int(os.getenv('TELEGRAM_CHAT_ID'))
+LEVERAGE     = 4
+HT_QUEUE_FILE = os.path.join(os.path.dirname(__file__), 'ht_signals_queue.json')
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -102,10 +104,10 @@ def open_position(client, account, symbol, side):
 # Ana onay akışı
 # ---------------------------------------------------------------------------
 
-def ask_approval(signals: list, pdf_time: str = None):
+def ask_approval(signals: list, pdf_time: str = None, source: str = 'PDF'):
     """Sinyalleri Telegram'a gönder, cevap bekle."""
     if not signals:
-        bot.send_message(CHAT_ID, "⚠️ PDF'de sinyal bulunamadı.")
+        bot.send_message(CHAT_ID, "⚠️ Sinyal bulunamadı.")
         return
 
     try:
@@ -116,23 +118,30 @@ def ask_approval(signals: list, pdf_time: str = None):
     except Exception:
         open_count = '?'
 
-    lines = ["📄 *Yeni Haluk Tatar Sinyali!*\n"]
+    header = "📡 *Yeni HT VIP Sinyali!*" if source == 'HT' else "📄 *Yeni Haluk Tatar Sinyali!*"
+    lines  = [f"{header}\n"]
     if pdf_time:
-        lines.append(f"⏰ PDF: {pdf_time}")
+        label = "Sinyal" if source == 'HT' else "PDF"
+        lines.append(f"⏰ {label}: {pdf_time}")
     lines.append(f"📊 Açık pozisyon: {open_count}/10 slot\n")
 
     for i, s in enumerate(signals, 1):
-        lev  = s.get('leverage') or '3x'
-        lev  = re.sub(r'^(\d+x)\d+$', r'\1', str(lev))
-        tp1  = s.get('tp1') or '—'
-        tp2  = s.get('tp2') or '—'
-        stop = s.get('stop') or '—'
+        lev   = s.get('leverage') or ('5x' if source == 'HT' else '3x')
+        lev   = re.sub(r'^(\d+x)\d+$', r'\1', str(lev))
+        entry = s.get('entry') or '—'
+        tp1   = s.get('tp1')   or '—'
+        tp2   = s.get('tp2')   or '—'
+        stop  = s.get('stop')  or '—'
+        risk  = s.get('risk')  or ''
+        ttype = s.get('trade_type') or ''
+        extra = f" [{ttype}]" if ttype else ""
+        extra += f" Risk:{risk}" if risk else ""
         lines.append(
             f"{i}️⃣ *{s['coin']}* | {s['side']} | "
-            f"Giriş: ${s['entry']} | TP1: ${tp1}"
-            + (f" | TP2: ${tp2}" if tp2 != '—' else "")
-            + (f" | Stop: ${stop}" if stop != '—' else "")
-            + f" | Kaldıraç: {lev}"
+            f"Giriş: {entry} | TP1: {tp1}"
+            + (f" | TP2: {tp2}" if tp2 != '—' else "")
+            + (f" | Stop: {stop}" if stop != '—' else "")
+            + f" | {lev}{extra}"
         )
 
     lines.append("\n✏️ Açmak istediklerini yaz:\n`1,3,5` veya `HEPSI` veya `HAYIR`")
@@ -273,13 +282,37 @@ Sadece JSON array döndür, başka hiçbir şey yazma.
 
 
 # ---------------------------------------------------------------------------
+# HT sinyal kuyruğu izleyici
+# ---------------------------------------------------------------------------
+
+def _ht_queue_checker():
+    """Arka planda 5 sn'de bir ht_signals_queue.json kontrol eder."""
+    while True:
+        time.sleep(5)
+        if not os.path.exists(HT_QUEUE_FILE):
+            continue
+        try:
+            with open(HT_QUEUE_FILE, encoding='utf-8') as f:
+                data = json.load(f)
+            os.remove(HT_QUEUE_FILE)
+            signals     = data.get('signals', [])
+            source_info = data.get('source', 'HT')
+            if signals:
+                print(f"[QUEUE] {len(signals)} sinyal alındı: {[s['coin'] for s in signals]}")
+                ask_approval(signals, pdf_time=source_info, source='HT')
+        except Exception as e:
+            print(f"[QUEUE] Hata: {e}")
+
+
+# ---------------------------------------------------------------------------
 # Bağımsız çalıştırma — bot polling
 # ---------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import sys as _sys
     _acquire_lock()
-    print(f"Onay botu başlatıldı (PID {os.getpid()}), polling...")
+    threading.Thread(target=_ht_queue_checker, daemon=True).start()
+    print(f"Onay botu başlatıldı (PID {os.getpid()}), polling + HT kuyruk izleyici aktif...")
 
     if len(_sys.argv) > 1:
         # Doğrudan PDF verilebilir: python approval_bot.py dosya.pdf
