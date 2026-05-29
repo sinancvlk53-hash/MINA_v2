@@ -110,6 +110,37 @@
 - **Spot Transfer:** Demo hesapta devre dışı (gerçek hesapta %50 kâr Spot'a gidecek)
 - **Manuel Giriş:** Sinan coin giriş/çıkış değerlerini manuel girecek
 - **Hedef:** 1 sene içinde 1 milyon dolar
+
+---
+
+## HALUK HOCA PDF SİSTEMİ KURALLARI
+
+### Kaldıraç
+- **BTC, ETH, XAU, XAG** → 5x
+- **Altcoinler** → 2x
+
+### Giriş
+- PDF'deki giriş fiyatı/bölgesi kullanılır
+
+### D1 (İlk Ekleme)
+- PDF'deki **stop seviyesine fiyat gelince** tetiklenir
+- **ROE bazlı değil, fiyat bazlı!**
+- D1 sonrası yeni ortalamaya göre TP güncellenir
+
+### TP Sistemi (4x ile aynı)
+- **TP1:** Yeni ortalamadan +%3
+- **TP2:** Yeni ortalamadan +%5
+- **Trailing:** Tepeden -%1
+
+### Filtre Sistemi
+- TOTAL yukarı + OTHERS güçlü → LONG aç
+- TOTAL aşağı + OTHERS zayıf → SHORT aç
+- TOTAL, OTHERS, BRENT, XCU → işlem açma, **sadece filtre**
+
+### Sinyal Kuralı
+- Grafik + giriş kutusu + stop seviyesi varsa → **aç**
+- "Pas", "şu an değil" yazsa bile grafik varsa → **aç**
+- TOTAL, OTHERS, BRENT, XCU → **asla açma**
 ## GENEL BİLGİLER
 - **Platform:** Binance Futures (Testnet)
 - **Para Birimi:** SADECE USDT (BTC, USDC, diğerleri kullanılmaz)
