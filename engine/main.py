@@ -13,6 +13,8 @@ from backend.config import BinanceConfig, AccountManager
 from binance.enums import *
 import time
 import json
+import re
+import traceback
 from datetime import datetime
 import logging
 
@@ -181,6 +183,14 @@ def send_stop_loss_order(client, symbol, side, amount):
         logger.error(f"❌ STOP LOSS HATASI: {symbol} {side} - {error_str}")
         return False, f"Hata: {error_str}"
 
+# KAR ALMA STRATEJİSİ:
+#   TP1 (+3%): current_amount'un %50'si kapatılır. Stop-loss giriş fiyatına çekilir
+#              (tp_level=1 iken fiyat girişe dönerse kalan %50 otomatik kapatılır).
+#   TP2 (+5%): Kalan %50'nin yarısı (%25) kapatılır, içeride %25 açık kalır.
+#   Trailing : TP2 sonrası kalan %25 üzerinde çalışır. Fiyat en yüksek/düşük
+#              noktadan -%1 geri çekilirse tp_level=3 ile tüm pozisyon kapatılır.
+#   Bileşik  : Pozisyon kapanınca realized kar bakiyeye işlenir; sonraki slot
+#              get_usdt_balance() ile taze bakiye üzerinden otomatik hesaplanır.
 def send_tp_order(client, symbol, side, current_amount, tp_level):
     """Take Profit emri gönder"""
     try:
@@ -218,6 +228,9 @@ def send_tp_order(client, symbol, side, current_amount, tp_level):
         error_str = str(e)
         if '-1106' in error_str:
             logger.warning(f"⚠️ TP{tp_level} ATILDI: {symbol} {side} - Pozisyon zaten kapalı veya reduceOnly geçersiz. Takipten siliniyor.")
+            return False, "POSITION_CLOSED"
+        elif '-4003' in error_str:
+            logger.warning(f"⚠️ TP{tp_level} ATILDI: {symbol} {side} - Miktar sıfır veya negatif (-4003), pozisyon zaten kapanmış. Takipten siliniyor.")
             return False, "POSITION_CLOSED"
         elif '-1109' in error_str:
             logger.warning(f"⚠️ {symbol} {side} hedge mode desteklemiyor (-1109), pozisyon takipten çıkarılıyor")
@@ -289,6 +302,27 @@ def _execute_with_retry(fn, label, symbol, side):
     raise Exception(last_err)
 
 
+# D1 DEFANS STRATEJİSİ (rakamlar örnek, oranlar sabittir):
+#
+# Giriş: 10.000$, 20 USDT kontrat (Total Size = %100)
+# Kalan 80 USDT defans için kenarda bekler.
+#
+# D1 tetiklenir (-5% ROE):
+#   Fiyat 9.500$'a düşer
+#   15 USDT kontrat eklenir (DCA)
+#   Yeni ortalama: (20×10.000 + 15×9.500) / 35 = 9.785$
+#   Binance entryPrice otomatik güncellenir
+#   TP seviyeleri yeni ortalamaya göre otomatik hesaplanır
+#
+# Kar alma (yeni ortalama 9.785$ üzerinden):
+#   TP1: 9.785$ × 1.03 = 10.078$ → 0.50 × Total Size kapat
+#        → Stop-loss 9.785$'a çek (pozisyon artık risksiz)
+#   TP2: 9.785$ × 1.05 = 10.274$ → 0.25 × Total Size kapat
+#   Trailing: kalan 0.25 × Total Size, tepeden -%1'de kapat
+#
+# ALTIN KURAL:
+#   Fiyat D1 sonrası eski giriş fiyatına (10.000$) dönmeden
+#   TP1 ve TP2 zaten tetiklenir. Yani D1 ceza değil, fırsata dönüşür.
 def send_defense_order(client, symbol, side, defense_level, leverage):
     """Savunma emri gönder — v1.4 (slot limit + retry + alarm)"""
     try:
@@ -303,14 +337,9 @@ def send_defense_order(client, symbol, side, defense_level, leverage):
 
         if leverage in [4, 5]:
             defense_amounts = {
-                1: slot_size * 0.15,
-                2: slot_size * 0.25,
-                3: slot_size * 0.30
-            }
-        elif leverage in [2, 10]:
-            defense_amounts = {
-                1: slot_size * 0.30,
-                2: slot_size * 0.50
+                1: slot_size * 0.15,  # D1: slot'un %15'i (DCA)
+                2: 25.0,              # D2: sabit 25 USDT (DCA) + TP iptal → break-even modu
+                3: slot_size * 0.30   # D3: slot'un %30'u, sadece margin ekle
             }
         else:
             return False, "Savunma tanımsız"
@@ -353,19 +382,35 @@ def send_defense_order(client, symbol, side, defense_level, leverage):
         precision = get_symbol_precision(client, symbol)
         quantity = round(raw_qty, precision)
         order_side = SIDE_BUY if side == 'LONG' else SIDE_SELL
+        pos_side_str = 'LONG' if side == 'LONG' else 'SHORT'
 
-        def do_order():
-            return client.futures_create_order(
-                symbol=symbol,
-                side=order_side,
-                type=ORDER_TYPE_MARKET,
-                quantity=quantity,
-                positionSide='LONG' if side == 'LONG' else 'SHORT'
-            )
+        max_qty = get_symbol_max_qty(client, symbol)
+        chunks = []
+        if quantity > max_qty:
+            remaining = quantity
+            while remaining > 0:
+                chunk = round(min(remaining, max_qty), precision)
+                if chunk == 0:
+                    break
+                chunks.append(chunk)
+                remaining = round(remaining - chunk, precision)
+        else:
+            chunks = [quantity]
 
-        # FIX 2 — retry
-        order = _execute_with_retry(do_order, label, symbol, side)
-        logger.info(f"🛡️  SAVUNMA {defense_level}: {symbol} {side} - {quantity} eklendi (${amount_usdt:.2f}) - Order: {order['orderId']}")
+        last_order = None
+        for chunk_qty in chunks:
+            _chunk = chunk_qty
+            def do_order(_q=_chunk):
+                return client.futures_create_order(
+                    symbol=symbol,
+                    side=order_side,
+                    type=ORDER_TYPE_MARKET,
+                    quantity=_q,
+                    positionSide=pos_side_str
+                )
+            last_order = _execute_with_retry(do_order, label, symbol, side)
+
+        logger.info(f"🛡️  SAVUNMA {defense_level}: {symbol} {side} - {quantity} eklendi (${amount_usdt:.2f}) - {len(chunks)} parça - Order: {last_order['orderId']}")
         return True, f"Savunma {defense_level}: {quantity} eklendi (${amount_usdt:.2f})"
 
     except Exception as e:
@@ -393,7 +438,7 @@ def check_trailing_stop(current_price, pos_key, tp_level, side):
             max_prices[pos_key] = max_price
             save_json(MAX_PRICE_FILE, max_prices)
     else:
-        if current_price < max_price or max_price == current_price:
+        if current_price < max_price:
             max_price = current_price
             max_prices[pos_key] = max_price
             save_json(MAX_PRICE_FILE, max_prices)
@@ -444,6 +489,14 @@ def check_stop_loss(pnl_percent, leverage):
     
     return False, None
 
+# DEFANS STRATEJİSİ — ROE EŞİKLERİ (4x kaldıraç):
+#   D1 (ROE ≤ -20%):  coin -%5  → slot×0.15 USDT kontrat ekle (DCA)
+#                      Binance entryPrice güncellenir, TP seviyeleri yeni ortalamaya göre
+#   D2 (ROE ≤ -60%):  coin -%15 → sabit 25 USDT kontrat ekle (DCA)
+#                      TP emirleri iptal edilir (tp_levels="BREAKEVEN")
+#                      Hedef: fiyat yeni ortalamaya döndüğünde pozisyonu kapat
+#   D3 (ROE ≤ -100%): coin -%25 → slot×0.30 USDT sadece margin ekle (kontrakt YOK)
+#                      D2'deki break-even emri korunur
 def check_defense_trigger(unrealized_pnl, initial_margin, defense_level, leverage):
     """Savunma tetikleme - ROE bazlı (unrealized_pnl / initial_margin * 100)"""
     rules = LEVERAGE_RULES.get(leverage)
@@ -456,11 +509,14 @@ def check_defense_trigger(unrealized_pnl, initial_margin, defense_level, leverag
     roe = (unrealized_pnl / initial_margin) * 100  # negatif = zarar
 
     if leverage == 4:
-        if defense_level == 0 and roe <= -5:
+        # D1: coin -%5  → 4x kaldıraçta ROE -20%
+        # D2: coin -%15 → 4x kaldıraçta ROE -60%
+        # D3: coin -%25 → 4x kaldıraçta ROE -100%
+        if defense_level == 0 and roe <= -20:
             return 1, f"🚨 SAVUNMA 1! (ROE {roe:.1f}%)"
-        if defense_level == 1 and roe <= -15:
+        if defense_level == 1 and roe <= -60:
             return 2, f"🚨 SAVUNMA 2! (ROE {roe:.1f}%)"
-        if defense_level == 2 and roe <= -25:
+        if defense_level == 2 and roe <= -100:
             return 3, f"🚨 SAVUNMA 3! (ROE {roe:.1f}%)"
 
     return 0, None
@@ -794,6 +850,9 @@ def main():
                             continue
 
                     # D3 sonrası başabaş kapama
+                    # D3 break-even: ROE >= -2% olduğunda kapatılır.
+                    # Tam 0% değil — komisyon + slippage için -%2 emniyet payı.
+                    # 4x kaldıraçta coin fiyatında sadece %0.5 fark eder.
                     if current_defense == 3 and roe >= -2:
                         logger.info(f"🛡️  D3 BAŞABAŞ: {symbol} {side} ROE {roe:+.1f}% → kapatılıyor")
                         print(f"\n   🛡️  D3 BAŞABAŞ! ROE {roe:+.1f}% — pozisyon kapatılıyor...")
@@ -819,6 +878,38 @@ def main():
                             print(f"   ❌ {message}")
                         continue
 
+                    # D2 sonrası break-even kapama (fiyat yeni ortalamaya döndüğünde)
+                    if current_tp == "BREAKEVEN":
+                        be_price = entry_price * (1.0008 if side == 'LONG' else 0.9992)
+                        be_hit = (current_price >= be_price) if side == 'LONG' else (current_price <= be_price)
+                        if be_hit:
+                            logger.info(f"🛡️  D2 BAŞABAŞ: {symbol} {side} fiyat ${current_price:.6f} → BE ${be_price:.6f}")
+                            print(f"\n   🛡️  D2 BAŞABAŞ! Fiyat yeni ortalamaya döndü: ${current_price:.6f} (BE: ${be_price:.6f})")
+                            print(f"   ⚡ Pozisyon kapatılıyor...")
+                            success, message = send_stop_loss_order(client, symbol, side, amount)
+                            if success or message == "POSITION_CLOSED":
+                                if message != "POSITION_CLOSED":
+                                    send_notification(
+                                        f"🛡️ *D2 BAŞABAŞ — {symbol} {side}*\n"
+                                        f"📌 {leverage}x | ROE: {roe:+.2f}%\n"
+                                        f"💰 Giriş (ort.): ${entry_price:.4f}\n"
+                                        f"📊 Fiyat: ${current_price:.4f}\n"
+                                        f"✅ Pozisyon kapatıldı"
+                                    )
+                                else:
+                                    print(f"   ⚠️ Pozisyon zaten kapalıydı, takipten silindi")
+                                for _d in [tp_levels, defense_levels, initial_margins]:
+                                    _d.pop(pos_key, None)
+                                max_prices = load_json(MAX_PRICE_FILE)
+                                max_prices.pop(pos_key, None)
+                                save_json(TP_FILE, tp_levels)
+                                save_json(DEFENSE_FILE, defense_levels)
+                                save_json(INITIAL_MARGIN_FILE, initial_margins)
+                                save_json(MAX_PRICE_FILE, max_prices)
+                            else:
+                                print(f"   ❌ {message}")
+                            continue
+
                     # Savunma — aynı döngüde zincirleme tetikleme (BUG5)
                     while True:
                         defense_trigger, defense_msg = check_defense_trigger(
@@ -841,6 +932,12 @@ def main():
                             current_defense = defense_trigger
                             defense_levels[pos_key] = current_defense
                             save_json(DEFENSE_FILE, defense_levels)
+                            # D2: mevcut TP emirlerini iptal et, break-even moduna geç
+                            if defense_trigger == 2:
+                                tp_levels[pos_key] = "BREAKEVEN"
+                                save_json(TP_FILE, tp_levels)
+                                current_tp = "BREAKEVEN"
+                                logger.info(f"🔄 D2 SONRASI: {symbol} {side} TP iptal, break-even modu aktif")
                             try:
                                 upd = client.futures_position_information(symbol=symbol)
                                 new_liq = next((float(p['liquidationPrice']) for p in upd
@@ -903,22 +1000,21 @@ def main():
         except Exception as e:
             err_str = str(e)
             logger.error(f"❌ KRİTİK HATA: {err_str}")
-            import traceback
             logger.error(traceback.format_exc())
 
-            if '-1003' in err_str or 'Too many requests' in err_str:
-                logger.warning("⚠️ RATE LİMİT! 60 saniye bekleniyor...")
-                time.sleep(60)
-            elif 'banned until' in err_str:
-                import re
+            if 'banned until' in err_str:
                 match = re.search(r'banned until (\d+)', err_str)
                 if match:
                     ban_until = int(match.group(1)) / 1000
                     wait = max(0, ban_until - time.time()) + 5
-                    logger.warning(f"⛔ IP BAN! {int(wait)} saniye bekleniyor...")
+                    logger.warning(f"⛔ IP BAN! {int(wait):.0f} saniye bekleniyor (ban bitişine kadar)...")
                     time.sleep(wait)
                 else:
-                    time.sleep(60)
+                    logger.warning("⛔ IP BAN (timestamp yok)! 120 saniye bekleniyor...")
+                    time.sleep(120)
+            elif '-1003' in err_str or 'Too many requests' in err_str:
+                logger.warning("⚠️ RATE LİMİT! 60 saniye bekleniyor...")
+                time.sleep(60)
             elif 'Connection' in err_str or 'ConnectionError' in err_str:
                 logger.warning("🔌 Bağlantı hatası, 15 saniye sonra tekrar denenecek...")
                 time.sleep(15)

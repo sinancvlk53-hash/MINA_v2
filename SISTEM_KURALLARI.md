@@ -49,6 +49,7 @@
   - 1. Savunma: %5 düşüş → Slot'un %20'si ekle
   - 2. Savunma: Likidasyonun %10 üstü → Slot'un %30'u ekle, sıfırda çık
   - 3. Savunma: Kalan %30 marjine ekle, sıfırda çık
+    > D3 break-even: ROE >= -2% olduğunda kapatılır. Tam 0% değil — komisyon + slippage için -%2 emniyet payı. 4x kaldıraçta coin fiyatında sadece %0.5 fark eder.
 - **Stop-Loss:** YOK (savunma sistemi var)
 
 ### 5x KALDIRAC
@@ -56,6 +57,8 @@
 - **Kar Alma:** Normal kurallar (%3, %5, takipli)
 - **Savunma:** YOK
 - **Stop-Loss:** %2 düşüş → Otomatik kapat
+
+> **NOT:** 4x dışındaki tüm kaldıraçlarda defense sistemi aktif değildir. Stop Loss ile çalışır.
 
 ### 10x KALDIRAC
 - **Giriş:** Slot'un %20'si
