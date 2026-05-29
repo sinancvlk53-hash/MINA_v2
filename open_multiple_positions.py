@@ -1,20 +1,21 @@
 # -*- coding: utf-8 -*-
 import sys, os, time
-sys.path.append('C:\\Users\\User\\Desktop\\MINA_v2')
-sys.path.append('C:\\Users\\User\\Desktop\\MINA_v2\\backend')
+_ROOT = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(_ROOT)
+sys.path.append(os.path.join(_ROOT, 'backend'))
 sys.stdout.reconfigure(encoding='utf-8')
 
 from dotenv import load_dotenv
-load_dotenv('C:\\Users\\User\\Desktop\\MINA_v2\\.env')
+load_dotenv(os.path.join(_ROOT, '.env'))
 
 from binance.enums import *
 from config import BinanceConfig, AccountManager
 
 LEVERAGE = 4
 
-LONGS  = ['RAVEUSDT']
-SHORTS = ['PHAUSDT']
-HEDGE  = []
+LONGS  = ['WLDUSDT', 'RAVEUSDT', 'DYMUSDT', 'BTCUSDT', 'KOMAUSDT']
+SHORTS = ['ALLOUSDT', 'HEIUSDT', 'LABUSDT', 'GUAUSDT']
+HEDGE  = ['DYDXUSDT']
 
 # Build full order list: (symbol, side)
 orders = []
