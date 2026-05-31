@@ -51,7 +51,7 @@ export default function App() {
         {/* ── SAĞ SÜTUN ── savunma + log */}
         <aside className="col-right">
           <DefensePanel data={data} />
-          <LogStream    logs={logs} />
+          <LogStream    logs={logs} testLogs={data?.testLogs ?? []} />
         </aside>
 
       </div>

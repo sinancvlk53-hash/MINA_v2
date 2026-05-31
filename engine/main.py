@@ -69,8 +69,8 @@ LEVERAGE_RULES = {
     3:  {'stop_loss': 2,    'defense_count': 0, 'tp_type': 'standard', 'tp1_pct': 3, 'tp2_pct': 5, 'tp2_close': 0.50, 'trailing_callback': 2.0},
     4:  {'stop_loss': None, 'defense_count': 3, 'tp_type': 'standard', 'tp1_pct': 3, 'tp2_pct': 5, 'tp2_close': 0.50, 'trailing_callback': 2.0},
     5:  {'stop_loss': 2,    'defense_count': 0, 'tp_type': 'standard', 'tp1_pct': 3, 'tp2_pct': 5, 'tp2_close': 0.50, 'trailing_callback': 2.0},
-    6:  {'stop_loss': 1,    'defense_count': 0, 'tp_type': 'standard', 'tp1_pct': 3, 'tp2_pct': 5, 'tp2_close': 0.50, 'trailing_callback': 2.0},
-    7:  {'stop_loss': 1,    'defense_count': 0, 'tp_type': 'standard', 'tp1_pct': 3, 'tp2_pct': 5, 'tp2_close': 0.50, 'trailing_callback': 2.0},
+    6:  {'stop_loss': 2,    'defense_count': 0, 'tp_type': 'standard', 'tp1_pct': 3, 'tp2_pct': 5, 'tp2_close': 0.50, 'trailing_callback': 2.0},
+    7:  {'stop_loss': 1.5,  'defense_count': 0, 'tp_type': 'standard', 'tp1_pct': 3, 'tp2_pct': 5, 'tp2_close': 0.50, 'trailing_callback': 2.0},
     8:  {'stop_loss': 1,    'defense_count': 0, 'tp_type': 'standard', 'tp1_pct': 3, 'tp2_pct': 5, 'tp2_close': 0.50, 'trailing_callback': 2.0},
     9:  {'stop_loss': 1,    'defense_count': 0, 'tp_type': 'standard', 'tp1_pct': 3, 'tp2_pct': 5, 'tp2_close': 0.50, 'trailing_callback': 2.0},
     10: {'stop_loss': 1,    'defense_count': 0, 'tp_type': 'fast',     'tp1_pct': 2, 'tp2_pct': 4, 'tp2_close': 1.00, 'trailing_callback': None},
@@ -748,7 +748,7 @@ def main():
     logger.info("🚀 MİNA v2 - EXECUTION ENGINE BAŞLATILDI (LOGGING AKTİF)")
     logger.info("=" * 70)
     logger.info(f"📊 Kaldıraçlar: 1x, 2x, 3x, 4x⭐, 5x, 10x")
-    logger.info(f"🛑 Stop Loss: 1x=%2, 2x=%3, 3x=%2, 4x=YOK, 5x=%2, 10x=%1")
+    logger.info(f"🛑 Stop Loss: 1x=%3, 2x=%3, 3x=%2, 4x=DEFANS, 5x=%2, 6x=%2, 7x=%1.5, 8x=%1, 9x=%1, 10x=%1")
     logger.info(f"💰 TP 1x-9x: TP1@%3→%50 kapat | TP2@%5→%25 kapat + TRAILING_STOP_MARKET callback%2")
     logger.info(f"💰 TP 10x  : TP1@%2→%50 kapat | TP2@%4→%100 kapat | Trailing YOK")
     logger.info(f"🛡️  Savunma: 2x(0), 4x(3)⭐, 5x(0), 10x(0)")

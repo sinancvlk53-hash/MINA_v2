@@ -1,6 +1,6 @@
 import React from 'react'
 
-const DEF_COLORS = ['#f59e0b', '#ef4444', '#7c3aed']
+const DEF_COLORS = ['#F0B90B', '#F6465D', '#7c3aed']
 
 function getLevRules(lev) {
   if (lev === 10) return { tp_type: 'fast', tp1_pct: 2, tp2_pct: 4, tp2_close: 1.00, trailing_callback: null }
@@ -30,7 +30,7 @@ function DefenseBadges({ level }) {
         <div key={l} className="def-badge" style={
           l <= level
             ? { background: DEF_COLORS[l - 1] + '28', border: '1px solid ' + DEF_COLORS[l - 1] + '66', color: DEF_COLORS[l - 1] }
-            : { background: '#0f1824', border: '1px solid #1c2a3a', color: '#2d4a63' }
+            : { background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-mute)' }
         }>D{l}</div>
       ))}
     </div>
@@ -47,12 +47,11 @@ function TPRow({ pos }) {
   const isFast = tp.tp_type === 'fast'
   const green = 'var(--green)'
   const mute  = 'var(--text-mute)'
-  const dim   = 'var(--text-dim)'
   const mono  = 'var(--mono)'
 
   const cellStyle = {
     padding: '8px 12px',
-    borderRight: '1px solid #1c2a3a',
+    borderRight: '1px solid var(--border)',
     minWidth: 140,
     verticalAlign: 'top',
   }
@@ -63,17 +62,17 @@ function TPRow({ pos }) {
 
   return (
     <tr>
-      <td colSpan={8} style={{ padding: 0, background: '#0a1420', borderBottom: '1px solid #1c2a3a' }}>
+      <td colSpan={8} style={{ padding: 0, background: 'var(--bg)', borderBottom: '1px solid var(--border)' }}>
         <div style={{
           display: 'flex', alignItems: 'stretch',
-          borderTop: '1px solid #1c2a3a',
+          borderTop: '1px solid var(--border)',
           fontSize: 11,
         }}>
           {/* Etiket */}
-          <div style={{ ...cellStyle, background: '#0d1a28', minWidth: 90, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ ...cellStyle, background: 'var(--surface)', minWidth: 90, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 9, color: mute, letterSpacing: '0.8px', fontWeight: 700 }}>TP PLANI</div>
-              <div style={{ fontSize: 10, color: isFast ? '#f59e0b' : 'var(--accent)', fontWeight: 700, marginTop: 3 }}>
+              <div style={{ fontSize: 10, color: isFast ? 'var(--amber)' : 'var(--accent)', fontWeight: 700, marginTop: 3 }}>
                 {pos.leverage}x {isFast ? 'FAST' : 'STD'}
               </div>
             </div>
@@ -102,13 +101,13 @@ function TPRow({ pos }) {
             <div style={labelStyle}>Trailing Stop</div>
             {isFast ? (
               <>
-                <div style={{ fontSize: 12, color: '#ef4444', fontWeight: 700 }}>YOK</div>
+                <div style={{ fontSize: 12, color: 'var(--red)', fontWeight: 700 }}>YOK</div>
                 <div style={noteStyle}>10x TP2 ile pozisyon kapanır</div>
               </>
             ) : (
               <>
                 <div style={priceStyle}>Başlangıç: TP2 fiyatı</div>
-                <div style={{ fontSize: 11, fontFamily: mono, color: '#f59e0b', fontWeight: 700, marginTop: 2 }}>
+                <div style={{ fontSize: 11, fontFamily: mono, color: 'var(--amber)', fontWeight: 700, marginTop: 2 }}>
                   callbackRate: %{tp.trailing_callback}
                 </div>
                 <div style={noteStyle}>TRAILING_STOP_MARKET · Tepeden -%{tp.trailing_callback} düşünce kapanır</div>
@@ -117,12 +116,96 @@ function TPRow({ pos }) {
           </div>
 
           {/* Giriş referansı */}
-          <div style={{ ...cellStyle, borderRight: 'none', marginLeft: 'auto', background: '#0d1a28', minWidth: 130 }}>
+          <div style={{ ...cellStyle, borderRight: 'none', marginLeft: 'auto', background: 'var(--surface)', minWidth: 130 }}>
             <div style={labelStyle}>Giriş Fiyatı</div>
             <div style={priceStyle}>${fmt(pos.entryPrice, 4)}</div>
             <div style={noteStyle}>Miktar: {fmt(pos.amount, 4)}</div>
             <div style={{ fontSize: 9, color: mute, marginTop: 2 }}>
               {pos.side === 'LONG' ? '↑ LONG' : '↓ SHORT'}
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>
+  )
+}
+
+function DefenseRow({ pos }) {
+  if (pos.leverage !== 4) return null
+
+  const { entryPrice, side } = pos
+  const isLong = side === 'LONG'
+  const mono   = 'var(--mono)'
+  const mute   = 'var(--text-mute)'
+
+  const d1Trigger = entryPrice * (isLong ? 0.95 : 1.05)
+  const d2Trigger = entryPrice * (isLong ? 0.88 : 1.12)
+  // BE hedefi: D2 sonrası ağırlıklı ortalama × 1.0035
+  const beTarget  = isLong ? d2Trigger * 1.0035 : d2Trigger * 0.9965
+
+  const cellStyle = {
+    padding: '8px 12px',
+    borderRight: '1px solid var(--border)',
+    minWidth: 150,
+    verticalAlign: 'top',
+  }
+  const labelStyle = {
+    fontSize: 9, color: mute, letterSpacing: '0.8px',
+    textTransform: 'uppercase', marginBottom: 4, fontWeight: 700,
+  }
+
+  return (
+    <tr>
+      <td colSpan={8} style={{ padding: 0, background: 'var(--bg)', borderBottom: '1px solid var(--border)' }}>
+        <div style={{
+          display: 'flex', alignItems: 'stretch',
+          borderTop: '1px dashed var(--border)',
+          fontSize: 11,
+        }}>
+          {/* Etiket */}
+          <div style={{ ...cellStyle, background: 'var(--surface)', minWidth: 90, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 9, color: mute, letterSpacing: '0.8px', fontWeight: 700 }}>DEFANS</div>
+              <div style={{ fontSize: 10, color: 'var(--amber)', fontWeight: 700, marginTop: 3 }}>4x PLAN</div>
+            </div>
+          </div>
+
+          {/* D1 */}
+          <div style={cellStyle}>
+            <div style={labelStyle}>D1 Tetik (-%5)</div>
+            <div style={{ fontSize: 12, fontFamily: mono, color: 'var(--amber)', fontWeight: 600 }}>
+              ${fmt(d1Trigger, 4)}
+            </div>
+            <div style={{ fontSize: 9, color: mute, marginTop: 3 }}>
+              D1 Tetik: {fmt(d1Trigger, 2)} USDT (girişten -%5)
+            </div>
+            <div style={{ fontSize: 9, color: mute, marginTop: 1 }}>DCA +%20 slot · Binance ent. güncellenir</div>
+          </div>
+
+          {/* D2 */}
+          <div style={cellStyle}>
+            <div style={labelStyle}>D2 Tetik (-%12)</div>
+            <div style={{ fontSize: 12, fontFamily: mono, color: 'var(--red)', fontWeight: 600 }}>
+              ${fmt(d2Trigger, 4)}
+            </div>
+            <div style={{ fontSize: 9, color: mute, marginTop: 2 }}>
+              D2 Tetik: {fmt(d2Trigger, 2)} USDT (girişten -%12)
+            </div>
+            <div style={{ fontSize: 11, fontFamily: mono, color: 'var(--green)', fontWeight: 700, marginTop: 3 }}>
+              BE Hedefi: ${fmt(beTarget, 4)}
+            </div>
+            <div style={{ fontSize: 9, color: mute, marginTop: 1 }}>D1+D2 ağ.ort. × 1.0035</div>
+          </div>
+
+          {/* D3 */}
+          <div style={{ ...cellStyle, borderRight: 'none', flex: 1 }}>
+            <div style={labelStyle}>D3 (-%25)</div>
+            <div style={{ fontSize: 11, color: 'var(--purple)', fontWeight: 700 }}>Hayalet SFP</div>
+            <div style={{ fontSize: 9, color: mute, marginTop: 2 }}>
+              Ana destek bölgesinde 5m Bull Bar onayı bekleniyor
+            </div>
+            <div style={{ fontSize: 9, color: 'var(--red)', marginTop: 4, fontWeight: 600 }}>
+              Hard Stop: D3 iğnesi altına dinamik konur
             </div>
           </div>
         </div>
@@ -190,7 +273,7 @@ export default function PositionTable({ positions, selected, onSelect }) {
                     <td>
                       <span style={{
                         padding: '2px 7px', borderRadius: 4,
-                        background: isLong ? '#10b98118' : '#ef444418',
+                        background: isLong ? '#0ECB8118' : '#F6465D18',
                         color: isLong ? 'var(--green)' : 'var(--red)',
                         fontSize: 10, fontWeight: 700
                       }}>{p.side}</span>
@@ -208,11 +291,12 @@ export default function PositionTable({ positions, selected, onSelect }) {
                       {p.roe >= 0 ? '+' : ''}{fmt(p.roe, 1)}%
                     </td>
                     <td><DefenseBadges level={p.defenseLevel || 0} /></td>
-                    <td style={{ color: '#ef4444aa', fontFamily: 'var(--mono)', fontSize: 11 }}>
+                    <td style={{ color: '#F6465Daa', fontFamily: 'var(--mono)', fontSize: 11 }}>
                       ${fmt(p.liqPrice)}
                     </td>
                   </tr>
                   <TPRow pos={p} />
+                  <DefenseRow pos={p} />
                 </React.Fragment>
               )
             })}

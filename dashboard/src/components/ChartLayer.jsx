@@ -70,6 +70,24 @@ export default function ChartLayer({ symbol }) {
     )
   }
 
+  if (!symbol.endsWith('USDT')) {
+    return (
+      <div className="section-card">
+        <div className="section-header">
+          <span className="section-title">Grafik — {symbol}</span>
+        </div>
+        <div style={{
+          height: 360, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: 6,
+          color: 'var(--text-mute)', fontSize: 12
+        }}>
+          <span style={{ fontSize: 24, opacity: .3 }}>⊘</span>
+          USDT dışı çiftler desteklenmiyor
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="section-card">
       <div className="section-header">
