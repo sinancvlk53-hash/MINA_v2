@@ -89,6 +89,20 @@ Hard stop patlarsa:
 6. Kasa değişince slot ve marjin
    otomatik yeniden hesaplanır
 
+## GERÇEK HESAP ÖNCESİ KONTROL
+- Trailing stop Algo endpoint
+  test edilmedi
+  (/fapi/v1/order/algo/trailing)
+- Testnet'te -4120 hatası var,
+  manuel trailing kullanılıyor
+- Gerçek hesaba geçmeden önce
+  bu endpoint mutlaka test edilmeli
+- max_prices.json seed'lenmeli,
+  aksi halde manuel trailing çalışmaz
+- D3 öncesi bakiye yeniden hesaplama
+- Order retry mekanizması
+- Slot limit fix
+
 ## SUNUCU
 IP: 178.105.150.40
 Servisler:
