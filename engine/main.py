@@ -69,6 +69,10 @@ LEVERAGE_RULES = {
     3:  {'stop_loss': 2,    'defense_count': 0, 'tp_type': 'standard', 'tp1_pct': 3, 'tp2_pct': 5, 'tp2_close': 0.50, 'trailing_callback': 2.0},
     4:  {'stop_loss': None, 'defense_count': 3, 'tp_type': 'standard', 'tp1_pct': 3, 'tp2_pct': 5, 'tp2_close': 0.50, 'trailing_callback': 2.0},
     5:  {'stop_loss': 2,    'defense_count': 0, 'tp_type': 'standard', 'tp1_pct': 3, 'tp2_pct': 5, 'tp2_close': 0.50, 'trailing_callback': 2.0},
+    6:  {'stop_loss': 1,    'defense_count': 0, 'tp_type': 'standard', 'tp1_pct': 3, 'tp2_pct': 5, 'tp2_close': 0.50, 'trailing_callback': 2.0},
+    7:  {'stop_loss': 1,    'defense_count': 0, 'tp_type': 'standard', 'tp1_pct': 3, 'tp2_pct': 5, 'tp2_close': 0.50, 'trailing_callback': 2.0},
+    8:  {'stop_loss': 1,    'defense_count': 0, 'tp_type': 'standard', 'tp1_pct': 3, 'tp2_pct': 5, 'tp2_close': 0.50, 'trailing_callback': 2.0},
+    9:  {'stop_loss': 1,    'defense_count': 0, 'tp_type': 'standard', 'tp1_pct': 3, 'tp2_pct': 5, 'tp2_close': 0.50, 'trailing_callback': 2.0},
     10: {'stop_loss': 1,    'defense_count': 0, 'tp_type': 'fast',     'tp1_pct': 2, 'tp2_pct': 4, 'tp2_close': 1.00, 'trailing_callback': None},
 }
 
@@ -218,7 +222,7 @@ def send_stop_loss_order(client, symbol, side, amount):
         logger.error(f"❌ STOP LOSS HATASI: {symbol} {side} - {error_str}")
         return False, f"Hata: {error_str}"
 
-# KAR ALMA STRATEJİSİ — 1x–5x (standard):
+# KAR ALMA STRATEJİSİ — 1x–9x (standard):
 #   TP1 (+3%): current_amount'un %50'si kapatılır. Stop-loss giriş fiyatına çekilir.
 #   TP2 (+5%): O anki pozisyonun %50'si kapatılır (= başlangıç pozisyonunun %25'i).
 #              Aynı anda TRAILING_STOP_MARKET: activationPrice=TP2 fiyatı, callbackRate=%2.
@@ -276,7 +280,7 @@ def send_tp_order(client, symbol, side, current_amount, tp_level, tp_type='stand
         return False, f"Hata: {error_str}"
 
 def send_trailing_stop_order(client, symbol, side, quantity, activation_price, callback_rate=2.0):
-    """TP2 sonrası TRAILING_STOP_MARKET emri gönder (1x-5x standard)"""
+    """TP2 sonrası TRAILING_STOP_MARKET emri gönder (1x-9x standard)"""
     try:
         order_side   = SIDE_SELL if side == 'LONG' else SIDE_BUY
         pos_side_str = 'LONG' if side == 'LONG' else 'SHORT'
@@ -745,10 +749,10 @@ def main():
     logger.info("=" * 70)
     logger.info(f"📊 Kaldıraçlar: 1x, 2x, 3x, 4x⭐, 5x, 10x")
     logger.info(f"🛑 Stop Loss: 1x=%2, 2x=%3, 3x=%2, 4x=YOK, 5x=%2, 10x=%1")
-    logger.info(f"💰 TP 1x-5x: TP1@%3→%50 kapat | TP2@%5→%25 kapat + TRAILING_STOP_MARKET callback%2")
+    logger.info(f"💰 TP 1x-9x: TP1@%3→%50 kapat | TP2@%5→%25 kapat + TRAILING_STOP_MARKET callback%2")
     logger.info(f"💰 TP 10x  : TP1@%2→%50 kapat | TP2@%4→%100 kapat | Trailing YOK")
     logger.info(f"🛡️  Savunma: 2x(0), 4x(3)⭐, 5x(0), 10x(0)")
-    logger.info(f"🎯 Trailing: Binance-native TRAILING_STOP_MARKET, callbackRate=%2 (1x-5x)")
+    logger.info(f"🎯 Trailing: Binance-native TRAILING_STOP_MARKET, callbackRate=%2 (1x-9x)")
     logger.info(f"📝 Log Dosyası: mina_bot.log")
     logger.info("=" * 70)
 
