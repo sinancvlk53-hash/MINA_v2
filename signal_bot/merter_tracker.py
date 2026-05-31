@@ -38,8 +38,28 @@ MAX_SNAPSHOTS      = 200          # pozisyon başına max snapshot
 #   2x → coin -3% stop | 4x → savunma (D1 coin -5%, sim stop coin -15%) | 5x → coin -2% stop
 SIM_RULES = {
     '2x': {'lev': 2, 'stop_pct': -3.0, 'tp1_pct': 3.0, 'tp2_pct': 5.0, 'd1_pct': None},
+    '3x': {
+        'lev':          3,
+        'stop_pct':     -2.0,
+        'sim_stop_pct': None,
+        'tp1_pct':      4.6,
+        'tp2_pct':      None,
+        'd1_pct':       None,
+        'd2_trigger':   None,
+        'trailing_pct': -1.0,
+    },
     '4x': {'lev': 4, 'stop_pct': None, 'tp1_pct': 3.0, 'tp2_pct': 5.0, 'd1_pct': -5.0},
     '5x': {'lev': 5, 'stop_pct': -2.0, 'tp1_pct': 3.0, 'tp2_pct': 5.0, 'd1_pct': None},
+    '6x': {
+        'lev':          6,
+        'stop_pct':     None,
+        'sim_stop_pct': -10.0,
+        'tp1_pct':      3.0,
+        'tp2_pct':      5.0,
+        'd1_pct':       -4.0,
+        'd2_trigger':   -10.0,
+        'trailing_pct': -1.0,
+    },
 }
 
 # ── Dosya I/O ─────────────────────────────────────────────────────────────────
@@ -172,7 +192,7 @@ def open_simulated_position(coin: str, side: str, source: str) -> str | None:
     print(f"[TRACKER] Açıldı: {coin} {side} Mark:${mark:.4f} → Giriş:${entry:.4f} ({source})")
     send_notification(
         f"📊 *SİMÜLASYON AÇILDI*\n"
-        f"📌 {coin} {side} | 2x / 4x / 5x\n"
+        f"📌 {coin} {side} | 2x / 3x / 4x / 5x / 6x\n"
         f"💰 Mark: ${mark:.4f} → Giriş: ${entry:.4f} (slippage +%0.05)\n"
         f"🔗 Kaynak: {source}\n"
         f"⏱ Timeout: {TIMEOUT_H}h | D1(4x): coin ≤ -5%"
@@ -266,28 +286,44 @@ async def track_positions():
                             f"💸 Kaynak: {pos['source']}"
                         )
 
-                    # ── 4x sim stop (D3 eşdeğeri: coin -15%) ─────────────────
-                    elif rules['stop_pct'] is None and coin_pct <= SIM_SL_4X:
-                        lev.update(status='SL',
-                                   close_coin_pct=round(coin_pct, 3),
-                                   close_roe=round(roe, 2))
-                        updated = True
-                        notifs.append(
-                            f"💥 *D3 LİMİT — {coin} {side} [{lev_key}]*\n"
-                            f"📊 Coin: {coin_pct:+.2f}% | ROE: {roe:+.2f}%\n"
-                            f"🚨 Sim stop {SIM_SL_4X}% aşıldı | {pos['source']}"
-                        )
-
-                    else:
-                        # ── D1 tetikleme (4x) ─────────────────────────────────
-                        if (rules['d1_pct'] is not None
-                                and not lev['d1_triggered']
-                                and coin_pct <= rules['d1_pct']):
-                            lev['d1_triggered'] = True
-                            lev['d1_price']     = round(mark, 4)
+                    # ── sim stop (D3 eşdeğeri: coin sim_stop_pct) ────────────
+                    elif rules['stop_pct'] is None:
+                        sim_stop = rules.get('sim_stop_pct', SIM_SL_4X)
+                        if coin_pct <= sim_stop:
+                            lev.update(status='SL',
+                                       close_coin_pct=round(coin_pct, 3),
+                                       close_roe=round(roe, 2))
                             updated = True
-                            print(f"[TRACKER] D1 TETİKLENDİ: {coin} {side} [{lev_key}] "
-                                  f"coin {coin_pct:+.2f}%")
+                            notifs.append(
+                                f"💥 *D3 LİMİT — {coin} {side} [{lev_key}]*\n"
+                                f"📊 Coin: {coin_pct:+.2f}% | ROE: {roe:+.2f}%\n"
+                                f"🚨 Sim stop {sim_stop}% aşıldı | {pos['source']}"
+                            )
+
+                        else:
+                            # ── D1 tetikleme ──────────────────────────────────
+                            d1_pct = rules.get('d1_pct')
+                            if (d1_pct is not None
+                                    and not lev['d1_triggered']
+                                    and coin_pct <= d1_pct):
+                                lev['d1_triggered'] = True
+                                lev['d1_price']     = round(mark, 4)
+                                updated = True
+                                print(f"[TRACKER] D1 TETİKLENDİ: {coin} {side} [{lev_key}] "
+                                      f"coin {coin_pct:+.2f}%")
+
+                            # ── D2 log-only ───────────────────────────────────
+                            d2_trigger = rules.get('d2_trigger')
+                            if d2_trigger and coin_pct <= d2_trigger:
+                                print(f"[TRACKER] D2 LOG: {coin} {side} [{lev_key}] "
+                                      f"coin {coin_pct:+.2f}% (d2_trigger={d2_trigger}%)")
+
+                            # ── Trailing log-only ─────────────────────────────
+                            trailing_pct = rules.get('trailing_pct')
+                            if (trailing_pct and lev.get('tp1_hit')
+                                    and coin_pct <= trailing_pct):
+                                print(f"[TRACKER] TRAILING LOG: {coin} {side} [{lev_key}] "
+                                      f"coin {coin_pct:+.2f}% (trailing_pct={trailing_pct}%)")
 
                         # ── TP1 ───────────────────────────────────────────────
                         if not lev['tp1_hit'] and coin_pct >= rules['tp1_pct']:

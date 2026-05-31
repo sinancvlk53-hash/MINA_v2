@@ -35,30 +35,27 @@ date_format = '%Y-%m-%d %H:%M:%S'
 # Logger oluştur
 logger = logging.getLogger('MİNA_v2')
 logger.setLevel(logging.INFO)
+logger.propagate = False  # root logger'a taşıma — çiftlenme önlenir
 
-# Dosyaya yazma
-file_handler = logging.FileHandler('mina_bot.log', encoding='utf-8')
-file_handler.setLevel(logging.INFO)
-file_handler.setFormatter(logging.Formatter(log_format, date_format))
-
-# Konsola yazma
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.INFO)
-console_handler.setFormatter(logging.Formatter(log_format, date_format))
-
-# Handler'ları ekle
-logger.addHandler(file_handler)
-logger.addHandler(console_handler)
+if not logger.handlers:
+    # Dosyaya yazma — systemd StandardOutput=append:mina_bot.log ile çakışmasın
+    # diye console_handler yok; file_handler tek kayıt noktası
+    file_handler = logging.FileHandler('mina_bot.log', encoding='utf-8')
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(logging.Formatter(log_format, date_format))
+    logger.addHandler(file_handler)
 
 # ═══════════════════════════════════════════════
 
 # Tracking dosyaları
-DEFENSE_FILE       = "defense_levels.json"
-TP_FILE            = "tp_levels.json"
-MAX_PRICE_FILE     = "max_prices.json"
+DEFENSE_FILE        = "defense_levels.json"
+TP_FILE             = "tp_levels.json"
+MAX_PRICE_FILE      = "max_prices.json"
 INITIAL_MARGIN_FILE = "initial_margins.json"
 STOP_LEVELS_FILE    = "stop_levels.json"
 PENDING_ORDERS_FILE = "pending_orders.json"
+INITIAL_PRICE_FILE  = "initial_entry_prices.json"
+DEFENSE_STOPS_FILE  = "defense_stop_orders.json"
 LIMIT_ORDER_TTL_H   = 48
 
 # Özel kaldıraç kuralları
@@ -90,6 +87,7 @@ def save_json(filename, data):
 # exchange_info cache — her pozisyon için tekrar çekilmemesi için
 _exchange_info_cache = {}
 _max_qty_cache = {}
+_price_precision_cache = {}
 
 def get_symbol_max_qty(client, symbol):
     """Sembol için maxQty'yi cache'li getir.
@@ -131,6 +129,28 @@ def get_symbol_precision(client, symbol):
                 _exchange_info_cache[sym] = prec
                 break
     return _exchange_info_cache.get(symbol, 3)
+
+def get_price_precision(client, symbol):
+    """Sembol için fiyat precision'ını cache'li getir (PRICE_FILTER tickSize)"""
+    if symbol in _price_precision_cache:
+        return _price_precision_cache[symbol]
+    exchange_info = client.futures_exchange_info()
+    import math as _math
+    for s in exchange_info['symbols']:
+        sym = s['symbol']
+        for f in s['filters']:
+            if f['filterType'] == 'PRICE_FILTER':
+                tick = float(f['tickSize'])
+                # str(tick) bilimsel notasyona düşebilir (örn. 1e-06) — log10 kullan
+                if tick >= 1:
+                    prec = 0
+                elif tick > 0:
+                    prec = max(0, -int(_math.floor(_math.log10(tick))))
+                else:
+                    prec = 8
+                _price_precision_cache[sym] = prec
+                break
+    return _price_precision_cache.get(symbol, 2)
 
 def get_open_positions(client):
     """Açık pozisyonları getir"""
@@ -208,7 +228,7 @@ def send_tp_order(client, symbol, side, current_amount, tp_level):
         if tp_level == 1:
             close_percent = 0.50
         elif tp_level == 2:
-            close_percent = 0.50
+            close_percent = 1.00
         elif tp_level == 3:
             close_percent = 1.00
         else:
@@ -348,9 +368,9 @@ def send_defense_order(client, symbol, side, defense_level, leverage):
 
         if leverage in [4, 5]:
             defense_amounts = {
-                1: slot_size * 0.15,  # D1: slot'un %15'i (DCA)
-                2: 25.0,              # D2: sabit 25 USDT (DCA) + TP iptal → break-even modu
-                3: slot_size * 0.30   # D3: slot'un %30'u, sadece margin ekle
+                1: slot_size * 0.20,  # D1: slot'un %20'si (DCA kontrat)
+                2: slot_size * 0.20,  # D2: slot'un %20'si (DCA kontrat) + STOP_MARKET başabaş
+                3: slot_size * 0.40   # D3: slot'un %40'ı (DCA kontrat) + yeni STOP_MARKET
             }
         else:
             return False, "Savunma tanımsız"
@@ -368,26 +388,8 @@ def send_defense_order(client, symbol, side, defense_level, leverage):
 
         ticker = client.futures_symbol_ticker(symbol=symbol)
         price = float(ticker['price'])
-        max_defense = rules.get('defense_count', 0)
 
-        if defense_level == max_defense:
-            # D3 — margin ekle
-            pos_side = 'LONG' if side == 'LONG' else 'SHORT'
-
-            def do_margin():
-                return client.futures_change_position_margin(
-                    symbol=symbol,
-                    positionSide=pos_side,
-                    amount=amount_usdt,
-                    type=1
-                )
-
-            # FIX 2 — retry
-            _execute_with_retry(do_margin, label, symbol, side)
-            logger.info(f"🛡️  SAVUNMA {defense_level}: {symbol} {side} - {amount_usdt:.2f} USDT MARGIN eklendi")
-            return True, f"Savunma {defense_level}: {amount_usdt:.2f} USDT margin eklendi"
-
-        # D1/D2 — kontrakt ekle
+        # D1/D2/D3 — kontrakt ekle
         position_size = amount_usdt * leverage
         raw_qty = position_size / price
         precision = get_symbol_precision(client, symbol)
@@ -455,11 +457,11 @@ def check_trailing_stop(current_price, pos_key, tp_level, side):
             save_json(MAX_PRICE_FILE, max_prices)
     
     if side == 'LONG':
-        if current_price < max_price * 0.99:
+        if current_price < max_price * 0.985:
             logger.info(f"🎯 TRAILING STOP TETİKLENDİ: {pos_key} - Max: ${max_price:.4f} → Şimdi: ${current_price:.4f}")
             return True, f"📉 TRAILING! Max: ${max_price:.4f} → ${current_price:.4f}", max_price
     else:
-        if current_price > max_price * 1.01:
+        if current_price > max_price * 1.015:
             logger.info(f"🎯 TRAILING STOP TETİKLENDİ: {pos_key} - Min: ${max_price:.4f} → Şimdi: ${current_price:.4f}")
             return True, f"📈 TRAILING! Min: ${max_price:.4f} → ${current_price:.4f}", max_price
     
@@ -500,16 +502,18 @@ def check_stop_loss(pnl_percent, leverage):
     
     return False, None
 
-# DEFANS STRATEJİSİ — ROE EŞİKLERİ (4x kaldıraç):
-#   D1 (ROE ≤ -20%):  coin -%5  → slot×0.15 USDT kontrat ekle (DCA)
+# DEFANS STRATEJİSİ — TETİKLEME EŞİKLERİ (4x kaldıraç):
+#   D1 (ROE ≤ -20%):  coin -%5  → slot×0.20 USDT kontrat ekle (DCA)
 #                      Binance entryPrice güncellenir, TP seviyeleri yeni ortalamaya göre
-#   D2 (ROE ≤ -60%):  coin -%15 → sabit 25 USDT kontrat ekle (DCA)
+#   D2 (FİYAT -%12):  initial_entry_price * 0.88 → slot×0.20 kontrat ekle (DCA)
 #                      TP emirleri iptal edilir (tp_levels="BREAKEVEN")
-#                      Hedef: fiyat yeni ortalamaya döndüğünde pozisyonu kapat
-#   D3 (ROE ≤ -100%): coin -%25 → slot×0.30 USDT sadece margin ekle (kontrakt YOK)
-#                      D2'deki break-even emri korunur
+#                      Binance'e TAKE_PROFIT_MARKET: entry_price * 0.9434 * 1.0012
+#   D3 (FİYAT -%25):  initial_entry_price * 0.75 → slot×0.40 kontrat ekle (DCA)
+#                      D2 stop iptal, yeni TAKE_PROFIT_MARKET: entry_price * 0.8817 * 1.0012
+#                      BREAKEVEN modu kalkar, normal TP devreye girer
 def check_defense_trigger(unrealized_pnl, initial_margin, defense_level, leverage):
-    """Savunma tetikleme - ROE bazlı (unrealized_pnl / initial_margin * 100)"""
+    """Savunma tetikleme - ROE bazlı (unrealized_pnl / initial_margin * 100)
+    D2/D3 fiyat bazlı — check_d2_price_trigger / check_d3_price_trigger ile kontrol edilir."""
     rules = LEVERAGE_RULES.get(leverage)
 
     if not rules or not rules.get('defense_count'):
@@ -521,14 +525,10 @@ def check_defense_trigger(unrealized_pnl, initial_margin, defense_level, leverag
 
     if leverage == 4:
         # D1: coin -%5  → 4x kaldıraçta ROE -20%
-        # D2: coin -%15 → 4x kaldıraçta ROE -60%
-        # D3: coin -%25 → 4x kaldıraçta ROE -100%
+        # D2: fiyat bazlı → check_d2_price_trigger ile tetiklenir
+        # D3: fiyat bazlı → check_d3_price_trigger ile tetiklenir
         if defense_level == 0 and roe <= -20:
             return 1, f"🚨 SAVUNMA 1! (ROE {roe:.1f}%)"
-        if defense_level == 1 and roe <= -60:
-            return 2, f"🚨 SAVUNMA 2! (ROE {roe:.1f}%)"
-        if defense_level == 2 and roe <= -100:
-            return 3, f"🚨 SAVUNMA 3! (ROE {roe:.1f}%)"
 
     return 0, None
 
@@ -543,6 +543,99 @@ def check_d1_price_trigger(current_price: float, pos_key: str,
     if side == 'SHORT' and current_price >= stop_px:
         return True, f"🎯 D1 FİYAT TETİKLENDİ: ${current_price:.4f} ≥ Stop ${stop_px:.4f}"
     return False, None
+
+def check_d2_price_trigger(current_price: float, pos_key: str,
+                            initial_entry_prices: dict, side: str):
+    """D2 fiyat bazlı tetikleme — initial_entry_price * 0.88 (giriş -%12)"""
+    initial_ep = initial_entry_prices.get(pos_key)
+    if initial_ep is None:
+        return False, None
+    if side == 'LONG':
+        trigger_px = initial_ep * 0.88
+        if current_price <= trigger_px:
+            return True, f"🚨 SAVUNMA 2! D2 FİYAT: ${current_price:.4f} ≤ ${trigger_px:.4f} (giriş -%12)"
+    else:
+        trigger_px = initial_ep * 1.12
+        if current_price >= trigger_px:
+            return True, f"🚨 SAVUNMA 2! D2 FİYAT: ${current_price:.4f} ≥ ${trigger_px:.4f} (giriş +%12)"
+    return False, None
+
+def check_d3_price_trigger(current_price: float, pos_key: str,
+                            initial_entry_prices: dict, side: str):
+    """D3 fiyat bazlı tetikleme — initial_entry_price * 0.75 (giriş -%25)"""
+    initial_ep = initial_entry_prices.get(pos_key)
+    if initial_ep is None:
+        return False, None
+    if side == 'LONG':
+        trigger_px = initial_ep * 0.75
+        if current_price <= trigger_px:
+            return True, f"🚨 SAVUNMA 3! D3 FİYAT: ${current_price:.4f} ≤ ${trigger_px:.4f} (giriş -%25)"
+    else:
+        trigger_px = initial_ep * 1.25
+        if current_price >= trigger_px:
+            return True, f"🚨 SAVUNMA 3! D3 FİYAT: ${current_price:.4f} ≥ ${trigger_px:.4f} (giriş +%25)"
+    return False, None
+
+def send_stop_market_defense(client, symbol, side, stop_price, label="DEFENSE STOP"):
+    """D2/D3 başabaş emri: önce TAKE_PROFIT_MARKET (mainnet), -4120 hatasında LIMIT GTC (testnet fallback).
+    Fiyat stop_price seviyesine ulaştığında pozisyon kapanır."""
+    try:
+        order_side   = SIDE_SELL if side == 'LONG' else SIDE_BUY
+        pos_side_str = 'LONG'   if side == 'LONG' else 'SHORT'
+        price_prec   = get_price_precision(client, symbol)
+        stop_rounded = round(stop_price, price_prec)
+
+        # Pozisyon miktarını al
+        pos_info = client.futures_position_information(symbol=symbol)
+        qty = 0.0
+        for p in pos_info:
+            p_amt  = float(p.get('positionAmt', 0))
+            p_side = p.get('positionSide', '')
+            if p['symbol'] == symbol and p_side == pos_side_str and p_amt != 0:
+                qty = abs(p_amt)
+                break
+
+        if qty == 0:
+            logger.warning(f"⚠️ {label}: {symbol} {side} pozisyon bulunamadı (qty=0) — atlanıyor")
+            return None
+
+        sym_prec = get_symbol_precision(client, symbol)
+        qty      = round(qty, sym_prec)
+
+        # 1. TAKE_PROFIT_MARKET dene (mainnet)
+        try:
+            order = client.futures_create_order(
+                symbol=symbol,
+                side=order_side,
+                type='TAKE_PROFIT_MARKET',
+                stopPrice=stop_rounded,
+                positionSide=pos_side_str,
+                quantity=qty,
+                workingType='MARK_PRICE',
+            )
+            order_type = 'TAKE_PROFIT_MARKET'
+        except Exception as e1:
+            if '-4120' not in str(e1):
+                raise
+            # -4120: Algo endpoint gerekiyor — LIMIT GTC fallback (testnet uyumlu)
+            logger.warning(f"⚠️ {label}: TAKE_PROFIT_MARKET -4120 → LIMIT GTC fallback ({symbol} {side})")
+            order = client.futures_create_order(
+                symbol=symbol,
+                side=order_side,
+                type='LIMIT',
+                price=stop_rounded,
+                timeInForce='GTC',
+                positionSide=pos_side_str,
+                quantity=qty,
+            )
+            order_type = 'LIMIT'
+
+        order_id = order['orderId']
+        logger.info(f"✅ {label}: {symbol} {side} {order_type} qty={qty} stop/price=${stop_rounded} orderId={order_id}")
+        return order_id
+    except Exception as e:
+        logger.error(f"❌ {label} STOP EMRİ HATASI: {symbol} {side} - {e}")
+        return None
 
 def cancel_stale_limit_orders(client, pending_orders: dict, stop_levels: dict) -> bool:
     """LIMIT_ORDER_TTL_H saatte dolmayan limit emirlerini iptal et.
@@ -638,11 +731,13 @@ def main():
     config = BinanceConfig()
     client = config.get_client()
     
-    defense_levels  = load_json(DEFENSE_FILE)
-    tp_levels       = load_json(TP_FILE)
-    initial_margins = load_json(INITIAL_MARGIN_FILE)
-    stop_levels     = load_json(STOP_LEVELS_FILE)
-    pending_orders  = load_json(PENDING_ORDERS_FILE)
+    defense_levels       = load_json(DEFENSE_FILE)
+    tp_levels            = load_json(TP_FILE)
+    initial_margins      = load_json(INITIAL_MARGIN_FILE)
+    stop_levels          = load_json(STOP_LEVELS_FILE)
+    pending_orders       = load_json(PENDING_ORDERS_FILE)
+    initial_entry_prices = load_json(INITIAL_PRICE_FILE)
+    defense_stops        = load_json(DEFENSE_STOPS_FILE)
     
     last_message_time = 0
     check_interval = 60
@@ -668,7 +763,8 @@ def main():
             if orphaned:
                 max_prices = load_json(MAX_PRICE_FILE)
                 for pos_key in orphaned:
-                    for _d in [defense_levels, initial_margins, tp_levels]:
+                    for _d in [defense_levels, initial_margins, tp_levels,
+                                initial_entry_prices, defense_stops]:
                         _d.pop(pos_key, None)
                     max_prices.pop(pos_key, None)
                     stop_levels.pop(pos_key, None)
@@ -683,6 +779,8 @@ def main():
                 save_json(TP_FILE, tp_levels)
                 save_json(MAX_PRICE_FILE, max_prices)
                 save_json(STOP_LEVELS_FILE, stop_levels)
+                save_json(INITIAL_PRICE_FILE, initial_entry_prices)
+                save_json(DEFENSE_STOPS_FILE, defense_stops)
             # ─────────────────────────────────────────────────────────────────
 
             if len(positions) == 0:
@@ -718,6 +816,10 @@ def main():
                     if pos_key not in initial_margins:
                         initial_margins[pos_key] = round((entry_price * amount) / leverage, 4)
                         save_json(INITIAL_MARGIN_FILE, initial_margins)
+                        # İlk giriş fiyatını kaydet (D2 fiyat tetiklemesi için)
+                        if pos_key not in initial_entry_prices:
+                            initial_entry_prices[pos_key] = entry_price
+                            save_json(INITIAL_PRICE_FILE, initial_entry_prices)
                         # Limit emir doldu: pending takibinden çıkar
                         if pos_key in pending_orders:
                             pending_orders.pop(pos_key, None)
@@ -769,19 +871,17 @@ def main():
                                     f"📉 Zarar: ${unrealized_pnl:+.2f}\n"
                                     f"✅ Pozisyon kapatıldı"
                                 )
-                            if pos_key in tp_levels:
-                                del tp_levels[pos_key]
-                            if pos_key in defense_levels:
-                                del defense_levels[pos_key]
-                            if pos_key in initial_margins:
-                                del initial_margins[pos_key]
+                            for _d in [tp_levels, defense_levels, initial_margins,
+                                       initial_entry_prices, defense_stops]:
+                                _d.pop(pos_key, None)
                             max_prices = load_json(MAX_PRICE_FILE)
-                            if pos_key in max_prices:
-                                del max_prices[pos_key]
+                            max_prices.pop(pos_key, None)
                             save_json(TP_FILE, tp_levels)
                             save_json(DEFENSE_FILE, defense_levels)
                             save_json(INITIAL_MARGIN_FILE, initial_margins)
                             save_json(MAX_PRICE_FILE, max_prices)
+                            save_json(INITIAL_PRICE_FILE, initial_entry_prices)
+                            save_json(DEFENSE_STOPS_FILE, defense_stops)
                         else:
                             print(f"   ❌ {message}")
                         continue
@@ -813,19 +913,17 @@ def main():
                                     f"📈 Kâr: ${unrealized_pnl:+.2f}\n"
                                     f"✅ Tüm pozisyon kapatıldı"
                                 )
-                            if pos_key in tp_levels:
-                                del tp_levels[pos_key]
-                            if pos_key in defense_levels:
-                                del defense_levels[pos_key]
-                            if pos_key in initial_margins:
-                                del initial_margins[pos_key]
+                            for _d in [tp_levels, defense_levels, initial_margins,
+                                       initial_entry_prices, defense_stops]:
+                                _d.pop(pos_key, None)
                             max_prices = load_json(MAX_PRICE_FILE)
-                            if pos_key in max_prices:
-                                del max_prices[pos_key]
+                            max_prices.pop(pos_key, None)
                             save_json(TP_FILE, tp_levels)
                             save_json(DEFENSE_FILE, defense_levels)
                             save_json(INITIAL_MARGIN_FILE, initial_margins)
                             save_json(MAX_PRICE_FILE, max_prices)
+                            save_json(INITIAL_PRICE_FILE, initial_entry_prices)
+                            save_json(DEFENSE_STOPS_FILE, defense_stops)
                         else:
                             print(f"   ❌ {message}")
                         continue
@@ -862,33 +960,30 @@ def main():
                                     print(f"   🛡️  Başabaş modu aktif! BE: ${be_price:.6f}")
                             elif message == "POSITION_CLOSED":
                                 print(f"   ⚠️ Pozisyon zaten kapalıydı, takipten silindi: {symbol} {side}")
-                                if pos_key in tp_levels:
-                                    del tp_levels[pos_key]
-                                if pos_key in defense_levels:
-                                    del defense_levels[pos_key]
-                                if pos_key in initial_margins:
-                                    del initial_margins[pos_key]
+                                for _d in [tp_levels, defense_levels, initial_margins,
+                                           initial_entry_prices, defense_stops]:
+                                    _d.pop(pos_key, None)
                                 max_prices = load_json(MAX_PRICE_FILE)
-                                if pos_key in max_prices:
-                                    del max_prices[pos_key]
+                                max_prices.pop(pos_key, None)
                                 save_json(TP_FILE, tp_levels)
                                 save_json(DEFENSE_FILE, defense_levels)
                                 save_json(INITIAL_MARGIN_FILE, initial_margins)
                                 save_json(MAX_PRICE_FILE, max_prices)
+                                save_json(INITIAL_PRICE_FILE, initial_entry_prices)
+                                save_json(DEFENSE_STOPS_FILE, defense_stops)
                             elif message == "HEDGE_NOT_SUPPORTED":
-                                if pos_key in tp_levels:
-                                    del tp_levels[pos_key]
-                                if pos_key in initial_margins:
-                                    del initial_margins[pos_key]
-                                if pos_key in defense_levels:
-                                    del defense_levels[pos_key]
+                                for _d in [tp_levels, initial_margins, defense_levels,
+                                           initial_entry_prices, defense_stops]:
+                                    _d.pop(pos_key, None)
                                 save_json(TP_FILE, tp_levels)
                                 save_json(INITIAL_MARGIN_FILE, initial_margins)
                                 save_json(DEFENSE_FILE, defense_levels)
+                                save_json(INITIAL_PRICE_FILE, initial_entry_prices)
+                                save_json(DEFENSE_STOPS_FILE, defense_stops)
                                 print(f"   ⚠️ {symbol} {side} takipten çıkarıldı (hedge mode kısıtı)")
                             else:
                                 print(f"   ❌ {message}")
-                    
+
                     # Başabaş kapama (TP1 sonrası fiyat geri döndüyse)
                     if current_tp == 1:
                         be_price = entry_price * (1.0008 if side == 'LONG' else 0.9992)
@@ -911,59 +1006,31 @@ def main():
                                         f"🛡️ Başabaş: ${be_price:.4f}\n"
                                         f"✅ Kalan %50 kapatıldı"
                                     )
-                                if pos_key in tp_levels:
-                                    del tp_levels[pos_key]
-                                if pos_key in defense_levels:
-                                    del defense_levels[pos_key]
-                                if pos_key in initial_margins:
-                                    del initial_margins[pos_key]
+                                for _d in [tp_levels, defense_levels, initial_margins,
+                                           initial_entry_prices, defense_stops]:
+                                    _d.pop(pos_key, None)
                                 max_prices = load_json(MAX_PRICE_FILE)
-                                if pos_key in max_prices:
-                                    del max_prices[pos_key]
+                                max_prices.pop(pos_key, None)
                                 save_json(TP_FILE, tp_levels)
                                 save_json(DEFENSE_FILE, defense_levels)
                                 save_json(INITIAL_MARGIN_FILE, initial_margins)
                                 save_json(MAX_PRICE_FILE, max_prices)
+                                save_json(INITIAL_PRICE_FILE, initial_entry_prices)
+                                save_json(DEFENSE_STOPS_FILE, defense_stops)
                             else:
                                 print(f"   ❌ {message}")
                             continue
 
-                    # D3 sonrası başabaş kapama
-                    # D3 break-even: ROE >= -2% olduğunda kapatılır.
-                    # Tam 0% değil — komisyon + slippage için -%2 emniyet payı.
-                    # 4x kaldıraçta coin fiyatında sadece %0.5 fark eder.
-                    if current_defense == 3 and roe >= -2:
-                        logger.info(f"🛡️  D3 BAŞABAŞ: {symbol} {side} ROE {roe:+.1f}% → kapatılıyor")
-                        print(f"\n   🛡️  D3 BAŞABAŞ! ROE {roe:+.1f}% — pozisyon kapatılıyor...")
-                        success, message = send_stop_loss_order(client, symbol, side, amount)
-                        if success or message == "POSITION_CLOSED":
-                            if message != "POSITION_CLOSED":
-                                send_notification(
-                                    f"🛡️ *D3 BAŞABAŞ — {symbol} {side}*\n"
-                                    f"📌 {leverage}x | ROE: {roe:+.2f}%\n"
-                                    f"💰 Giriş: ${entry_price:.4f}\n"
-                                    f"📊 Fiyat: ${current_price:.4f}\n"
-                                    f"✅ Pozisyon kapatıldı"
-                                )
-                            for _d in [tp_levels, defense_levels, initial_margins]:
-                                _d.pop(pos_key, None)
-                            max_prices = load_json(MAX_PRICE_FILE)
-                            max_prices.pop(pos_key, None)
-                            save_json(TP_FILE, tp_levels)
-                            save_json(DEFENSE_FILE, defense_levels)
-                            save_json(INITIAL_MARGIN_FILE, initial_margins)
-                            save_json(MAX_PRICE_FILE, max_prices)
-                        else:
-                            print(f"   ❌ {message}")
-                        continue
-
-                    # D2 sonrası break-even kapama (fiyat yeni ortalamaya döndüğünde)
+                    # D2 sonrası break-even izleme (motor tarafı — Binance stop backup)
                     if current_tp == "BREAKEVEN":
-                        be_price = entry_price * (1.0008 if side == 'LONG' else 0.9992)
+                        initial_ep   = initial_entry_prices.get(pos_key, entry_price)
+                        be_price     = (initial_ep * 0.9434 * 1.0012
+                                        if side == 'LONG'
+                                        else initial_ep / (0.9434 * 1.0012))
                         be_hit = (current_price >= be_price) if side == 'LONG' else (current_price <= be_price)
                         if be_hit:
                             logger.info(f"🛡️  D2 BAŞABAŞ: {symbol} {side} fiyat ${current_price:.6f} → BE ${be_price:.6f}")
-                            print(f"\n   🛡️  D2 BAŞABAŞ! Fiyat yeni ortalamaya döndü: ${current_price:.6f} (BE: ${be_price:.6f})")
+                            print(f"\n   🛡️  D2 BAŞABAŞ! Fiyat başabaş seviyesine döndü: ${current_price:.6f} (BE: ${be_price:.6f})")
                             print(f"   ⚡ Pozisyon kapatılıyor...")
                             success, message = send_stop_loss_order(client, symbol, side, amount)
                             if success or message == "POSITION_CLOSED":
@@ -977,7 +1044,8 @@ def main():
                                     )
                                 else:
                                     print(f"   ⚠️ Pozisyon zaten kapalıydı, takipten silindi")
-                                for _d in [tp_levels, defense_levels, initial_margins]:
+                                for _d in [tp_levels, defense_levels, initial_margins,
+                                           initial_entry_prices, defense_stops]:
                                     _d.pop(pos_key, None)
                                 max_prices = load_json(MAX_PRICE_FILE)
                                 max_prices.pop(pos_key, None)
@@ -985,6 +1053,8 @@ def main():
                                 save_json(DEFENSE_FILE, defense_levels)
                                 save_json(INITIAL_MARGIN_FILE, initial_margins)
                                 save_json(MAX_PRICE_FILE, max_prices)
+                                save_json(INITIAL_PRICE_FILE, initial_entry_prices)
+                                save_json(DEFENSE_STOPS_FILE, defense_stops)
                             else:
                                 print(f"   ❌ {message}")
                             continue
@@ -1002,6 +1072,22 @@ def main():
                             if price_d1:
                                 defense_trigger = 1
                                 defense_msg     = price_msg
+                        # D2: fiyat bazlı tetikleme (initial_entry_price * 0.88)
+                        if not defense_trigger and current_defense == 1:
+                            price_d2, price_msg_d2 = check_d2_price_trigger(
+                                current_price, pos_key, initial_entry_prices, side
+                            )
+                            if price_d2:
+                                defense_trigger = 2
+                                defense_msg     = price_msg_d2
+                        # D3: fiyat bazlı tetikleme (initial_entry_price * 0.75)
+                        if not defense_trigger and current_defense == 2:
+                            price_d3, price_msg_d3 = check_d3_price_trigger(
+                                current_price, pos_key, initial_entry_prices, side
+                            )
+                            if price_d3:
+                                defense_trigger = 3
+                                defense_msg     = price_msg_d3
                         if not defense_trigger:
                             break
                         if (pos_key, defense_trigger) in _slot_limit_blocked:
@@ -1023,12 +1109,45 @@ def main():
                             if defense_trigger == 1 and pos_key in stop_levels:
                                 stop_levels.pop(pos_key, None)
                                 save_json(STOP_LEVELS_FILE, stop_levels)
-                            # D2: mevcut TP emirlerini iptal et, break-even moduna geç
+                            # D2: TP durdur, başabaş modu + Binance stop emri
                             if defense_trigger == 2:
                                 tp_levels[pos_key] = "BREAKEVEN"
                                 save_json(TP_FILE, tp_levels)
                                 current_tp = "BREAKEVEN"
                                 logger.info(f"🔄 D2 SONRASI: {symbol} {side} TP iptal, break-even modu aktif")
+                                initial_ep = initial_entry_prices.get(pos_key, entry_price)
+                                be_stop = (initial_ep * 0.9434 * 1.0012
+                                           if side == 'LONG'
+                                           else initial_ep / (0.9434 * 1.0012))
+                                oid = send_stop_market_defense(client, symbol, side, be_stop, "D2 BAŞABAŞ STOP")
+                                if oid:
+                                    defense_stops[pos_key] = {'level': 2, 'orderId': oid}
+                                    save_json(DEFENSE_STOPS_FILE, defense_stops)
+                                    print(f"   📌 D2 başabaş stop emri: ${be_stop:.4f} (orderId={oid})")
+                            # D3: D2 stop iptal, yeni stop, BREAKEVEN kaldır, normal TP
+                            if defense_trigger == 3:
+                                old_stop = defense_stops.get(pos_key)
+                                if old_stop:
+                                    try:
+                                        client.futures_cancel_order(
+                                            symbol=symbol, orderId=old_stop['orderId']
+                                        )
+                                        logger.info(f"🔄 D3: D2 stop iptal — orderId={old_stop['orderId']}")
+                                    except Exception as _e:
+                                        logger.warning(f"D2 stop iptal edilemedi: {_e}")
+                                initial_ep = initial_entry_prices.get(pos_key, entry_price)
+                                be_stop3 = (initial_ep * 0.8817 * 1.0012
+                                            if side == 'LONG'
+                                            else initial_ep / (0.8817 * 1.0012))
+                                oid3 = send_stop_market_defense(client, symbol, side, be_stop3, "D3 BAŞABAŞ STOP")
+                                if oid3:
+                                    defense_stops[pos_key] = {'level': 3, 'orderId': oid3}
+                                    save_json(DEFENSE_STOPS_FILE, defense_stops)
+                                    print(f"   📌 D3 başabaş stop emri: ${be_stop3:.4f} (orderId={oid3})")
+                                tp_levels.pop(pos_key, None)
+                                save_json(TP_FILE, tp_levels)
+                                current_tp = 0
+                                logger.info(f"🔄 D3 SONRASI: {symbol} {side} BREAKEVEN kalktı, normal TP aktif, stop=${be_stop3:.4f}")
                             try:
                                 upd = client.futures_position_information(symbol=symbol)
                                 new_liq = next((float(p['liquidationPrice']) for p in upd
@@ -1057,7 +1176,8 @@ def main():
                             )
                         elif message == "POSITION_CLOSED":
                             print(f"   ⚠️ Pozisyon zaten kapalı, savunma atlandı: {symbol} {side}")
-                            for _d in [defense_levels, initial_margins, tp_levels]:
+                            for _d in [defense_levels, initial_margins, tp_levels,
+                                       initial_entry_prices, defense_stops]:
                                 _d.pop(pos_key, None)
                             max_prices = load_json(MAX_PRICE_FILE)
                             max_prices.pop(pos_key, None)
@@ -1065,6 +1185,8 @@ def main():
                             save_json(INITIAL_MARGIN_FILE, initial_margins)
                             save_json(TP_FILE, tp_levels)
                             save_json(MAX_PRICE_FILE, max_prices)
+                            save_json(INITIAL_PRICE_FILE, initial_entry_prices)
+                            save_json(DEFENSE_STOPS_FILE, defense_stops)
                             break
                         elif message == "MARGIN_FAILED":
                             print(f"   ❌ D{defense_trigger} margin eklenemedi, bir sonraki döngüde tekrar denenecek: {symbol} {side}")

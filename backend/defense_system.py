@@ -8,19 +8,61 @@ from binance.client import Client
 from binance.enums import *
 from typing import Dict
 import math
+import os
+import json
+
+_DEFENSE_JSON = os.path.normpath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'defense_levels.json')
+)
 
 class DefenseSystem:
     """Savunma sistemi - 4x için"""
-    
+
     def __init__(self, client: Client, slot_size: float):
         self.client = client
         self.slot_size = slot_size
-        
-        # Savunma seviyeleri
-        self.defense_levels = {
-            1: {'trigger_pct': -5.0, 'ratio': 0.20, 'triggered': False},   # %5 düşüş
-            2: {'trigger_pct': -10.0, 'ratio': 0.30, 'triggered': False},  # Likidasyon %10 önce
-            3: {'trigger_pct': -10.0, 'ratio': 0.30, 'triggered': False}   # Likidasyon %10 önce (marjin)
+
+        # Level config (oranlari tum semboller icin paylasimli)
+        self.level_config = {
+            1: {'trigger_pct': -5.0,  'ratio': 0.20},  # %5 dusus
+            2: {'trigger_pct': -10.0, 'ratio': 0.30},  # Likidasyondan %10 once
+            3: {'trigger_pct': -10.0, 'ratio': 0.30},  # Likidasyondan %10 once (marjin)
+        }
+
+        # Sembol bazli tetikleme durumu: {"DYDXUSDT_SHORT": 1, ...}
+        # Deger = tetiklenen en yuksek seviye (0 = hic tetiklenmedi)
+        self.triggered_map: Dict[str, int] = self._load_triggered_map()
+        print(f"   Defense state restore edildi: {self.triggered_map}")
+
+    def _load_triggered_map(self) -> Dict[str, int]:
+        try:
+            if os.path.exists(_DEFENSE_JSON):
+                with open(_DEFENSE_JSON, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+        except Exception as e:
+            print(f"   defense_levels.json okunamadi: {e}")
+        return {}
+
+    def _save_triggered_map(self):
+        try:
+            with open(_DEFENSE_JSON, 'w', encoding='utf-8') as f:
+                json.dump(self.triggered_map, f, indent=2)
+        except Exception as e:
+            print(f"   Defense state kaydedilemedi: {e}")
+
+    def _is_triggered(self, symbol_key: str, level: int) -> bool:
+        return self.triggered_map.get(symbol_key, 0) >= level
+
+    # Eski kod uyumlulugu icin: tek sembol olmadan cagrilabilir
+    @property
+    def defense_levels(self):
+        """Geriye donuk uyumluluk: ilk sembol icin durum dondurir."""
+        first_key = next(iter(self.triggered_map), '')
+        max_lv = self.triggered_map.get(first_key, 0)
+        return {
+            1: {**self.level_config[1], 'triggered': max_lv >= 1},
+            2: {**self.level_config[2], 'triggered': max_lv >= 2},
+            3: {**self.level_config[3], 'triggered': max_lv >= 3},
         }
     
     def calculate_defense_trigger_price(self, entry_price: float, side: str, defense_num: int) -> float:
@@ -29,7 +71,7 @@ class DefenseSystem:
         Defense 1: LONG → %5 aşağı, SHORT → %5 yukarı
         """
         if defense_num == 1:
-            trigger_pct = abs(self.defense_levels[1]['trigger_pct']) / 100
+            trigger_pct = abs(self.level_config[1]['trigger_pct']) / 100
             if side == 'LONG':
                 return entry_price * (1 - trigger_pct)
             else:
@@ -55,6 +97,7 @@ class DefenseSystem:
         Hangi savunmanın tetiklenmesi gerektiğini kontrol et
         Returns: 0 = yok, 1 = defense #1, 2 = defense #2, 3 = defense #3
         """
+        symbol_key = f"{position['symbol']}_{position['side']}"
         entry_price = position['entry_price']
         liquidation_price = position['liquidation_price']
         side = position['side']
@@ -63,10 +106,10 @@ class DefenseSystem:
         defense1_price = self.calculate_defense_trigger_price(entry_price, side, 1)
 
         if side == 'LONG':
-            if current_price <= defense1_price and not self.defense_levels[1]['triggered']:
+            if current_price <= defense1_price and not self._is_triggered(symbol_key, 1):
                 return 1
         else:
-            if current_price >= defense1_price and not self.defense_levels[1]['triggered']:
+            if current_price >= defense1_price and not self._is_triggered(symbol_key, 1):
                 return 1
 
         # Defense #2 ve #3: Likidasyondan %10 önce
@@ -76,15 +119,15 @@ class DefenseSystem:
 
         if side == 'LONG':
             if current_price <= defense23_price:
-                if not self.defense_levels[2]['triggered']:
+                if not self._is_triggered(symbol_key, 2):
                     return 2
-                elif not self.defense_levels[3]['triggered']:
+                elif not self._is_triggered(symbol_key, 3):
                     return 3
         else:
             if current_price >= defense23_price:
-                if not self.defense_levels[2]['triggered']:
+                if not self._is_triggered(symbol_key, 2):
                     return 2
-                elif not self.defense_levels[3]['triggered']:
+                elif not self._is_triggered(symbol_key, 3):
                     return 3
 
         return 0
@@ -97,24 +140,25 @@ class DefenseSystem:
         """
         symbol = position['symbol']
         side = position['side']
-        
+        symbol_key = f"{symbol}_{side}"
+
         try:
             if defense_num in [1, 2]:
                 # Pozisyona ekle
-                ratio = self.defense_levels[defense_num]['ratio']
+                ratio = self.level_config[defense_num]['ratio']
                 defense_amount_usdt = self.slot_size * ratio
-                
+
                 # Quantity hesapla
                 quantity = defense_amount_usdt / current_price
                 quantity = self._round_quantity(symbol, quantity)
-                
-                print(f"\n🛡️  SAVUNMA #{defense_num} TETİKLENDİ!")
-                print(f"   📦 Miktar: {quantity} ({defense_amount_usdt} USDT)")
-                print(f"   💵 Fiyat: ${current_price}")
-                
+
+                print(f"\n SAVUNMA #{defense_num} TETIKLENDI!")
+                print(f"   Miktar: {quantity} ({defense_amount_usdt} USDT)")
+                print(f"   Fiyat: ${current_price}")
+
                 # Emir gönder
                 order_side = SIDE_BUY if side == 'LONG' else SIDE_SELL
-                
+
                 order = self.client.futures_create_order(
                     symbol=symbol,
                     side=order_side,
@@ -122,32 +166,33 @@ class DefenseSystem:
                     quantity=quantity,
                     positionSide=side  # Hedge mode uyumlu
                 )
-                
-                self.defense_levels[defense_num]['triggered'] = True
-                print(f"   ✅ Savunma eklendi! Order ID: {order['orderId']}")
+
+                self.triggered_map[symbol_key] = max(self.triggered_map.get(symbol_key, 0), defense_num)
+                self._save_triggered_map()
+                print(f"   Savunma eklendi! Order ID: {order['orderId']}")
                 return True
-            
+
             elif defense_num == 3:
                 # Isolated margin ekle
-                ratio = self.defense_levels[3]['ratio']
+                ratio = self.level_config[3]['ratio']
                 margin_to_add = self.slot_size * ratio
-                
-                print(f"\n🛡️  SAVUNMA #3 TETİKLENDİ!")
-                print(f"   💰 Marjin Ekleniyor: {margin_to_add} USDT")
-                
-                # Isolated margin ekle
-                result = self.client.futures_change_position_margin(
+
+                print(f"\n SAVUNMA #3 TETIKLENDI!")
+                print(f"   Marjin Ekleniyor: {margin_to_add} USDT")
+
+                self.client.futures_change_position_margin(
                     symbol=symbol,
                     amount=margin_to_add,
                     type=1  # 1 = Add, 2 = Reduce
                 )
-                
-                self.defense_levels[3]['triggered'] = True
-                print(f"   ✅ Marjin eklendi!")
+
+                self.triggered_map[symbol_key] = max(self.triggered_map.get(symbol_key, 0), 3)
+                self._save_triggered_map()
+                print(f"   Marjin eklendi!")
                 return True
-        
+
         except Exception as e:
-            print(f"   ❌ Savunma hatası: {e}")
+            print(f"   Savunma hatasi: {e}")
             return False
     
     def _round_quantity(self, symbol: str, quantity: float) -> float:
@@ -158,17 +203,21 @@ class DefenseSystem:
         else:
             return round(quantity, 3)
     
-    def reset_defenses(self):
-        """Savunma seviyelerini sıfırla (yeni pozisyon için)"""
-        for level in self.defense_levels:
-            self.defense_levels[level]['triggered'] = False
-    
-    def get_defense_status(self) -> Dict:
-        """Savunma durumunu döndür"""
+    def reset_defenses(self, symbol_key: str = None):
+        """Savunma seviyelerini sifirla (yeni pozisyon icin)"""
+        if symbol_key:
+            self.triggered_map.pop(symbol_key, None)
+        else:
+            self.triggered_map = {}
+        self._save_triggered_map()
+
+    def get_defense_status(self, symbol_key: str = '') -> Dict:
+        """Savunma durumunu dondur"""
+        max_lv = self.triggered_map.get(symbol_key, 0)
         return {
-            'defense_1': self.defense_levels[1]['triggered'],
-            'defense_2': self.defense_levels[2]['triggered'],
-            'defense_3': self.defense_levels[3]['triggered']
+            'defense_1': max_lv >= 1,
+            'defense_2': max_lv >= 2,
+            'defense_3': max_lv >= 3,
         }
 
 

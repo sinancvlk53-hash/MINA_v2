@@ -13,3 +13,5 @@ initial_margins.json
 *.session
 *.session-journal
 engine.lock
+deploy.py
+_deploy_*.py

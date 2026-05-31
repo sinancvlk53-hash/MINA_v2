@@ -4,12 +4,16 @@ MİNA v2 - Ana Trading Bot
 Tüm sistemleri birleştiren ana motor
 """
 
+import sys
 import time
 import json
 from datetime import datetime
 from binance.client import Client
 from binance.streams import ThreadedWebsocketManager
 from typing import Dict
+
+sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 
 from config import BinanceConfig, AccountManager
 from position_manager import PositionManager

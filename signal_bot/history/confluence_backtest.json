@@ -1,0 +1,5114 @@
+[
+  {
+    "coin": "DYDXUSDT",
+    "rsi_ts": "2026-05-05 18:34",
+    "ei_ts": "2026-05-05 21:00",
+    "delay_min": 146,
+    "rsi_5dk": 20,
+    "rsi_15dk": 20,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 5
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 4
+    }
+  },
+  {
+    "coin": "DYDXUSDT",
+    "rsi_ts": "2026-05-05 18:47",
+    "ei_ts": "2026-05-05 21:00",
+    "delay_min": 133,
+    "rsi_5dk": 19,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 5
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 4
+    }
+  },
+  {
+    "coin": "DYDXUSDT",
+    "rsi_ts": "2026-05-05 18:55",
+    "ei_ts": "2026-05-05 21:00",
+    "delay_min": 125,
+    "rsi_5dk": 19,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 5
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 4
+    }
+  },
+  {
+    "coin": "DYDXUSDT",
+    "rsi_ts": "2026-05-05 18:59",
+    "ei_ts": "2026-05-05 21:00",
+    "delay_min": 121,
+    "rsi_5dk": 18,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 5
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 4
+    }
+  },
+  {
+    "coin": "DYDXUSDT",
+    "rsi_ts": "2026-05-05 19:03",
+    "ei_ts": "2026-05-05 21:00",
+    "delay_min": 117,
+    "rsi_5dk": 18,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 5
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 4
+    }
+  },
+  {
+    "coin": "ATOMUSDT",
+    "rsi_ts": "2026-05-05 19:39",
+    "ei_ts": "2026-05-05 21:15",
+    "delay_min": 96,
+    "rsi_5dk": 17,
+    "rsi_15dk": 20,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 15
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "ATOMUSDT",
+    "rsi_ts": "2026-05-05 19:47",
+    "ei_ts": "2026-05-05 21:15",
+    "delay_min": 88,
+    "rsi_5dk": 17,
+    "rsi_15dk": 20,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 15
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "1000000MOGUSDT",
+    "rsi_ts": "2026-05-06 00:39",
+    "ei_ts": "2026-05-06 04:15",
+    "delay_min": 216,
+    "rsi_5dk": 19,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 7
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "1000000MOGUSDT",
+    "rsi_ts": "2026-05-06 00:51",
+    "ei_ts": "2026-05-06 04:15",
+    "delay_min": 204,
+    "rsi_5dk": 19,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 7
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "1000000MOGUSDT",
+    "rsi_ts": "2026-05-06 01:34",
+    "ei_ts": "2026-05-06 04:15",
+    "delay_min": 161,
+    "rsi_5dk": 16,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 7
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "1000000MOGUSDT",
+    "rsi_ts": "2026-05-06 01:38",
+    "ei_ts": "2026-05-06 04:15",
+    "delay_min": 157,
+    "rsi_5dk": 15,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 7
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "1000000MOGUSDT",
+    "rsi_ts": "2026-05-06 01:46",
+    "ei_ts": "2026-05-06 04:15",
+    "delay_min": 149,
+    "rsi_5dk": 19,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 7
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "CHILLGUYUSDT",
+    "rsi_ts": "2026-05-07 18:19",
+    "ei_ts": "2026-05-07 22:15",
+    "delay_min": 236,
+    "rsi_5dk": 18,
+    "rsi_15dk": 20,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 4
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "BNBUSDT",
+    "rsi_ts": "2026-05-10 04:28",
+    "ei_ts": "2026-05-10 05:30",
+    "delay_min": 62,
+    "rsi_5dk": 20,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 2.13,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 10
+    }
+  },
+  {
+    "coin": "THETAUSDT",
+    "rsi_ts": "2026-05-10 04:36",
+    "ei_ts": "2026-05-10 08:30",
+    "delay_min": 234,
+    "rsi_5dk": 16,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 7
+    }
+  },
+  {
+    "coin": "THETAUSDT",
+    "rsi_ts": "2026-05-10 04:40",
+    "ei_ts": "2026-05-10 08:30",
+    "delay_min": 230,
+    "rsi_5dk": 18,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 7
+    }
+  },
+  {
+    "coin": "THETAUSDT",
+    "rsi_ts": "2026-05-10 04:48",
+    "ei_ts": "2026-05-10 08:30",
+    "delay_min": 222,
+    "rsi_5dk": 20,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 7
+    }
+  },
+  {
+    "coin": "THETAUSDT",
+    "rsi_ts": "2026-05-10 04:52",
+    "ei_ts": "2026-05-10 08:30",
+    "delay_min": 218,
+    "rsi_5dk": 20,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 7
+    }
+  },
+  {
+    "coin": "DOGSUSDT",
+    "rsi_ts": "2026-05-10 05:08",
+    "ei_ts": "2026-05-10 06:30",
+    "delay_min": 82,
+    "rsi_5dk": 16,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 6
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "DOGSUSDT",
+    "rsi_ts": "2026-05-10 05:12",
+    "ei_ts": "2026-05-10 06:30",
+    "delay_min": 78,
+    "rsi_5dk": 17,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 6
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "DOGSUSDT",
+    "rsi_ts": "2026-05-10 05:16",
+    "ei_ts": "2026-05-10 06:30",
+    "delay_min": 74,
+    "rsi_5dk": 19,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 6
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "THETAUSDT",
+    "rsi_ts": "2026-05-10 21:27",
+    "ei_ts": "2026-05-11 01:15",
+    "delay_min": 228,
+    "rsi_5dk": 91,
+    "rsi_15dk": 93,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 2
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "ORDIUSDT",
+    "rsi_ts": "2026-05-10 23:49",
+    "ei_ts": "2026-05-11 01:30",
+    "delay_min": 101,
+    "rsi_5dk": 14,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 2
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "MERLUSDT",
+    "rsi_ts": "2026-05-11 07:03",
+    "ei_ts": "2026-05-11 08:30",
+    "delay_min": 87,
+    "rsi_5dk": 19,
+    "rsi_15dk": 20,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 15
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "JUPUSDT",
+    "rsi_ts": "2026-05-11 16:39",
+    "ei_ts": "2026-05-11 19:15",
+    "delay_min": 156,
+    "rsi_5dk": 13,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 4
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "JUPUSDT",
+    "rsi_ts": "2026-05-11 16:43",
+    "ei_ts": "2026-05-11 19:15",
+    "delay_min": 152,
+    "rsi_5dk": 19,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 4
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "JUPUSDT",
+    "rsi_ts": "2026-05-11 16:47",
+    "ei_ts": "2026-05-11 19:15",
+    "delay_min": 148,
+    "rsi_5dk": 11,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 4
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "JUPUSDT",
+    "rsi_ts": "2026-05-11 16:51",
+    "ei_ts": "2026-05-11 19:15",
+    "delay_min": 144,
+    "rsi_5dk": 14,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 4
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "JUPUSDT",
+    "rsi_ts": "2026-05-11 16:55",
+    "ei_ts": "2026-05-11 19:15",
+    "delay_min": 140,
+    "rsi_5dk": 11,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 4
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "JUPUSDT",
+    "rsi_ts": "2026-05-11 16:59",
+    "ei_ts": "2026-05-11 19:15",
+    "delay_min": 136,
+    "rsi_5dk": 11,
+    "rsi_15dk": 15,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 4
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "JUPUSDT",
+    "rsi_ts": "2026-05-11 17:31",
+    "ei_ts": "2026-05-11 19:15",
+    "delay_min": 104,
+    "rsi_5dk": 19,
+    "rsi_15dk": 15,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 4
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "JUPUSDT",
+    "rsi_ts": "2026-05-11 17:35",
+    "ei_ts": "2026-05-11 19:15",
+    "delay_min": 100,
+    "rsi_5dk": 19,
+    "rsi_15dk": 15,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 4
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "JUPUSDT",
+    "rsi_ts": "2026-05-11 18:19",
+    "ei_ts": "2026-05-11 20:00",
+    "delay_min": 101,
+    "rsi_5dk": 19,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 12
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "JUPUSDT",
+    "rsi_ts": "2026-05-11 18:23",
+    "ei_ts": "2026-05-11 20:00",
+    "delay_min": 97,
+    "rsi_5dk": 19,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 12
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-12 04:36",
+    "ei_ts": "2026-05-12 07:45",
+    "delay_min": 189,
+    "rsi_5dk": 15,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 4
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-12 04:40",
+    "ei_ts": "2026-05-12 07:45",
+    "delay_min": 185,
+    "rsi_5dk": 12,
+    "rsi_15dk": 15,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 4
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "RENDERUSDT",
+    "rsi_ts": "2026-05-12 04:40",
+    "ei_ts": "2026-05-12 08:30",
+    "delay_min": 230,
+    "rsi_5dk": 17,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 6
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 4
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-12 04:44",
+    "ei_ts": "2026-05-12 07:45",
+    "delay_min": 181,
+    "rsi_5dk": 11,
+    "rsi_15dk": 15,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 4
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "RENDERUSDT",
+    "rsi_ts": "2026-05-12 04:44",
+    "ei_ts": "2026-05-12 08:30",
+    "delay_min": 226,
+    "rsi_5dk": 17,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 6
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 4
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-12 04:48",
+    "ei_ts": "2026-05-12 07:45",
+    "delay_min": 177,
+    "rsi_5dk": 16,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 4
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-12 04:52",
+    "ei_ts": "2026-05-12 07:45",
+    "delay_min": 173,
+    "rsi_5dk": 16,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 4
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-12 04:56",
+    "ei_ts": "2026-05-12 07:45",
+    "delay_min": 169,
+    "rsi_5dk": 15,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 4
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-12 05:00",
+    "ei_ts": "2026-05-12 07:45",
+    "delay_min": 165,
+    "rsi_5dk": 17,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 4
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-12 14:25",
+    "ei_ts": "2026-05-12 18:00",
+    "delay_min": 215,
+    "rsi_5dk": 9,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 21
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 10
+    }
+  },
+  {
+    "coin": "KNCUSDT",
+    "rsi_ts": "2026-05-12 17:32",
+    "ei_ts": "2026-05-12 20:45",
+    "delay_min": 193,
+    "rsi_5dk": 18,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 18
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 6
+    }
+  },
+  {
+    "coin": "AAVEUSDT",
+    "rsi_ts": "2026-05-12 17:36",
+    "ei_ts": "2026-05-12 19:30",
+    "delay_min": 114,
+    "rsi_5dk": 16,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 20
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "AAVEUSDT",
+    "rsi_ts": "2026-05-12 17:40",
+    "ei_ts": "2026-05-12 19:30",
+    "delay_min": 110,
+    "rsi_5dk": 17,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 20
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "AAVEUSDT",
+    "rsi_ts": "2026-05-12 17:52",
+    "ei_ts": "2026-05-12 19:30",
+    "delay_min": 98,
+    "rsi_5dk": 19,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 20
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "AAVEUSDT",
+    "rsi_ts": "2026-05-12 17:56",
+    "ei_ts": "2026-05-12 19:30",
+    "delay_min": 94,
+    "rsi_5dk": 19,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 20
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "AAVEUSDT",
+    "rsi_ts": "2026-05-12 18:25",
+    "ei_ts": "2026-05-12 19:30",
+    "delay_min": 65,
+    "rsi_5dk": 18,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 20
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "COMPUSDT",
+    "rsi_ts": "2026-05-13 16:46",
+    "ei_ts": "2026-05-13 19:45",
+    "delay_min": 179,
+    "rsi_5dk": 20,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 8
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 8
+    }
+  },
+  {
+    "coin": "GMTUSDT",
+    "rsi_ts": "2026-05-13 17:44",
+    "ei_ts": "2026-05-13 21:15",
+    "delay_min": 211,
+    "rsi_5dk": 19,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "OPUSDT",
+    "rsi_ts": "2026-05-13 18:12",
+    "ei_ts": "2026-05-13 20:15",
+    "delay_min": 123,
+    "rsi_5dk": 18,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 15
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 7
+    }
+  },
+  {
+    "coin": "OPUSDT",
+    "rsi_ts": "2026-05-13 18:16",
+    "ei_ts": "2026-05-13 20:15",
+    "delay_min": 119,
+    "rsi_5dk": 20,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 15
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 7
+    }
+  },
+  {
+    "coin": "OPUSDT",
+    "rsi_ts": "2026-05-13 18:24",
+    "ei_ts": "2026-05-13 20:15",
+    "delay_min": 111,
+    "rsi_5dk": 19,
+    "rsi_15dk": 15,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 15
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 7
+    }
+  },
+  {
+    "coin": "KNCUSDT",
+    "rsi_ts": "2026-05-13 18:28",
+    "ei_ts": "2026-05-13 21:15",
+    "delay_min": 167,
+    "rsi_5dk": 20,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 4.12,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 5
+    }
+  },
+  {
+    "coin": "KNCUSDT",
+    "rsi_ts": "2026-05-13 18:32",
+    "ei_ts": "2026-05-13 21:15",
+    "delay_min": 163,
+    "rsi_5dk": 20,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 4.12,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 5
+    }
+  },
+  {
+    "coin": "SNXUSDT",
+    "rsi_ts": "2026-05-13 18:37",
+    "ei_ts": "2026-05-13 21:00",
+    "delay_min": 143,
+    "rsi_5dk": 20,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 3.57,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "KNCUSDT",
+    "rsi_ts": "2026-05-13 18:41",
+    "ei_ts": "2026-05-13 21:15",
+    "delay_min": 154,
+    "rsi_5dk": 20,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 4.12,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 5
+    }
+  },
+  {
+    "coin": "SNXUSDT",
+    "rsi_ts": "2026-05-13 18:49",
+    "ei_ts": "2026-05-13 21:00",
+    "delay_min": 131,
+    "rsi_5dk": 16,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 3.57,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "SNXUSDT",
+    "rsi_ts": "2026-05-13 18:53",
+    "ei_ts": "2026-05-13 21:00",
+    "delay_min": 127,
+    "rsi_5dk": 19,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 3.57,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "SNXUSDT",
+    "rsi_ts": "2026-05-13 18:57",
+    "ei_ts": "2026-05-13 21:00",
+    "delay_min": 123,
+    "rsi_5dk": 14,
+    "rsi_15dk": 13,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 3.57,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "BTCUSDT",
+    "rsi_ts": "2026-05-13 19:01",
+    "ei_ts": "2026-05-13 20:30",
+    "delay_min": 89,
+    "rsi_5dk": 16,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 6.39,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 18
+    }
+  },
+  {
+    "coin": "SNXUSDT",
+    "rsi_ts": "2026-05-13 19:09",
+    "ei_ts": "2026-05-13 21:00",
+    "delay_min": 111,
+    "rsi_5dk": 18,
+    "rsi_15dk": 12,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 3.57,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "SUNUSDT",
+    "rsi_ts": "2026-05-15 06:09",
+    "ei_ts": "2026-05-15 08:30",
+    "delay_min": 141,
+    "rsi_5dk": 17,
+    "rsi_15dk": 20,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -2.86,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TIMEOUT",
+      "roe": -5.73,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "SUNUSDT",
+    "rsi_ts": "2026-05-15 06:13",
+    "ei_ts": "2026-05-15 08:30",
+    "delay_min": 137,
+    "rsi_5dk": 15,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -2.86,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TIMEOUT",
+      "roe": -5.73,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "SUNUSDT",
+    "rsi_ts": "2026-05-15 06:17",
+    "ei_ts": "2026-05-15 08:30",
+    "delay_min": 133,
+    "rsi_5dk": 14,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -2.86,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TIMEOUT",
+      "roe": -5.73,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "SUNUSDT",
+    "rsi_ts": "2026-05-15 06:20",
+    "ei_ts": "2026-05-15 08:30",
+    "delay_min": 130,
+    "rsi_5dk": 11,
+    "rsi_15dk": 15,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -2.86,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TIMEOUT",
+      "roe": -5.73,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "SUNUSDT",
+    "rsi_ts": "2026-05-15 06:24",
+    "ei_ts": "2026-05-15 08:30",
+    "delay_min": 126,
+    "rsi_5dk": 11,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -2.86,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TIMEOUT",
+      "roe": -5.73,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "SUNUSDT",
+    "rsi_ts": "2026-05-15 06:28",
+    "ei_ts": "2026-05-15 08:30",
+    "delay_min": 122,
+    "rsi_5dk": 10,
+    "rsi_15dk": 13,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -2.86,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TIMEOUT",
+      "roe": -5.73,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "SUNUSDT",
+    "rsi_ts": "2026-05-15 06:32",
+    "ei_ts": "2026-05-15 08:30",
+    "delay_min": 118,
+    "rsi_5dk": 9,
+    "rsi_15dk": 13,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -2.86,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TIMEOUT",
+      "roe": -5.73,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "SUNUSDT",
+    "rsi_ts": "2026-05-15 06:36",
+    "ei_ts": "2026-05-15 08:30",
+    "delay_min": 114,
+    "rsi_5dk": 8,
+    "rsi_15dk": 12,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -2.86,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TIMEOUT",
+      "roe": -5.73,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "SUNUSDT",
+    "rsi_ts": "2026-05-15 06:40",
+    "ei_ts": "2026-05-15 08:30",
+    "delay_min": 110,
+    "rsi_5dk": 12,
+    "rsi_15dk": 13,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -2.86,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TIMEOUT",
+      "roe": -5.73,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "SUNUSDT",
+    "rsi_ts": "2026-05-15 06:44",
+    "ei_ts": "2026-05-15 08:30",
+    "delay_min": 106,
+    "rsi_5dk": 11,
+    "rsi_15dk": 13,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -2.86,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TIMEOUT",
+      "roe": -5.73,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "SUNUSDT",
+    "rsi_ts": "2026-05-15 06:48",
+    "ei_ts": "2026-05-15 08:30",
+    "delay_min": 102,
+    "rsi_5dk": 9,
+    "rsi_15dk": 11,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -2.86,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TIMEOUT",
+      "roe": -5.73,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "SUNUSDT",
+    "rsi_ts": "2026-05-15 06:52",
+    "ei_ts": "2026-05-15 08:30",
+    "delay_min": 98,
+    "rsi_5dk": 9,
+    "rsi_15dk": 11,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -2.86,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TIMEOUT",
+      "roe": -5.73,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "SUNUSDT",
+    "rsi_ts": "2026-05-15 06:56",
+    "ei_ts": "2026-05-15 08:30",
+    "delay_min": 94,
+    "rsi_5dk": 12,
+    "rsi_15dk": 11,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -2.86,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TIMEOUT",
+      "roe": -5.73,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "SUNUSDT",
+    "rsi_ts": "2026-05-15 06:59",
+    "ei_ts": "2026-05-15 08:30",
+    "delay_min": 91,
+    "rsi_5dk": 16,
+    "rsi_15dk": 12,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -2.86,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TIMEOUT",
+      "roe": -5.73,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "SUNUSDT",
+    "rsi_ts": "2026-05-15 07:11",
+    "ei_ts": "2026-05-15 08:30",
+    "delay_min": 79,
+    "rsi_5dk": 17,
+    "rsi_15dk": 10,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -2.86,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TIMEOUT",
+      "roe": -5.73,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "SUNUSDT",
+    "rsi_ts": "2026-05-15 07:15",
+    "ei_ts": "2026-05-15 08:30",
+    "delay_min": 75,
+    "rsi_5dk": 16,
+    "rsi_15dk": 10,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -2.86,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TIMEOUT",
+      "roe": -5.73,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "SUNUSDT",
+    "rsi_ts": "2026-05-15 07:19",
+    "ei_ts": "2026-05-15 08:30",
+    "delay_min": 71,
+    "rsi_5dk": 16,
+    "rsi_15dk": 10,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -2.86,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TIMEOUT",
+      "roe": -5.73,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "SUNUSDT",
+    "rsi_ts": "2026-05-15 07:26",
+    "ei_ts": "2026-05-15 08:30",
+    "delay_min": 64,
+    "rsi_5dk": 18,
+    "rsi_15dk": 9,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -2.86,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TIMEOUT",
+      "roe": -5.73,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "APTUSDT",
+    "rsi_ts": "2026-05-15 08:33",
+    "ei_ts": "2026-05-15 09:45",
+    "delay_min": 72,
+    "rsi_5dk": 15,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 4
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 4
+    }
+  },
+  {
+    "coin": "CRVUSDT",
+    "rsi_ts": "2026-05-15 08:41",
+    "ei_ts": "2026-05-15 10:00",
+    "delay_min": 79,
+    "rsi_5dk": 19,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 3
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "ORDIUSDT",
+    "rsi_ts": "2026-05-15 08:41",
+    "ei_ts": "2026-05-15 10:00",
+    "delay_min": 79,
+    "rsi_5dk": 20,
+    "rsi_15dk": 20,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 3
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "CRVUSDT",
+    "rsi_ts": "2026-05-15 08:45",
+    "ei_ts": "2026-05-15 10:00",
+    "delay_min": 75,
+    "rsi_5dk": 18,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 3
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "ZKUSDT",
+    "rsi_ts": "2026-05-15 08:57",
+    "ei_ts": "2026-05-15 10:30",
+    "delay_min": 93,
+    "rsi_5dk": 20,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 3
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "RUNEUSDT",
+    "rsi_ts": "2026-05-15 12:06",
+    "ei_ts": "2026-05-15 14:45",
+    "delay_min": 159,
+    "rsi_5dk": 19,
+    "rsi_15dk": 20,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 3
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "RUNEUSDT",
+    "rsi_ts": "2026-05-15 12:10",
+    "ei_ts": "2026-05-15 14:45",
+    "delay_min": 155,
+    "rsi_5dk": 16,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 3
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "RUNEUSDT",
+    "rsi_ts": "2026-05-15 12:14",
+    "ei_ts": "2026-05-15 14:45",
+    "delay_min": 151,
+    "rsi_5dk": 15,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 3
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "RUNEUSDT",
+    "rsi_ts": "2026-05-15 12:18",
+    "ei_ts": "2026-05-15 14:45",
+    "delay_min": 147,
+    "rsi_5dk": 14,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 3
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "RUNEUSDT",
+    "rsi_ts": "2026-05-15 12:22",
+    "ei_ts": "2026-05-15 14:45",
+    "delay_min": 143,
+    "rsi_5dk": 11,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 3
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "RUNEUSDT",
+    "rsi_ts": "2026-05-15 12:26",
+    "ei_ts": "2026-05-15 14:45",
+    "delay_min": 139,
+    "rsi_5dk": 9,
+    "rsi_15dk": 12,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 3
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "RUNEUSDT",
+    "rsi_ts": "2026-05-15 12:30",
+    "ei_ts": "2026-05-15 14:45",
+    "delay_min": 135,
+    "rsi_5dk": 6,
+    "rsi_15dk": 10,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 3
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "RUNEUSDT",
+    "rsi_ts": "2026-05-15 12:34",
+    "ei_ts": "2026-05-15 14:45",
+    "delay_min": 131,
+    "rsi_5dk": 14,
+    "rsi_15dk": 15,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 3
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "RUNEUSDT",
+    "rsi_ts": "2026-05-15 12:38",
+    "ei_ts": "2026-05-15 14:45",
+    "delay_min": 127,
+    "rsi_5dk": 4,
+    "rsi_15dk": 8,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 3
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "RUNEUSDT",
+    "rsi_ts": "2026-05-15 12:42",
+    "ei_ts": "2026-05-15 14:45",
+    "delay_min": 123,
+    "rsi_5dk": 4,
+    "rsi_15dk": 6,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 3
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "RUNEUSDT",
+    "rsi_ts": "2026-05-15 12:46",
+    "ei_ts": "2026-05-15 14:45",
+    "delay_min": 119,
+    "rsi_5dk": 18,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 3
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "RUNEUSDT",
+    "rsi_ts": "2026-05-15 12:50",
+    "ei_ts": "2026-05-15 14:45",
+    "delay_min": 115,
+    "rsi_5dk": 16,
+    "rsi_15dk": 15,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 3
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "RUNEUSDT",
+    "rsi_ts": "2026-05-15 12:54",
+    "ei_ts": "2026-05-15 14:45",
+    "delay_min": 111,
+    "rsi_5dk": 18,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 3
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "RUNEUSDT",
+    "rsi_ts": "2026-05-15 12:58",
+    "ei_ts": "2026-05-15 14:45",
+    "delay_min": 107,
+    "rsi_5dk": 17,
+    "rsi_15dk": 13,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 3
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "RUNEUSDT",
+    "rsi_ts": "2026-05-15 13:14",
+    "ei_ts": "2026-05-15 14:45",
+    "delay_min": 91,
+    "rsi_5dk": 19,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 3
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "BTCUSDT",
+    "rsi_ts": "2026-05-15 16:44",
+    "ei_ts": "2026-05-15 20:30",
+    "delay_min": 226,
+    "rsi_5dk": 13,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -3.19,
+      "bars": 24
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 14
+    }
+  },
+  {
+    "coin": "BTCUSDT",
+    "rsi_ts": "2026-05-15 16:48",
+    "ei_ts": "2026-05-15 20:30",
+    "delay_min": 222,
+    "rsi_5dk": 14,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -3.19,
+      "bars": 24
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 14
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-15 17:09",
+    "ei_ts": "2026-05-15 19:30",
+    "delay_min": 141,
+    "rsi_5dk": 17,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 14
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 14
+    }
+  },
+  {
+    "coin": "SEIUSDT",
+    "rsi_ts": "2026-05-15 17:09",
+    "ei_ts": "2026-05-15 19:30",
+    "delay_min": 141,
+    "rsi_5dk": 16,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 11
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 9
+    }
+  },
+  {
+    "coin": "SEIUSDT",
+    "rsi_ts": "2026-05-15 17:13",
+    "ei_ts": "2026-05-15 19:30",
+    "delay_min": 137,
+    "rsi_5dk": 20,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 11
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 9
+    }
+  },
+  {
+    "coin": "MERLUSDT",
+    "rsi_ts": "2026-05-15 17:55",
+    "ei_ts": "2026-05-15 19:45",
+    "delay_min": 110,
+    "rsi_5dk": 18,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 5
+    }
+  },
+  {
+    "coin": "MERLUSDT",
+    "rsi_ts": "2026-05-15 18:03",
+    "ei_ts": "2026-05-15 19:45",
+    "delay_min": 102,
+    "rsi_5dk": 17,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 5
+    }
+  },
+  {
+    "coin": "MERLUSDT",
+    "rsi_ts": "2026-05-15 18:07",
+    "ei_ts": "2026-05-15 19:45",
+    "delay_min": 98,
+    "rsi_5dk": 14,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 5
+    }
+  },
+  {
+    "coin": "MERLUSDT",
+    "rsi_ts": "2026-05-15 18:11",
+    "ei_ts": "2026-05-15 19:45",
+    "delay_min": 94,
+    "rsi_5dk": 16,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 5
+    }
+  },
+  {
+    "coin": "MERLUSDT",
+    "rsi_ts": "2026-05-15 18:16",
+    "ei_ts": "2026-05-15 19:45",
+    "delay_min": 89,
+    "rsi_5dk": 16,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 5
+    }
+  },
+  {
+    "coin": "MERLUSDT",
+    "rsi_ts": "2026-05-15 18:20",
+    "ei_ts": "2026-05-15 19:45",
+    "delay_min": 85,
+    "rsi_5dk": 13,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 5
+    }
+  },
+  {
+    "coin": "MERLUSDT",
+    "rsi_ts": "2026-05-15 18:24",
+    "ei_ts": "2026-05-15 19:45",
+    "delay_min": 81,
+    "rsi_5dk": 13,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 5
+    }
+  },
+  {
+    "coin": "MERLUSDT",
+    "rsi_ts": "2026-05-15 18:28",
+    "ei_ts": "2026-05-15 19:45",
+    "delay_min": 77,
+    "rsi_5dk": 13,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 5
+    }
+  },
+  {
+    "coin": "MERLUSDT",
+    "rsi_ts": "2026-05-15 18:32",
+    "ei_ts": "2026-05-15 19:45",
+    "delay_min": 73,
+    "rsi_5dk": 13,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 5
+    }
+  },
+  {
+    "coin": "MERLUSDT",
+    "rsi_ts": "2026-05-15 18:36",
+    "ei_ts": "2026-05-15 19:45",
+    "delay_min": 69,
+    "rsi_5dk": 13,
+    "rsi_15dk": 15,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 5
+    }
+  },
+  {
+    "coin": "MERLUSDT",
+    "rsi_ts": "2026-05-15 18:40",
+    "ei_ts": "2026-05-15 19:45",
+    "delay_min": 65,
+    "rsi_5dk": 15,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 5
+    }
+  },
+  {
+    "coin": "MERLUSDT",
+    "rsi_ts": "2026-05-15 18:45",
+    "ei_ts": "2026-05-15 19:45",
+    "delay_min": 60,
+    "rsi_5dk": 14,
+    "rsi_15dk": 15,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 5
+    }
+  },
+  {
+    "coin": "BNBUSDT",
+    "rsi_ts": "2026-05-16 07:06",
+    "ei_ts": "2026-05-16 08:30",
+    "delay_min": 84,
+    "rsi_5dk": 15,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -3.4,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TIMEOUT",
+      "roe": -6.79,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "BNBUSDT",
+    "rsi_ts": "2026-05-16 07:09",
+    "ei_ts": "2026-05-16 08:30",
+    "delay_min": 81,
+    "rsi_5dk": 16,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -3.4,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TIMEOUT",
+      "roe": -6.79,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "BNBUSDT",
+    "rsi_ts": "2026-05-16 07:13",
+    "ei_ts": "2026-05-16 08:30",
+    "delay_min": 77,
+    "rsi_5dk": 14,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -3.4,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TIMEOUT",
+      "roe": -6.79,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "BNBUSDT",
+    "rsi_ts": "2026-05-16 07:17",
+    "ei_ts": "2026-05-16 08:30",
+    "delay_min": 73,
+    "rsi_5dk": 16,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -3.4,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TIMEOUT",
+      "roe": -6.79,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "BNBUSDT",
+    "rsi_ts": "2026-05-16 07:21",
+    "ei_ts": "2026-05-16 08:30",
+    "delay_min": 69,
+    "rsi_5dk": 16,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -3.4,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TIMEOUT",
+      "roe": -6.79,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "ETHUSDT",
+    "rsi_ts": "2026-05-16 10:20",
+    "ei_ts": "2026-05-16 14:15",
+    "delay_min": 235,
+    "rsi_5dk": 19,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 0.97,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TP1_TIMEOUT",
+      "roe": 1.93,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "DOTUSDT",
+    "rsi_ts": "2026-05-16 10:27",
+    "ei_ts": "2026-05-16 14:15",
+    "delay_min": 228,
+    "rsi_5dk": 19,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 0.95,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "ETHUSDT",
+    "rsi_ts": "2026-05-16 10:32",
+    "ei_ts": "2026-05-16 14:15",
+    "delay_min": 223,
+    "rsi_5dk": 19,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 0.97,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TP1_TIMEOUT",
+      "roe": 1.93,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "BIGTIMEUSDT",
+    "rsi_ts": "2026-05-16 10:32",
+    "ei_ts": "2026-05-16 14:15",
+    "delay_min": 223,
+    "rsi_5dk": 19,
+    "rsi_15dk": 11,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 0.0,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "ETHUSDT",
+    "rsi_ts": "2026-05-16 12:19",
+    "ei_ts": "2026-05-16 14:15",
+    "delay_min": 116,
+    "rsi_5dk": 13,
+    "rsi_15dk": 13,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 0.97,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TP1_TIMEOUT",
+      "roe": 1.93,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "ETHUSDT",
+    "rsi_ts": "2026-05-16 12:23",
+    "ei_ts": "2026-05-16 14:15",
+    "delay_min": 112,
+    "rsi_5dk": 15,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 0.97,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TP1_TIMEOUT",
+      "roe": 1.93,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "ETHUSDT",
+    "rsi_ts": "2026-05-16 12:28",
+    "ei_ts": "2026-05-16 14:15",
+    "delay_min": 107,
+    "rsi_5dk": 20,
+    "rsi_15dk": 15,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 0.97,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TP1_TIMEOUT",
+      "roe": 1.93,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "SOLUSDT",
+    "rsi_ts": "2026-05-16 12:32",
+    "ei_ts": "2026-05-16 14:45",
+    "delay_min": 133,
+    "rsi_5dk": 18,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -0.35,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 15
+    }
+  },
+  {
+    "coin": "RUNEUSDT",
+    "rsi_ts": "2026-05-16 14:43",
+    "ei_ts": "2026-05-16 18:15",
+    "delay_min": 212,
+    "rsi_5dk": 20,
+    "rsi_15dk": 15,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 1
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "RUNEUSDT",
+    "rsi_ts": "2026-05-16 14:47",
+    "ei_ts": "2026-05-16 18:15",
+    "delay_min": 208,
+    "rsi_5dk": 18,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 1
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "RUNEUSDT",
+    "rsi_ts": "2026-05-16 14:51",
+    "ei_ts": "2026-05-16 18:15",
+    "delay_min": 204,
+    "rsi_5dk": 19,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 1
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "RUNEUSDT",
+    "rsi_ts": "2026-05-16 14:55",
+    "ei_ts": "2026-05-16 18:15",
+    "delay_min": 200,
+    "rsi_5dk": 18,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 1
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "RUNEUSDT",
+    "rsi_ts": "2026-05-16 15:03",
+    "ei_ts": "2026-05-16 18:15",
+    "delay_min": 192,
+    "rsi_5dk": 16,
+    "rsi_15dk": 13,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 1
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "RUNEUSDT",
+    "rsi_ts": "2026-05-16 15:07",
+    "ei_ts": "2026-05-16 18:15",
+    "delay_min": 188,
+    "rsi_5dk": 16,
+    "rsi_15dk": 13,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 1
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "THETAUSDT",
+    "rsi_ts": "2026-05-17 04:28",
+    "ei_ts": "2026-05-17 07:30",
+    "delay_min": 182,
+    "rsi_5dk": 14,
+    "rsi_15dk": 20,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "THETAUSDT",
+    "rsi_ts": "2026-05-17 04:33",
+    "ei_ts": "2026-05-17 07:30",
+    "delay_min": 177,
+    "rsi_5dk": 14,
+    "rsi_15dk": 20,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "THETAUSDT",
+    "rsi_ts": "2026-05-17 04:36",
+    "ei_ts": "2026-05-17 07:30",
+    "delay_min": 174,
+    "rsi_5dk": 12,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "THETAUSDT",
+    "rsi_ts": "2026-05-17 04:40",
+    "ei_ts": "2026-05-17 07:30",
+    "delay_min": 170,
+    "rsi_5dk": 13,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "THETAUSDT",
+    "rsi_ts": "2026-05-17 04:44",
+    "ei_ts": "2026-05-17 07:30",
+    "delay_min": 166,
+    "rsi_5dk": 15,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "ACTUSDT",
+    "rsi_ts": "2026-05-17 04:49",
+    "ei_ts": "2026-05-17 06:15",
+    "delay_min": 86,
+    "rsi_5dk": 17,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 17
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 10
+    }
+  },
+  {
+    "coin": "1000SHIBUSDT",
+    "rsi_ts": "2026-05-17 04:52",
+    "ei_ts": "2026-05-17 06:30",
+    "delay_min": 98,
+    "rsi_5dk": 18,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 17
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 17
+    }
+  },
+  {
+    "coin": "STXUSDT",
+    "rsi_ts": "2026-05-17 04:56",
+    "ei_ts": "2026-05-17 06:15",
+    "delay_min": 79,
+    "rsi_5dk": 18,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 17
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "1000SHIBUSDT",
+    "rsi_ts": "2026-05-17 05:00",
+    "ei_ts": "2026-05-17 06:30",
+    "delay_min": 90,
+    "rsi_5dk": 19,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 17
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 17
+    }
+  },
+  {
+    "coin": "BRETTUSDT",
+    "rsi_ts": "2026-05-17 05:01",
+    "ei_ts": "2026-05-17 06:30",
+    "delay_min": 89,
+    "rsi_5dk": 15,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "1000SHIBUSDT",
+    "rsi_ts": "2026-05-17 05:04",
+    "ei_ts": "2026-05-17 06:30",
+    "delay_min": 86,
+    "rsi_5dk": 16,
+    "rsi_15dk": 15,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 17
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 17
+    }
+  },
+  {
+    "coin": "1000BONKUSDT",
+    "rsi_ts": "2026-05-17 05:05",
+    "ei_ts": "2026-05-17 06:45",
+    "delay_min": 100,
+    "rsi_5dk": 20,
+    "rsi_15dk": 20,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 17
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 4
+    }
+  },
+  {
+    "coin": "STXUSDT",
+    "rsi_ts": "2026-05-17 05:08",
+    "ei_ts": "2026-05-17 06:15",
+    "delay_min": 67,
+    "rsi_5dk": 14,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 17
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "BRETTUSDT",
+    "rsi_ts": "2026-05-17 05:08",
+    "ei_ts": "2026-05-17 06:30",
+    "delay_min": 82,
+    "rsi_5dk": 17,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "STXUSDT",
+    "rsi_ts": "2026-05-17 05:12",
+    "ei_ts": "2026-05-17 06:15",
+    "delay_min": 63,
+    "rsi_5dk": 14,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 17
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "BRETTUSDT",
+    "rsi_ts": "2026-05-17 05:12",
+    "ei_ts": "2026-05-17 06:30",
+    "delay_min": 78,
+    "rsi_5dk": 17,
+    "rsi_15dk": 15,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "BRETTUSDT",
+    "rsi_ts": "2026-05-17 05:16",
+    "ei_ts": "2026-05-17 06:30",
+    "delay_min": 74,
+    "rsi_5dk": 16,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "BRETTUSDT",
+    "rsi_ts": "2026-05-17 05:20",
+    "ei_ts": "2026-05-17 06:30",
+    "delay_min": 70,
+    "rsi_5dk": 15,
+    "rsi_15dk": 13,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "BRETTUSDT",
+    "rsi_ts": "2026-05-17 05:24",
+    "ei_ts": "2026-05-17 06:30",
+    "delay_min": 66,
+    "rsi_5dk": 13,
+    "rsi_15dk": 12,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "BRETTUSDT",
+    "rsi_ts": "2026-05-17 05:28",
+    "ei_ts": "2026-05-17 06:30",
+    "delay_min": 62,
+    "rsi_5dk": 15,
+    "rsi_15dk": 12,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "MANTAUSDT",
+    "rsi_ts": "2026-05-17 19:08",
+    "ei_ts": "2026-05-17 21:45",
+    "delay_min": 157,
+    "rsi_5dk": 90,
+    "rsi_15dk": 90,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 2
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "CRVUSDT",
+    "rsi_ts": "2026-05-17 20:37",
+    "ei_ts": "2026-05-17 22:00",
+    "delay_min": 83,
+    "rsi_5dk": 16,
+    "rsi_15dk": 20,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 1
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "CRVUSDT",
+    "rsi_ts": "2026-05-17 20:41",
+    "ei_ts": "2026-05-17 22:00",
+    "delay_min": 79,
+    "rsi_5dk": 16,
+    "rsi_15dk": 20,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 1
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "ETHUSDT",
+    "rsi_ts": "2026-05-18 02:50",
+    "ei_ts": "2026-05-18 05:15",
+    "delay_min": 145,
+    "rsi_5dk": 14,
+    "rsi_15dk": 13,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 2.51,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 7
+    }
+  },
+  {
+    "coin": "SEIUSDT",
+    "rsi_ts": "2026-05-18 02:50",
+    "ei_ts": "2026-05-18 05:15",
+    "delay_min": 145,
+    "rsi_5dk": 15,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 1.98,
+      "bars": 24
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 10
+    }
+  },
+  {
+    "coin": "ETHUSDT",
+    "rsi_ts": "2026-05-18 02:54",
+    "ei_ts": "2026-05-18 05:15",
+    "delay_min": 141,
+    "rsi_5dk": 17,
+    "rsi_15dk": 15,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 2.51,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 7
+    }
+  },
+  {
+    "coin": "ETHUSDT",
+    "rsi_ts": "2026-05-18 03:10",
+    "ei_ts": "2026-05-18 05:15",
+    "delay_min": 125,
+    "rsi_5dk": 19,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 2.51,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 7
+    }
+  },
+  {
+    "coin": "ETHUSDT",
+    "rsi_ts": "2026-05-18 03:14",
+    "ei_ts": "2026-05-18 05:15",
+    "delay_min": 121,
+    "rsi_5dk": 18,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 2.51,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 7
+    }
+  },
+  {
+    "coin": "ETHUSDT",
+    "rsi_ts": "2026-05-18 03:26",
+    "ei_ts": "2026-05-18 05:15",
+    "delay_min": 109,
+    "rsi_5dk": 19,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 2.51,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 7
+    }
+  },
+  {
+    "coin": "ETHUSDT",
+    "rsi_ts": "2026-05-18 03:30",
+    "ei_ts": "2026-05-18 05:15",
+    "delay_min": 105,
+    "rsi_5dk": 18,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 2.51,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 7
+    }
+  },
+  {
+    "coin": "ETHUSDT",
+    "rsi_ts": "2026-05-18 03:34",
+    "ei_ts": "2026-05-18 05:15",
+    "delay_min": 101,
+    "rsi_5dk": 20,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 2.51,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 7
+    }
+  },
+  {
+    "coin": "ETHUSDT",
+    "rsi_ts": "2026-05-18 03:42",
+    "ei_ts": "2026-05-18 05:15",
+    "delay_min": 93,
+    "rsi_5dk": 19,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 2.51,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 7
+    }
+  },
+  {
+    "coin": "ETHUSDT",
+    "rsi_ts": "2026-05-18 03:46",
+    "ei_ts": "2026-05-18 05:15",
+    "delay_min": 89,
+    "rsi_5dk": 18,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 2.51,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 7
+    }
+  },
+  {
+    "coin": "PYTHUSDT",
+    "rsi_ts": "2026-05-19 15:02",
+    "ei_ts": "2026-05-19 16:15",
+    "delay_min": 73,
+    "rsi_5dk": 19,
+    "rsi_15dk": 20,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 3
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "PYTHUSDT",
+    "rsi_ts": "2026-05-19 15:06",
+    "ei_ts": "2026-05-19 16:15",
+    "delay_min": 69,
+    "rsi_5dk": 19,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 3
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "PYTHUSDT",
+    "rsi_ts": "2026-05-19 15:10",
+    "ei_ts": "2026-05-19 16:15",
+    "delay_min": 65,
+    "rsi_5dk": 18,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 3
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "PYTHUSDT",
+    "rsi_ts": "2026-05-19 15:14",
+    "ei_ts": "2026-05-19 16:15",
+    "delay_min": 61,
+    "rsi_5dk": 12,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 3
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "PYTHUSDT",
+    "rsi_ts": "2026-05-19 17:45",
+    "ei_ts": "2026-05-19 19:30",
+    "delay_min": 105,
+    "rsi_5dk": 19,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 6
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "PYTHUSDT",
+    "rsi_ts": "2026-05-19 17:49",
+    "ei_ts": "2026-05-19 19:30",
+    "delay_min": 101,
+    "rsi_5dk": 18,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 6
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "PYTHUSDT",
+    "rsi_ts": "2026-05-19 17:57",
+    "ei_ts": "2026-05-19 19:30",
+    "delay_min": 93,
+    "rsi_5dk": 18,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 6
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "PYTHUSDT",
+    "rsi_ts": "2026-05-19 18:01",
+    "ei_ts": "2026-05-19 19:30",
+    "delay_min": 89,
+    "rsi_5dk": 16,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 6
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "PYTHUSDT",
+    "rsi_ts": "2026-05-19 18:10",
+    "ei_ts": "2026-05-19 19:30",
+    "delay_min": 80,
+    "rsi_5dk": 17,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 6
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "PYTHUSDT",
+    "rsi_ts": "2026-05-19 18:14",
+    "ei_ts": "2026-05-19 19:30",
+    "delay_min": 76,
+    "rsi_5dk": 16,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 6
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "PYTHUSDT",
+    "rsi_ts": "2026-05-19 18:26",
+    "ei_ts": "2026-05-19 19:30",
+    "delay_min": 64,
+    "rsi_5dk": 18,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 6
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "PYTHUSDT",
+    "rsi_ts": "2026-05-19 18:30",
+    "ei_ts": "2026-05-19 19:30",
+    "delay_min": 60,
+    "rsi_5dk": 18,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 6
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "ORDIUSDT",
+    "rsi_ts": "2026-05-21 13:32",
+    "ei_ts": "2026-05-21 15:45",
+    "delay_min": 133,
+    "rsi_5dk": 15,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 6
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "APEUSDT",
+    "rsi_ts": "2026-05-21 13:53",
+    "ei_ts": "2026-05-21 15:45",
+    "delay_min": 112,
+    "rsi_5dk": 16,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 22
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "APEUSDT",
+    "rsi_ts": "2026-05-21 13:57",
+    "ei_ts": "2026-05-21 15:45",
+    "delay_min": 108,
+    "rsi_5dk": 17,
+    "rsi_15dk": 20,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 22
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "APEUSDT",
+    "rsi_ts": "2026-05-21 14:01",
+    "ei_ts": "2026-05-21 15:45",
+    "delay_min": 104,
+    "rsi_5dk": 16,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 22
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "APEUSDT",
+    "rsi_ts": "2026-05-21 14:05",
+    "ei_ts": "2026-05-21 15:45",
+    "delay_min": 100,
+    "rsi_5dk": 18,
+    "rsi_15dk": 20,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 22
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "APEUSDT",
+    "rsi_ts": "2026-05-21 14:10",
+    "ei_ts": "2026-05-21 15:45",
+    "delay_min": 95,
+    "rsi_5dk": 16,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 22
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "CFXUSDT",
+    "rsi_ts": "2026-05-21 14:38",
+    "ei_ts": "2026-05-21 15:45",
+    "delay_min": 67,
+    "rsi_5dk": 18,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 16
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "CFXUSDT",
+    "rsi_ts": "2026-05-21 14:43",
+    "ei_ts": "2026-05-21 15:45",
+    "delay_min": 62,
+    "rsi_5dk": 20,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 16
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "SYNUSDT",
+    "rsi_ts": "2026-05-22 11:13",
+    "ei_ts": "2026-05-22 13:45",
+    "delay_min": 152,
+    "rsi_5dk": 7,
+    "rsi_15dk": 9,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 5
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "SYNUSDT",
+    "rsi_ts": "2026-05-22 11:29",
+    "ei_ts": "2026-05-22 13:45",
+    "delay_min": 136,
+    "rsi_5dk": 9,
+    "rsi_15dk": 7,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 5
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "SYNUSDT",
+    "rsi_ts": "2026-05-22 11:42",
+    "ei_ts": "2026-05-22 13:45",
+    "delay_min": 123,
+    "rsi_5dk": 17,
+    "rsi_15dk": 12,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 5
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "SANDUSDT",
+    "rsi_ts": "2026-05-22 21:47",
+    "ei_ts": "2026-05-23 00:00",
+    "delay_min": 133,
+    "rsi_5dk": 20,
+    "rsi_15dk": 20,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 7
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "PYTHUSDT",
+    "rsi_ts": "2026-05-22 21:48",
+    "ei_ts": "2026-05-23 00:30",
+    "delay_min": 162,
+    "rsi_5dk": 19,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 7
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 7
+    }
+  },
+  {
+    "coin": "PYTHUSDT",
+    "rsi_ts": "2026-05-22 21:52",
+    "ei_ts": "2026-05-23 00:30",
+    "delay_min": 158,
+    "rsi_5dk": 19,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 7
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 7
+    }
+  },
+  {
+    "coin": "ETHUSDT",
+    "rsi_ts": "2026-05-22 22:32",
+    "ei_ts": "2026-05-23 01:00",
+    "delay_min": 148,
+    "rsi_5dk": 19,
+    "rsi_15dk": 15,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 6
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 6
+    }
+  },
+  {
+    "coin": "ETHUSDT",
+    "rsi_ts": "2026-05-22 22:37",
+    "ei_ts": "2026-05-23 01:00",
+    "delay_min": 143,
+    "rsi_5dk": 20,
+    "rsi_15dk": 15,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 6
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 6
+    }
+  },
+  {
+    "coin": "ETHUSDT",
+    "rsi_ts": "2026-05-22 22:41",
+    "ei_ts": "2026-05-23 01:00",
+    "delay_min": 139,
+    "rsi_5dk": 19,
+    "rsi_15dk": 15,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 6
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 6
+    }
+  },
+  {
+    "coin": "ETHUSDT",
+    "rsi_ts": "2026-05-22 22:45",
+    "ei_ts": "2026-05-23 01:00",
+    "delay_min": 135,
+    "rsi_5dk": 16,
+    "rsi_15dk": 13,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 6
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 6
+    }
+  },
+  {
+    "coin": "THETAUSDT",
+    "rsi_ts": "2026-05-22 22:49",
+    "ei_ts": "2026-05-23 00:00",
+    "delay_min": 71,
+    "rsi_5dk": 20,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 7
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "ZETAUSDT",
+    "rsi_ts": "2026-05-22 22:49",
+    "ei_ts": "2026-05-23 00:00",
+    "delay_min": 71,
+    "rsi_5dk": 19,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 7
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "ETHUSDT",
+    "rsi_ts": "2026-05-22 22:53",
+    "ei_ts": "2026-05-23 01:00",
+    "delay_min": 127,
+    "rsi_5dk": 18,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 6
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 6
+    }
+  },
+  {
+    "coin": "THETAUSDT",
+    "rsi_ts": "2026-05-23 01:34",
+    "ei_ts": "2026-05-23 04:00",
+    "delay_min": 146,
+    "rsi_5dk": 20,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 3
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-23 02:34",
+    "ei_ts": "2026-05-23 04:30",
+    "delay_min": 116,
+    "rsi_5dk": 9,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 3
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-23 02:38",
+    "ei_ts": "2026-05-23 04:30",
+    "delay_min": 112,
+    "rsi_5dk": 11,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 3
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-23 02:42",
+    "ei_ts": "2026-05-23 04:30",
+    "delay_min": 108,
+    "rsi_5dk": 12,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 3
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-23 02:46",
+    "ei_ts": "2026-05-23 04:30",
+    "delay_min": 104,
+    "rsi_5dk": 10,
+    "rsi_15dk": 13,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 3
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-23 02:50",
+    "ei_ts": "2026-05-23 04:30",
+    "delay_min": 100,
+    "rsi_5dk": 10,
+    "rsi_15dk": 13,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 3
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-23 02:54",
+    "ei_ts": "2026-05-23 04:30",
+    "delay_min": 96,
+    "rsi_5dk": 9,
+    "rsi_15dk": 13,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 3
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-23 02:58",
+    "ei_ts": "2026-05-23 04:30",
+    "delay_min": 92,
+    "rsi_5dk": 13,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 3
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-23 03:02",
+    "ei_ts": "2026-05-23 04:30",
+    "delay_min": 88,
+    "rsi_5dk": 14,
+    "rsi_15dk": 15,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 3
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-23 03:06",
+    "ei_ts": "2026-05-23 04:30",
+    "delay_min": 84,
+    "rsi_5dk": 18,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 3
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "DOTUSDT",
+    "rsi_ts": "2026-05-23 10:47",
+    "ei_ts": "2026-05-23 14:30",
+    "delay_min": 223,
+    "rsi_5dk": 16,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 6
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "1000BONKUSDT",
+    "rsi_ts": "2026-05-23 10:48",
+    "ei_ts": "2026-05-23 13:15",
+    "delay_min": 147,
+    "rsi_5dk": 18,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 7
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "BTCUSDT",
+    "rsi_ts": "2026-05-23 11:00",
+    "ei_ts": "2026-05-23 13:45",
+    "delay_min": 165,
+    "rsi_5dk": 15,
+    "rsi_15dk": 12,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 6.16,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 5
+    }
+  },
+  {
+    "coin": "BTCUSDT",
+    "rsi_ts": "2026-05-23 11:04",
+    "ei_ts": "2026-05-23 13:45",
+    "delay_min": 161,
+    "rsi_5dk": 18,
+    "rsi_15dk": 13,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 6.16,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 5
+    }
+  },
+  {
+    "coin": "BTCUSDT",
+    "rsi_ts": "2026-05-23 11:12",
+    "ei_ts": "2026-05-23 13:45",
+    "delay_min": 153,
+    "rsi_5dk": 20,
+    "rsi_15dk": 13,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 6.16,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 5
+    }
+  },
+  {
+    "coin": "SOLUSDT",
+    "rsi_ts": "2026-05-23 11:16",
+    "ei_ts": "2026-05-23 13:15",
+    "delay_min": 119,
+    "rsi_5dk": 15,
+    "rsi_15dk": 11,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 8
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "AVAXUSDT",
+    "rsi_ts": "2026-05-23 11:24",
+    "ei_ts": "2026-05-23 13:15",
+    "delay_min": 111,
+    "rsi_5dk": 19,
+    "rsi_15dk": 10,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 7
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "AVAXUSDT",
+    "rsi_ts": "2026-05-23 11:28",
+    "ei_ts": "2026-05-23 13:15",
+    "delay_min": 107,
+    "rsi_5dk": 19,
+    "rsi_15dk": 10,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 7
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "AVAXUSDT",
+    "rsi_ts": "2026-05-23 11:32",
+    "ei_ts": "2026-05-23 13:15",
+    "delay_min": 103,
+    "rsi_5dk": 17,
+    "rsi_15dk": 10,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 7
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "AVAXUSDT",
+    "rsi_ts": "2026-05-23 11:36",
+    "ei_ts": "2026-05-23 13:15",
+    "delay_min": 99,
+    "rsi_5dk": 17,
+    "rsi_15dk": 9,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 7
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "AVAXUSDT",
+    "rsi_ts": "2026-05-23 11:40",
+    "ei_ts": "2026-05-23 13:15",
+    "delay_min": 95,
+    "rsi_5dk": 15,
+    "rsi_15dk": 9,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 7
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "AVAXUSDT",
+    "rsi_ts": "2026-05-23 11:44",
+    "ei_ts": "2026-05-23 13:15",
+    "delay_min": 91,
+    "rsi_5dk": 20,
+    "rsi_15dk": 9,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 7
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "GOATUSDT",
+    "rsi_ts": "2026-05-23 11:48",
+    "ei_ts": "2026-05-23 13:30",
+    "delay_min": 102,
+    "rsi_5dk": 20,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 7
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-23 13:01",
+    "ei_ts": "2026-05-23 16:30",
+    "delay_min": 209,
+    "rsi_5dk": 19,
+    "rsi_15dk": 12,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -0.19,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-23 13:05",
+    "ei_ts": "2026-05-23 16:30",
+    "delay_min": 205,
+    "rsi_5dk": 20,
+    "rsi_15dk": 13,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -0.19,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-23 13:09",
+    "ei_ts": "2026-05-23 16:30",
+    "delay_min": 201,
+    "rsi_5dk": 20,
+    "rsi_15dk": 13,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -0.19,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "MEWUSDT",
+    "rsi_ts": "2026-05-24 17:14",
+    "ei_ts": "2026-05-24 19:15",
+    "delay_min": 121,
+    "rsi_5dk": 19,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 2
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "LTCUSDT",
+    "rsi_ts": "2026-05-24 17:18",
+    "ei_ts": "2026-05-24 20:15",
+    "delay_min": 177,
+    "rsi_5dk": 12,
+    "rsi_15dk": 20,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 0.74,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 13
+    }
+  },
+  {
+    "coin": "LTCUSDT",
+    "rsi_ts": "2026-05-25 00:38",
+    "ei_ts": "2026-05-25 02:45",
+    "delay_min": 127,
+    "rsi_5dk": 16,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -2.0,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 6
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-25 00:47",
+    "ei_ts": "2026-05-25 02:45",
+    "delay_min": 118,
+    "rsi_5dk": 13,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 1.32,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-25 00:51",
+    "ei_ts": "2026-05-25 02:45",
+    "delay_min": 114,
+    "rsi_5dk": 12,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 1.32,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-25 00:55",
+    "ei_ts": "2026-05-25 02:45",
+    "delay_min": 110,
+    "rsi_5dk": 13,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 1.32,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "BCHUSDT",
+    "rsi_ts": "2026-05-25 00:59",
+    "ei_ts": "2026-05-25 02:45",
+    "delay_min": 106,
+    "rsi_5dk": 16,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 1.32,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "COMPUSDT",
+    "rsi_ts": "2026-05-25 10:15",
+    "ei_ts": "2026-05-25 13:30",
+    "delay_min": 195,
+    "rsi_5dk": 9,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 14
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "COMPUSDT",
+    "rsi_ts": "2026-05-25 10:31",
+    "ei_ts": "2026-05-25 13:30",
+    "delay_min": 179,
+    "rsi_5dk": 9,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 14
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "SNXUSDT",
+    "rsi_ts": "2026-05-25 17:49",
+    "ei_ts": "2026-05-25 21:00",
+    "delay_min": 191,
+    "rsi_5dk": 91,
+    "rsi_15dk": 91,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 4
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 4
+    }
+  },
+  {
+    "coin": "SNXUSDT",
+    "rsi_ts": "2026-05-25 17:53",
+    "ei_ts": "2026-05-25 21:00",
+    "delay_min": 187,
+    "rsi_5dk": 91,
+    "rsi_15dk": 91,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 4
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 4
+    }
+  },
+  {
+    "coin": "SNXUSDT",
+    "rsi_ts": "2026-05-25 17:57",
+    "ei_ts": "2026-05-25 21:00",
+    "delay_min": 183,
+    "rsi_5dk": 91,
+    "rsi_15dk": 91,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 4
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 4
+    }
+  },
+  {
+    "coin": "SNXUSDT",
+    "rsi_ts": "2026-05-25 18:01",
+    "ei_ts": "2026-05-25 21:00",
+    "delay_min": 179,
+    "rsi_5dk": 92,
+    "rsi_15dk": 91,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 4
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 4
+    }
+  },
+  {
+    "coin": "SNXUSDT",
+    "rsi_ts": "2026-05-25 18:05",
+    "ei_ts": "2026-05-25 21:00",
+    "delay_min": 175,
+    "rsi_5dk": 93,
+    "rsi_15dk": 92,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 4
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 4
+    }
+  },
+  {
+    "coin": "SNXUSDT",
+    "rsi_ts": "2026-05-25 18:13",
+    "ei_ts": "2026-05-25 21:00",
+    "delay_min": 167,
+    "rsi_5dk": 94,
+    "rsi_15dk": 92,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 4
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 4
+    }
+  },
+  {
+    "coin": "GMXUSDT",
+    "rsi_ts": "2026-05-25 23:41",
+    "ei_ts": "2026-05-26 02:30",
+    "delay_min": 169,
+    "rsi_5dk": 18,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 4.71,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "GMXUSDT",
+    "rsi_ts": "2026-05-25 23:45",
+    "ei_ts": "2026-05-26 02:30",
+    "delay_min": 165,
+    "rsi_5dk": 19,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 4.71,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "GMXUSDT",
+    "rsi_ts": "2026-05-25 23:53",
+    "ei_ts": "2026-05-26 02:30",
+    "delay_min": 157,
+    "rsi_5dk": 20,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 4.71,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "GMXUSDT",
+    "rsi_ts": "2026-05-25 23:57",
+    "ei_ts": "2026-05-26 02:30",
+    "delay_min": 153,
+    "rsi_5dk": 19,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 4.71,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "GMXUSDT",
+    "rsi_ts": "2026-05-26 00:01",
+    "ei_ts": "2026-05-26 02:30",
+    "delay_min": 149,
+    "rsi_5dk": 16,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 4.71,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "GMXUSDT",
+    "rsi_ts": "2026-05-26 00:05",
+    "ei_ts": "2026-05-26 02:30",
+    "delay_min": 145,
+    "rsi_5dk": 16,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 4.71,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "RUNEUSDT",
+    "rsi_ts": "2026-05-26 03:42",
+    "ei_ts": "2026-05-26 07:30",
+    "delay_min": 228,
+    "rsi_5dk": 15,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 1.71,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "RUNEUSDT",
+    "rsi_ts": "2026-05-26 03:46",
+    "ei_ts": "2026-05-26 07:30",
+    "delay_min": 224,
+    "rsi_5dk": 16,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 1.71,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "RUNEUSDT",
+    "rsi_ts": "2026-05-26 03:50",
+    "ei_ts": "2026-05-26 07:30",
+    "delay_min": 220,
+    "rsi_5dk": 18,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 1.71,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "XRPUSDT",
+    "rsi_ts": "2026-05-26 03:54",
+    "ei_ts": "2026-05-26 06:45",
+    "delay_min": 171,
+    "rsi_5dk": 11,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -2.72,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 8
+    }
+  },
+  {
+    "coin": "DYMUSDT",
+    "rsi_ts": "2026-05-26 04:14",
+    "ei_ts": "2026-05-26 07:00",
+    "delay_min": 166,
+    "rsi_5dk": 17,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 12
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 7
+    }
+  },
+  {
+    "coin": "DYMUSDT",
+    "rsi_ts": "2026-05-26 04:18",
+    "ei_ts": "2026-05-26 07:00",
+    "delay_min": 162,
+    "rsi_5dk": 18,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 12
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 7
+    }
+  },
+  {
+    "coin": "SUNUSDT",
+    "rsi_ts": "2026-05-27 21:12",
+    "ei_ts": "2026-05-27 23:45",
+    "delay_min": 153,
+    "rsi_5dk": 19,
+    "rsi_15dk": 18,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 10
+    }
+  },
+  {
+    "coin": "SUNUSDT",
+    "rsi_ts": "2026-05-27 21:20",
+    "ei_ts": "2026-05-27 23:45",
+    "delay_min": 145,
+    "rsi_5dk": 15,
+    "rsi_15dk": 17,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 10
+    }
+  },
+  {
+    "coin": "SUNUSDT",
+    "rsi_ts": "2026-05-27 21:24",
+    "ei_ts": "2026-05-27 23:45",
+    "delay_min": 141,
+    "rsi_5dk": 12,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 10
+    }
+  },
+  {
+    "coin": "SUNUSDT",
+    "rsi_ts": "2026-05-27 21:28",
+    "ei_ts": "2026-05-27 23:45",
+    "delay_min": 137,
+    "rsi_5dk": 11,
+    "rsi_15dk": 13,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 10
+    }
+  },
+  {
+    "coin": "STXUSDT",
+    "rsi_ts": "2026-05-28 00:52",
+    "ei_ts": "2026-05-28 03:30",
+    "delay_min": 158,
+    "rsi_5dk": 16,
+    "rsi_15dk": 20,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 21
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 6
+    }
+  },
+  {
+    "coin": "ETHUSDT",
+    "rsi_ts": "2026-05-28 06:20",
+    "ei_ts": "2026-05-28 10:15",
+    "delay_min": 235,
+    "rsi_5dk": 17,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 3.13,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 6
+    }
+  },
+  {
+    "coin": "HBARUSDT",
+    "rsi_ts": "2026-05-28 07:00",
+    "ei_ts": "2026-05-28 10:00",
+    "delay_min": 180,
+    "rsi_5dk": 13,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 3
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "BTCUSDT",
+    "rsi_ts": "2026-05-28 07:04",
+    "ei_ts": "2026-05-28 10:30",
+    "delay_min": 206,
+    "rsi_5dk": 17,
+    "rsi_15dk": 16,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 1.03,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TP1_TIMEOUT",
+      "roe": 2.06,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "HBARUSDT",
+    "rsi_ts": "2026-05-28 07:12",
+    "ei_ts": "2026-05-28 10:00",
+    "delay_min": 168,
+    "rsi_5dk": 16,
+    "rsi_15dk": 13,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 3
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "HBARUSDT",
+    "rsi_ts": "2026-05-28 07:16",
+    "ei_ts": "2026-05-28 10:00",
+    "delay_min": 164,
+    "rsi_5dk": 17,
+    "rsi_15dk": 13,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 3
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "DOTUSDT",
+    "rsi_ts": "2026-05-28 07:20",
+    "ei_ts": "2026-05-28 10:45",
+    "delay_min": 205,
+    "rsi_5dk": 18,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 5.82,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    }
+  },
+  {
+    "coin": "LTCUSDT",
+    "rsi_ts": "2026-05-28 07:24",
+    "ei_ts": "2026-05-28 11:15",
+    "delay_min": 231,
+    "rsi_5dk": 19,
+    "rsi_15dk": 14,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 5.56,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    }
+  },
+  {
+    "coin": "BTCUSDT",
+    "rsi_ts": "2026-05-28 07:28",
+    "ei_ts": "2026-05-28 10:30",
+    "delay_min": 182,
+    "rsi_5dk": 19,
+    "rsi_15dk": 15,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 1.03,
+      "bars": 24
+    },
+    "6x": {
+      "result": "TP1_TIMEOUT",
+      "roe": 2.06,
+      "bars": 24
+    }
+  },
+  {
+    "coin": "TRXUSDT",
+    "rsi_ts": "2026-05-28 13:15",
+    "ei_ts": "2026-05-28 17:15",
+    "delay_min": 240,
+    "rsi_5dk": 15,
+    "rsi_15dk": 10,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 15
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 14
+    }
+  },
+  {
+    "coin": "TRXUSDT",
+    "rsi_ts": "2026-05-28 13:19",
+    "ei_ts": "2026-05-28 17:15",
+    "delay_min": 236,
+    "rsi_5dk": 12,
+    "rsi_15dk": 9,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 15
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 14
+    }
+  },
+  {
+    "coin": "TRXUSDT",
+    "rsi_ts": "2026-05-28 13:23",
+    "ei_ts": "2026-05-28 17:15",
+    "delay_min": 232,
+    "rsi_5dk": 10,
+    "rsi_15dk": 9,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 15
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 14
+    }
+  },
+  {
+    "coin": "TRXUSDT",
+    "rsi_ts": "2026-05-28 13:27",
+    "ei_ts": "2026-05-28 17:15",
+    "delay_min": 228,
+    "rsi_5dk": 10,
+    "rsi_15dk": 9,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 15
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 14
+    }
+  },
+  {
+    "coin": "TRXUSDT",
+    "rsi_ts": "2026-05-28 13:31",
+    "ei_ts": "2026-05-28 17:15",
+    "delay_min": 224,
+    "rsi_5dk": 9,
+    "rsi_15dk": 8,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 15
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 14
+    }
+  },
+  {
+    "coin": "TRXUSDT",
+    "rsi_ts": "2026-05-28 13:35",
+    "ei_ts": "2026-05-28 17:15",
+    "delay_min": 220,
+    "rsi_5dk": 8,
+    "rsi_15dk": 8,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 15
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 14
+    }
+  },
+  {
+    "coin": "TRXUSDT",
+    "rsi_ts": "2026-05-28 13:39",
+    "ei_ts": "2026-05-28 17:15",
+    "delay_min": 216,
+    "rsi_5dk": 9,
+    "rsi_15dk": 7,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 15
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 14
+    }
+  },
+  {
+    "coin": "TRXUSDT",
+    "rsi_ts": "2026-05-28 13:44",
+    "ei_ts": "2026-05-28 17:15",
+    "delay_min": 211,
+    "rsi_5dk": 7,
+    "rsi_15dk": 7,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 15
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 14
+    }
+  },
+  {
+    "coin": "TRXUSDT",
+    "rsi_ts": "2026-05-28 13:48",
+    "ei_ts": "2026-05-28 17:15",
+    "delay_min": 207,
+    "rsi_5dk": 15,
+    "rsi_15dk": 11,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 15
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 14
+    }
+  },
+  {
+    "coin": "TRXUSDT",
+    "rsi_ts": "2026-05-28 13:52",
+    "ei_ts": "2026-05-28 17:15",
+    "delay_min": 203,
+    "rsi_5dk": 9,
+    "rsi_15dk": 9,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 15
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 14
+    }
+  },
+  {
+    "coin": "TRXUSDT",
+    "rsi_ts": "2026-05-28 13:56",
+    "ei_ts": "2026-05-28 17:15",
+    "delay_min": 199,
+    "rsi_5dk": 5,
+    "rsi_15dk": 6,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 15
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 14
+    }
+  },
+  {
+    "coin": "TRXUSDT",
+    "rsi_ts": "2026-05-28 14:00",
+    "ei_ts": "2026-05-28 17:15",
+    "delay_min": 195,
+    "rsi_5dk": 6,
+    "rsi_15dk": 6,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 15
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 14
+    }
+  },
+  {
+    "coin": "JUPUSDT",
+    "rsi_ts": "2026-05-28 17:06",
+    "ei_ts": "2026-05-28 19:45",
+    "delay_min": 159,
+    "rsi_5dk": 17,
+    "rsi_15dk": 20,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 20
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  },
+  {
+    "coin": "JUPUSDT",
+    "rsi_ts": "2026-05-28 17:10",
+    "ei_ts": "2026-05-28 19:45",
+    "delay_min": 155,
+    "rsi_5dk": 16,
+    "rsi_15dk": 19,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 20
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    }
+  }
+]
