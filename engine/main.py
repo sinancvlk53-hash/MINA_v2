@@ -671,6 +671,47 @@ def send_stop_market_defense(client, symbol, side, stop_price, label="DEFENSE ST
         logger.error(f"❌ {label} STOP EMRİ HATASI: {symbol} {side} - {e}")
         return None
 
+def send_hard_stop_order(client, symbol, side, stop_price, label="D3 FALLBACK STOP"):
+    """D3 DCA atlandığında/başarısız olduğunda devreye giren son koruma katmanı.
+    STOP_MARKET emri: fiyat stop_price seviyesine düşünce pozisyon kapanır."""
+    try:
+        order_side   = SIDE_SELL if side == 'LONG' else SIDE_BUY
+        pos_side_str = 'LONG' if side == 'LONG' else 'SHORT'
+        price_prec   = get_price_precision(client, symbol)
+        stop_rounded = round(stop_price, price_prec)
+
+        pos_info = client.futures_position_information(symbol=symbol)
+        qty = 0.0
+        for p in pos_info:
+            p_amt  = float(p.get('positionAmt', 0))
+            p_side = p.get('positionSide', '')
+            if p['symbol'] == symbol and p_side == pos_side_str and p_amt != 0:
+                qty = abs(p_amt)
+                break
+
+        if qty == 0:
+            logger.warning(f"⚠️ {label}: {symbol} {side} pozisyon bulunamadı (qty=0) — atlanıyor")
+            return None
+
+        sym_prec = get_symbol_precision(client, symbol)
+        qty = round(qty, sym_prec)
+
+        order = client.futures_create_order(
+            symbol=symbol,
+            side=order_side,
+            type='STOP_MARKET',
+            stopPrice=stop_rounded,
+            positionSide=pos_side_str,
+            quantity=qty,
+            workingType='MARK_PRICE',
+        )
+        order_id = order['orderId']
+        logger.info(f"🛑 {label}: {symbol} {side} STOP_MARKET qty={qty} stopPrice=${stop_rounded} orderId={order_id}")
+        return order_id
+    except Exception as e:
+        logger.error(f"❌ {label} HATASI: {symbol} {side} - {e}")
+        return None
+
 def cancel_stale_limit_orders(client, pending_orders: dict, stop_levels: dict) -> bool:
     """LIMIT_ORDER_TTL_H saatte dolmayan limit emirlerini iptal et.
     Değişiklik olduysa True döner (kaydetmek için)."""
@@ -1265,13 +1306,55 @@ def main():
                             break
                         elif message == "MARGIN_FAILED":
                             print(f"   ❌ D{defense_trigger} margin eklenemedi, bir sonraki döngüde tekrar denenecek: {symbol} {side}")
+                            if defense_trigger == 3:
+                                initial_ep = initial_entry_prices.get(pos_key, entry_price)
+                                d3_stop = initial_ep * (0.75 if side == 'LONG' else 1.25)
+                                oid = send_hard_stop_order(client, symbol, side, d3_stop)
+                                if oid:
+                                    defense_stops[pos_key] = {'level': 'D3_FALLBACK', 'orderId': oid}
+                                    save_json(DEFENSE_STOPS_FILE, defense_stops)
+                                    print(f"   🛑 D3 FALLBACK STOP: ${d3_stop:.4f} (orderId={oid})")
+                                    send_notification(
+                                        f"🛑 *D3 FALLBACK STOP — {symbol} {side}*\n"
+                                        f"📌 {leverage}x | D3 DCA başarısız (MARGIN)\n"
+                                        f"🛡️ Hard Stop: ${d3_stop:.4f} (giriş -%25)\n"
+                                        f"⚠️ Pozisyon korunuyor"
+                                    )
                             break
                         elif message == "SLOT_LIMIT":
                             _slot_limit_blocked.add((pos_key, defense_trigger))
                             logger.warning(f"⛔ SLOT LİMİTİ: {symbol} {side} D{defense_trigger} iptal — bu oturumda tekrar denenmeyecek.")
+                            if defense_trigger == 3:
+                                initial_ep = initial_entry_prices.get(pos_key, entry_price)
+                                d3_stop = initial_ep * (0.75 if side == 'LONG' else 1.25)
+                                oid = send_hard_stop_order(client, symbol, side, d3_stop)
+                                if oid:
+                                    defense_stops[pos_key] = {'level': 'D3_FALLBACK', 'orderId': oid}
+                                    save_json(DEFENSE_STOPS_FILE, defense_stops)
+                                    print(f"   🛑 D3 FALLBACK STOP: ${d3_stop:.4f} (orderId={oid})")
+                                    send_notification(
+                                        f"🛑 *D3 FALLBACK STOP — {symbol} {side}*\n"
+                                        f"📌 {leverage}x | D3 DCA başarısız (SLOT_LIMIT)\n"
+                                        f"🛡️ Hard Stop: ${d3_stop:.4f} (giriş -%25)\n"
+                                        f"⚠️ Pozisyon korunuyor"
+                                    )
                             break
                         else:
                             print(f"   ❌ {message}")
+                            if defense_trigger == 3:
+                                initial_ep = initial_entry_prices.get(pos_key, entry_price)
+                                d3_stop = initial_ep * (0.75 if side == 'LONG' else 1.25)
+                                oid = send_hard_stop_order(client, symbol, side, d3_stop)
+                                if oid:
+                                    defense_stops[pos_key] = {'level': 'D3_FALLBACK', 'orderId': oid}
+                                    save_json(DEFENSE_STOPS_FILE, defense_stops)
+                                    print(f"   🛑 D3 FALLBACK STOP: ${d3_stop:.4f} (orderId={oid})")
+                                    send_notification(
+                                        f"🛑 *D3 FALLBACK STOP — {symbol} {side}*\n"
+                                        f"📌 {leverage}x | D3 DCA başarısız\n"
+                                        f"🛡️ Hard Stop: ${d3_stop:.4f} (giriş -%25)\n"
+                                        f"⚠️ Pozisyon korunuyor"
+                                    )
                             break
                 
                 print(f"{'='*70}\n")
