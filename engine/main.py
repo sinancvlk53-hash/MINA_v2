@@ -280,13 +280,17 @@ def send_tp_order(client, symbol, side, current_amount, tp_level, tp_type='stand
         return False, f"Hata: {error_str}"
 
 def send_trailing_stop_order(client, symbol, side, quantity, activation_price, callback_rate=2.0):
-    """TP2 sonrası TRAILING_STOP_MARKET emri gönder (1x-9x standard)"""
-    try:
-        order_side   = SIDE_SELL if side == 'LONG' else SIDE_BUY
-        pos_side_str = 'LONG' if side == 'LONG' else 'SHORT'
-        price_prec   = get_price_precision(client, symbol)
-        act_price    = round(activation_price, price_prec)
+    """TP2 sonrası TRAILING_STOP_MARKET emri gönder.
+    -4120 hatasında (endpoint desteklenmiyorsa) STOP_MARKET fallback kullanır.
+    STOP_MARKET: activation_price * (1 - callback/100) LONG, * (1 + callback/100) SHORT.
+    Engine-side manuel trailing (check_trailing_stop) her durumda devam eder."""
+    order_side   = SIDE_SELL if side == 'LONG' else SIDE_BUY
+    pos_side_str = 'LONG' if side == 'LONG' else 'SHORT'
+    price_prec   = get_price_precision(client, symbol)
+    act_price    = round(activation_price, price_prec)
 
+    # 1. TRAILING_STOP_MARKET dene
+    try:
         order = client.futures_create_order(
             symbol=symbol,
             side=order_side,
@@ -301,7 +305,37 @@ def send_trailing_stop_order(client, symbol, side, quantity, activation_price, c
         logger.info(f"🎯 TRAILING_STOP_MARKET: {symbol} {side} qty={quantity} activationPrice=${act_price} callbackRate={callback_rate}% orderId={order_id}")
         return True, order_id
     except Exception as e:
-        logger.error(f"❌ TRAILING_STOP_MARKET HATASI: {symbol} {side} - {e}")
+        if '-4120' not in str(e):
+            logger.error(f"❌ TRAILING_STOP_MARKET HATASI: {symbol} {side} - {e}")
+            return False, None
+        logger.warning(f"⚠️ TRAILING_STOP_MARKET -4120 ({symbol} {side}) → STOP_MARKET fallback")
+
+    # 2. STOP_MARKET fallback (-4120 durumunda)
+    try:
+        if side == 'LONG':
+            stop_px = round(act_price * (1 - callback_rate / 100), price_prec)
+        else:
+            stop_px = round(act_price * (1 + callback_rate / 100), price_prec)
+
+        order = client.futures_create_order(
+            symbol=symbol,
+            side=order_side,
+            type='STOP_MARKET',
+            stopPrice=stop_px,
+            quantity=quantity,
+            positionSide=pos_side_str,
+            workingType='MARK_PRICE',
+        )
+        order_id = order['orderId']
+        logger.info(f"🎯 STOP_MARKET (trailing fallback): {symbol} {side} qty={quantity} stopPrice=${stop_px} (activation=${act_price} callback={callback_rate}%) orderId={order_id}")
+        return True, order_id
+    except Exception as e2:
+        if '-4120' in str(e2):
+            # Testnet'te her iki conditional emir tipi de desteklenmez.
+            # Engine-side manuel trailing (check_trailing_stop) devralır.
+            logger.warning(f"⚠️ STOP_MARKET fallback da -4120 ({symbol} {side}) — manuel trailing devrede")
+            return False, None
+        logger.error(f"❌ STOP_MARKET FALLBACK HATASI: {symbol} {side} - {e2}")
         return False, None
 
 
@@ -474,24 +508,36 @@ def send_defense_order(client, symbol, side, defense_level, leverage):
         return False, f"Hata: {error_str}"
 
 def check_trailing_stop(current_price, pos_key, tp_level, side):
-    """Trailing Stop kontrolü"""
+    """Trailing Stop kontrolü — engine-side manuel trailing.
+    max_prices.json boşsa (key yoksa) current_price ile seed'lenir.
+    LONG: tepe'den -%1.5 düşünce kapat. SHORT: dip'ten +%1.5 çıkınca kapat."""
     if tp_level != 2:
         return False, None, None
-    
+
     max_prices = load_json(MAX_PRICE_FILE)
-    max_price = max_prices.get(pos_key, current_price)
-    
+    changed = False
+
+    if pos_key not in max_prices:
+        # İlk kez: mevcut fiyatla başlat — bir sonraki döngüden itibaren takip başlar
+        max_prices[pos_key] = current_price
+        changed = True
+
+    max_price = max_prices[pos_key]
+
     if side == 'LONG':
         if current_price > max_price:
             max_price = current_price
             max_prices[pos_key] = max_price
-            save_json(MAX_PRICE_FILE, max_prices)
+            changed = True
     else:
         if current_price < max_price:
             max_price = current_price
             max_prices[pos_key] = max_price
-            save_json(MAX_PRICE_FILE, max_prices)
-    
+            changed = True
+
+    if changed:
+        save_json(MAX_PRICE_FILE, max_prices)
+
     if side == 'LONG':
         if current_price < max_price * 0.985:
             logger.info(f"🎯 TRAILING STOP TETİKLENDİ: {pos_key} - Max: ${max_price:.4f} → Şimdi: ${current_price:.4f}")
@@ -500,7 +546,7 @@ def check_trailing_stop(current_price, pos_key, tp_level, side):
         if current_price > max_price * 1.015:
             logger.info(f"🎯 TRAILING STOP TETİKLENDİ: {pos_key} - Min: ${max_price:.4f} → Şimdi: ${current_price:.4f}")
             return True, f"📈 TRAILING! Min: ${max_price:.4f} → ${current_price:.4f}", max_price
-    
+
     return False, None, max_price
 
 def check_tp_trigger(pnl_percent, tp_level, leverage):
