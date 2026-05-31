@@ -60,12 +60,16 @@ LIMIT_ORDER_TTL_H   = 48
 
 # Özel kaldıraç kuralları
 LEVERAGE_RULES = {
-    1:  {'stop_loss': 3,    'defense_count': 0, 'tp_type': 'standard'},
-    2:  {'stop_loss': 3,    'defense_count': 0, 'tp_type': 'standard'},
-    3:  {'stop_loss': 2,    'defense_count': 0, 'tp_type': 'standard'},
-    4:  {'stop_loss': None, 'defense_count': 3, 'tp_type': 'standard'},
-    5:  {'stop_loss': 2,    'defense_count': 0, 'tp_type': 'standard'},
-    10: {'stop_loss': 1,    'defense_count': 0, 'tp_type': 'fast'}
+    # tp1_pct       : TP1 tetik eşiği (%)
+    # tp2_pct       : TP2 tetik eşiği (%)
+    # tp2_close     : TP2'de kapatılacak oran (current_amount'a göre)
+    # trailing_callback : TRAILING_STOP_MARKET callbackRate (%), None = trailing yok
+    1:  {'stop_loss': 3,    'defense_count': 0, 'tp_type': 'standard', 'tp1_pct': 3, 'tp2_pct': 5, 'tp2_close': 0.50, 'trailing_callback': 2.0},
+    2:  {'stop_loss': 3,    'defense_count': 0, 'tp_type': 'standard', 'tp1_pct': 3, 'tp2_pct': 5, 'tp2_close': 0.50, 'trailing_callback': 2.0},
+    3:  {'stop_loss': 2,    'defense_count': 0, 'tp_type': 'standard', 'tp1_pct': 3, 'tp2_pct': 5, 'tp2_close': 0.50, 'trailing_callback': 2.0},
+    4:  {'stop_loss': None, 'defense_count': 3, 'tp_type': 'standard', 'tp1_pct': 3, 'tp2_pct': 5, 'tp2_close': 0.50, 'trailing_callback': 2.0},
+    5:  {'stop_loss': 2,    'defense_count': 0, 'tp_type': 'standard', 'tp1_pct': 3, 'tp2_pct': 5, 'tp2_close': 0.50, 'trailing_callback': 2.0},
+    10: {'stop_loss': 1,    'defense_count': 0, 'tp_type': 'fast',     'tp1_pct': 2, 'tp2_pct': 4, 'tp2_close': 1.00, 'trailing_callback': None},
 }
 
 def load_json(filename):
@@ -214,21 +218,23 @@ def send_stop_loss_order(client, symbol, side, amount):
         logger.error(f"❌ STOP LOSS HATASI: {symbol} {side} - {error_str}")
         return False, f"Hata: {error_str}"
 
-# KAR ALMA STRATEJİSİ:
-#   TP1 (+3%): current_amount'un %50'si kapatılır. Stop-loss giriş fiyatına çekilir
-#              (tp_level=1 iken fiyat girişe dönerse kalan %50 otomatik kapatılır).
-#   TP2 (+5%): Kalan %50'nin yarısı (%25) kapatılır, içeride %25 açık kalır.
-#   Trailing : TP2 sonrası kalan %25 üzerinde çalışır. Fiyat en yüksek/düşük
-#              noktadan -%1 geri çekilirse tp_level=3 ile tüm pozisyon kapatılır.
+# KAR ALMA STRATEJİSİ — 1x–5x (standard):
+#   TP1 (+3%): current_amount'un %50'si kapatılır. Stop-loss giriş fiyatına çekilir.
+#   TP2 (+5%): O anki pozisyonun %50'si kapatılır (= başlangıç pozisyonunun %25'i).
+#              Aynı anda TRAILING_STOP_MARKET: activationPrice=TP2 fiyatı, callbackRate=%2.
+#   Trailing : Binance-native TRAILING_STOP_MARKET. Fiyat tepeden -%2 düşünce kalan %25 kapanır.
+# KAR ALMA STRATEJİSİ — 10x (fast):
+#   TP1 (+2%): current_amount'un %50'si kapatılır. Stop-loss giriş fiyatına çekilir.
+#   TP2 (+4%): Kalan pozisyonun %100'ü kapatılır. Trailing YOK.
 #   Bileşik  : Pozisyon kapanınca realized kar bakiyeye işlenir; sonraki slot
 #              get_usdt_balance() ile taze bakiye üzerinden otomatik hesaplanır.
-def send_tp_order(client, symbol, side, current_amount, tp_level):
+def send_tp_order(client, symbol, side, current_amount, tp_level, tp_type='standard'):
     """Take Profit emri gönder"""
     try:
         if tp_level == 1:
             close_percent = 0.50
         elif tp_level == 2:
-            close_percent = 1.00
+            close_percent = 0.50 if tp_type == 'standard' else 1.00
         elif tp_level == 3:
             close_percent = 1.00
         else:
@@ -268,6 +274,32 @@ def send_tp_order(client, symbol, side, current_amount, tp_level):
             return False, "HEDGE_NOT_SUPPORTED"
         logger.error(f"❌ TP{tp_level} HATASI: {symbol} {side} - {error_str}")
         return False, f"Hata: {error_str}"
+
+def send_trailing_stop_order(client, symbol, side, quantity, activation_price, callback_rate=2.0):
+    """TP2 sonrası TRAILING_STOP_MARKET emri gönder (1x-5x standard)"""
+    try:
+        order_side   = SIDE_SELL if side == 'LONG' else SIDE_BUY
+        pos_side_str = 'LONG' if side == 'LONG' else 'SHORT'
+        price_prec   = get_price_precision(client, symbol)
+        act_price    = round(activation_price, price_prec)
+
+        order = client.futures_create_order(
+            symbol=symbol,
+            side=order_side,
+            type='TRAILING_STOP_MARKET',
+            quantity=quantity,
+            activationPrice=act_price,
+            callbackRate=callback_rate,
+            positionSide=pos_side_str,
+            workingType='MARK_PRICE',
+        )
+        order_id = order['orderId']
+        logger.info(f"🎯 TRAILING_STOP_MARKET: {symbol} {side} qty={quantity} activationPrice=${act_price} callbackRate={callback_rate}% orderId={order_id}")
+        return True, order_id
+    except Exception as e:
+        logger.error(f"❌ TRAILING_STOP_MARKET HATASI: {symbol} {side} - {e}")
+        return False, None
+
 
 MAX_RETRY      = 3    # Sipariş yeniden deneme sayısı
 RETRY_DELAY    = 5    # Denemeler arası bekleme (saniye)
@@ -469,20 +501,18 @@ def check_trailing_stop(current_price, pos_key, tp_level, side):
 
 def check_tp_trigger(pnl_percent, tp_level, leverage):
     """TP tetikleme kontrolü"""
-    rules = LEVERAGE_RULES.get(leverage, {})
+    rules   = LEVERAGE_RULES.get(leverage, {})
+    tp1_pct = rules.get('tp1_pct', 3)
+    tp2_pct = rules.get('tp2_pct', 5)
     tp_type = rules.get('tp_type', 'standard')
-    
-    if tp_type == 'fast':
-        if tp_level == 0 and pnl_percent >= 2:
-            return 1, "💰 TP1 (FAST)! (%2 kar - %50 kapat)"
-        if tp_level == 1 and pnl_percent >= 4:
-            return 2, "💰 TP2 (FAST)! (%4 kar - kalan %50 kapat)"
-    else:
-        if tp_level == 0 and pnl_percent >= 3:
-            return 1, "💰 TP1! (%3 kar - %50 kapat)"
-        if tp_level == 1 and pnl_percent >= 5:
-            return 2, "💰 TP2! (%5 kar - kalan %50 kapat)"
-    
+
+    tag = "(FAST) " if tp_type == 'fast' else ""
+    if tp_level == 0 and pnl_percent >= tp1_pct:
+        return 1, f"💰 TP1 {tag}(%{tp1_pct} kar - %50 kapat)"
+    if tp_level == 1 and pnl_percent >= tp2_pct:
+        close_lbl = "%100 kapat" if tp_type == 'fast' else "%25 kapat + Trailing"
+        return 2, f"💰 TP2 {tag}(%{tp2_pct} kar - {close_lbl})"
+
     return 0, None
 
 def check_stop_loss(pnl_percent, leverage):
@@ -715,9 +745,10 @@ def main():
     logger.info("=" * 70)
     logger.info(f"📊 Kaldıraçlar: 1x, 2x, 3x, 4x⭐, 5x, 10x")
     logger.info(f"🛑 Stop Loss: 1x=%2, 2x=%3, 3x=%2, 4x=YOK, 5x=%2, 10x=%1")
-    logger.info(f"💰 TP: Standard (%3,%5) | Fast 10x (%2,%4)")
+    logger.info(f"💰 TP 1x-5x: TP1@%3→%50 kapat | TP2@%5→%25 kapat + TRAILING_STOP_MARKET callback%2")
+    logger.info(f"💰 TP 10x  : TP1@%2→%50 kapat | TP2@%4→%100 kapat | Trailing YOK")
     logger.info(f"🛡️  Savunma: 2x(0), 4x(3)⭐, 5x(0), 10x(0)")
-    logger.info(f"🎯 Trailing: TP2 sonrası %1")
+    logger.info(f"🎯 Trailing: Binance-native TRAILING_STOP_MARKET, callbackRate=%2 (1x-5x)")
     logger.info(f"📝 Log Dosyası: mina_bot.log")
     logger.info("=" * 70)
 
@@ -835,8 +866,9 @@ def main():
                     init_margin = initial_margins[pos_key]
                     roe = (unrealized_pnl / init_margin) * 100 if init_margin > 0 else 0.0
 
-                    rules = LEVERAGE_RULES.get(leverage, {})
-                    tp_type = "FAST" if rules.get('tp_type') == 'fast' else "STD"
+                    rules       = LEVERAGE_RULES.get(leverage, {})
+                    tp_type     = "FAST" if rules.get('tp_type') == 'fast' else "STD"
+                    tp_lev_type = rules.get('tp_type', 'standard')
 
                     pnl_icon = "📈" if unrealized_pnl > 0 else "📉"
                     side_icon = "🟢" if side == 'LONG' else "🔴"
@@ -936,28 +968,67 @@ def main():
                             print(f"\n   {tp_msg}")
                             print(f"   ⚡ TP emri gönderiliyor...")
 
-                            success, message = send_tp_order(client, symbol, side, amount, tp_trigger)
+                            success, message = send_tp_order(client, symbol, side, amount, tp_trigger, tp_lev_type)
 
                             if success:
                                 print(f"   ✅ {message}")
                                 tp_levels[pos_key] = tp_trigger
                                 save_json(TP_FILE, tp_levels)
-                                send_notification(
-                                    f"💰 *KÂR AL {tp_trigger} — {symbol} {side}*\n"
-                                    f"📌 {leverage}x | PnL: {pnl_percent:+.2f}%\n"
-                                    f"💰 Giriş: ${entry_price:.4f}\n"
-                                    f"📊 Fiyat: ${current_price:.4f}\n"
-                                    f"📈 Kâr: ${unrealized_pnl:+.2f}\n"
-                                    f"✅ %50 kapatıldı" + ("\n🎯 Trailing aktif!" if tp_trigger == 2 else "\n🛡️ Başabaş modu aktif!")
-                                )
-                                max_prices = load_json(MAX_PRICE_FILE)
-                                max_prices[pos_key] = current_price
-                                save_json(MAX_PRICE_FILE, max_prices)
-                                if tp_trigger == 2:
-                                    print(f"   🎯 Trailing aktif!")
-                                else:
+
+                                if tp_trigger == 1:
                                     be_price = entry_price * (1.0008 if side == 'LONG' else 0.9992)
                                     print(f"   🛡️  Başabaş modu aktif! BE: ${be_price:.6f}")
+                                    send_notification(
+                                        f"💰 *KÂR AL 1 — {symbol} {side}*\n"
+                                        f"📌 {leverage}x | PnL: {pnl_percent:+.2f}%\n"
+                                        f"💰 Giriş: ${entry_price:.4f}\n"
+                                        f"📊 Fiyat: ${current_price:.4f}\n"
+                                        f"📈 Kâr: ${unrealized_pnl:+.2f}\n"
+                                        f"✅ %50 kapatıldı\n🛡️ Başabaş modu aktif!"
+                                    )
+
+                                elif tp_trigger == 2 and tp_lev_type == 'standard':
+                                    precision = get_symbol_precision(client, symbol)
+                                    remaining = round(amount * 0.50, precision)
+                                    trail_ok, trail_oid = send_trailing_stop_order(
+                                        client, symbol, side, remaining, current_price,
+                                        callback_rate=rules.get('trailing_callback', 2.0)
+                                    )
+                                    if trail_ok:
+                                        tp_levels[pos_key] = "TRAILING"
+                                        save_json(TP_FILE, tp_levels)
+                                        print(f"   🎯 TRAILING_STOP_MARKET: qty={remaining} activationPrice=${current_price:.4f} callback=%{rules.get('trailing_callback', 2.0)}")
+                                    else:
+                                        print(f"   ⚠️ Trailing emri gönderilemedi!")
+                                    send_notification(
+                                        f"💰 *KÂR AL 2 — {symbol} {side}*\n"
+                                        f"📌 {leverage}x | PnL: {pnl_percent:+.2f}%\n"
+                                        f"💰 Giriş: ${entry_price:.4f}\n"
+                                        f"📊 Fiyat: ${current_price:.4f}\n"
+                                        f"📈 Kâr: ${unrealized_pnl:+.2f}\n"
+                                        f"✅ %25 kapatıldı\n🎯 Trailing Stop aktif! (callback %{rules.get('trailing_callback', 2.0)})"
+                                    )
+
+                                elif tp_trigger == 2 and tp_lev_type == 'fast':
+                                    send_notification(
+                                        f"💰 *KÂR AL 2 (10x) — {symbol} {side}*\n"
+                                        f"📌 {leverage}x | PnL: {pnl_percent:+.2f}%\n"
+                                        f"💰 Giriş: ${entry_price:.4f}\n"
+                                        f"📊 Fiyat: ${current_price:.4f}\n"
+                                        f"📈 Kâr: ${unrealized_pnl:+.2f}\n"
+                                        f"✅ Pozisyon tamamen kapatıldı"
+                                    )
+                                    for _d in [tp_levels, defense_levels, initial_margins,
+                                               initial_entry_prices, defense_stops]:
+                                        _d.pop(pos_key, None)
+                                    max_prices = load_json(MAX_PRICE_FILE)
+                                    max_prices.pop(pos_key, None)
+                                    save_json(TP_FILE, tp_levels)
+                                    save_json(DEFENSE_FILE, defense_levels)
+                                    save_json(INITIAL_MARGIN_FILE, initial_margins)
+                                    save_json(MAX_PRICE_FILE, max_prices)
+                                    save_json(INITIAL_PRICE_FILE, initial_entry_prices)
+                                    save_json(DEFENSE_STOPS_FILE, defense_stops)
                             elif message == "POSITION_CLOSED":
                                 print(f"   ⚠️ Pozisyon zaten kapalıydı, takipten silindi: {symbol} {side}")
                                 for _d in [tp_levels, defense_levels, initial_margins,
