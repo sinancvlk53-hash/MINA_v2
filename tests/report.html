@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MINA v2 Dashboard Test Raporu</title>
+<style>
+  body { background:#0b0e11; color:#E0E3E7; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; margin:0; padding:24px }
+  h1   { color:#F0B90B; margin-bottom:4px }
+  .meta { color:#848e9c; font-size:13px; margin-bottom:24px }
+  .summary { display:flex; gap:24px; margin-bottom:24px }
+  .badge { padding:8px 20px; border-radius:6px; font-weight:700; font-size:15px }
+  .green { background:#0ECB8118; border:1px solid #0ECB8140; color:#0ECB81 }
+  .red   { background:#F6465D18; border:1px solid #F6465D40; color:#F6465D }
+  .gray  { background:#1E2329; border:1px solid #2d3f50; color:#848e9c }
+  table  { width:100%; border-collapse:collapse; background:#1E2329; border-radius:8px; overflow:hidden }
+  th     { padding:10px 12px; text-align:left; background:#2d3f50; color:#848e9c; font-size:11px; text-transform:uppercase; letter-spacing:.8px }
+  tr     { border-bottom:1px solid #2d3f5030 }
+  tr:last-child { border-bottom:none }
+</style>
+</head>
+<body>
+<h1>MINA v2 — Dashboard Test Raporu</h1>
+<div class="meta">01.06.2026 02:33:12 · http://178.105.150.40:3000</div>
+<div class="summary">
+  <div class="badge green">✅ Geçti: 33</div>
+  <div class="badge red">❌ Başarısız: 0</div>
+  <div class="badge gray">Toplam: 33</div>
+</div>
+<table>
+  <thead>
+    <tr>
+      <th></th><th>Test</th><th>Detay</th><th>Görüntü</th>
+    </tr>
+  </thead>
+  <tbody>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">HTTP 200 alındı</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px">status=200</td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">Sayfa başlığı var</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px">MINA v2 — Dashboard</td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">.app container görünür</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px"></td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">Header render edildi</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px"></td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">Ekran goruntusu alindi</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px">C:\Users\User\Desktop\MINA_v2\tests\shot_01_loaded.png</td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">TP satirlari/etiketleri var</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px">27 referans</td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">TP1 etiketi sayfada mevcut</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px"></td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">TP2 etiketi sayfada mevcut</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px"></td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">TP paneli ekran görüntüsü</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px">C:\Users\User\Desktop\MINA_v2\tests\shot_02_tp_panel.png</td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">Defense Panel başlığı görünür</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px"></td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">D1 etiketi var</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px"></td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">D2 etiketi var</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px"></td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">D3 etiketi var</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px"></td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">Engine durum badge'i var</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px"></td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">Defense paneli ekran görüntüsü</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px">C:\Users\User\Desktop\MINA_v2\tests\shot_03_defense.png</td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">Log Akışı bölümü görünür</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px"></td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">'Canlı İzle' butonu var</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px">1 adet</td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">'Canlı İzle' tıklanabilir</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px"></td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">'Canlı İzle' toggle çalışıyor</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px"></td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">'Test Akışını İzle' butonu var</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px">1 adet</td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">'Test Akışını İzle' tıklanabilir</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px"></td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">'Devamını Gör' butonu var (log varsa)</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px">görünür</td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">Log butonları ekran görüntüsü</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px">C:\Users\User\Desktop\MINA_v2\tests\shot_04_log_buttons.png</td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">TradingView container oluştu</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px">1 adet</td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">TradingView iframe var</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px">yüklendi</td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">Grafik alanı boyutlandırıldı</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px">832×1963px</td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">TradingView ekran görüntüsü</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px">C:\Users\User\Desktop\MINA_v2\tests\shot_05_tradingview.png</td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">Mobil: HTTP 200</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px"></td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">Mobil: .app container var</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px"></td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">Mobil: yatay taşma yok</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px">scrollWidth=375px (viewport=375px)</td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">Mobil: header ekrana sığıyor</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px">375px</td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">Mobil ekran görüntüsü</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px">C:\Users\User\Desktop\MINA_v2\tests\shot_06_mobile.png</td>
+          <td style="padding:8px 12px"></td>
+        </tr>
+        <tr style="background:#0ECB8108">
+          <td style="padding:8px 12px;font-size:16px">✅</td>
+          <td style="padding:8px 12px;color:#E0E3E7">JS konsol hatası yok</td>
+          <td style="padding:8px 12px;color:#848e9c;font-size:12px">temiz</td>
+          <td style="padding:8px 12px"></td>
+        </tr></tbody>
+</table>
+</body>
+</html>
