@@ -28,6 +28,19 @@ class PositionManager:
             for pos in positions:
                 amount = float(pos['positionAmt'])
                 if amount != 0:
+                    lev = 0
+                    try:
+                        lev = int(pos.get('leverage') or 0)
+                    except (TypeError, ValueError):
+                        lev = 0
+                    if lev <= 0:
+                        try:
+                            risk = self.client.futures_position_risk(symbol=pos['symbol'])
+                            if risk:
+                                lev = int(risk[0].get('leverage', 4))
+                        except Exception:
+                            lev = 4
+                    iso = float(pos.get('isolatedMargin') or pos.get('isolatedWallet') or 0)
                     open_positions.append({
                         'symbol': pos['symbol'],
                         'side': 'LONG' if amount > 0 else 'SHORT',
@@ -36,9 +49,9 @@ class PositionManager:
                         'mark_price': float(pos['markPrice']),
                         'liquidation_price': float(pos['liquidationPrice']),
                         'unrealized_pnl': float(pos['unRealizedProfit']),
-                        'leverage': int(pos['leverage']),
-                        'margin_type': pos['marginType'],
-                        'isolated_margin': float(pos.get('isolatedWallet', 0))
+                        'leverage': lev,
+                        'margin_type': pos.get('marginType', 'isolated'),
+                        'isolated_margin': iso,
                     })
             
             return open_positions

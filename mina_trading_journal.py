@@ -1,0 +1,473 @@
+# -*- coding: utf-8 -*-
+"""
+MİNA v2 - DERR (Veri Tabanlı Öz-Denetim ve İşlem Günlüğü)
+Trading Journal — Professional Trading Metrics Database
+
+Her işlem açıldığında ve kapandığında, tüm metrikleri SQLite'da kaydeder.
+- Açılış/Kapanış tarihi ve saati
+- Sembol, yön, kaldıraç
+- Giriş/çıkış fiyatları
+- Savunma durumu (D1/D2/D3)
+- Çıkış nedeni (TP1/TP2/Trailing/Hard Stop/Başabaş)
+- Net PnL (dolar bazında)
+"""
+
+import sqlite3
+import json
+import os
+from datetime import datetime
+from typing import Dict, Optional, List
+
+
+class TradingJournal:
+    """Profesyonel trading journal ve veri tabanı yöneticisi."""
+    
+    def __init__(self, db_path: str = 'mina_trading_journal.db'):
+        """
+        Trading journal veritabanını başlat.
+        
+        Args:
+            db_path: SQLite veritabanı dosya yolu
+        """
+        self.db_path = db_path
+        self.conn = None
+        self._init_db()
+    
+    def _init_db(self) -> None:
+        """Veritabanı ve tabloları oluştur."""
+        try:
+            self.conn = sqlite3.connect(self.db_path)
+            self.conn.row_factory = sqlite3.Row
+            cursor = self.conn.cursor()
+            
+            # ─ İŞLEM TABLOSU ─────────────────────────────────────────────
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS trades (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    
+                    -- Temel Bilgiler
+                    symbol TEXT NOT NULL,
+                    side TEXT NOT NULL,              -- 'LONG' veya 'SHORT'
+                    leverage INTEGER NOT NULL,       -- 1x, 2x, 3x, 4x, 5x, 10x
+                    
+                    -- Açılış Bilgileri
+                    open_time TIMESTAMP NOT NULL,    -- İşlem açılış tarihi/saati
+                    open_price REAL NOT NULL,        -- Giriş fiyatı
+                    open_qty REAL NOT NULL,          -- Açılan miktar
+                    open_notional REAL NOT NULL,     -- Notional value (fiyat × miktar)
+                    initial_margin REAL NOT NULL,    -- Başlangıç marjini
+                    
+                    -- Savunma Durumu
+                    defense_triggered INTEGER DEFAULT 0,  -- 0=Yok, 1=D1, 2=D2, 3=D3
+                    defense_prices TEXT,             -- JSON: {"D1": 95000, "D2": 88000, ...}
+                    weighted_avg_price REAL,         -- Ağırlıklı ortalama (defans sonrası)
+                    
+                    -- Kapanış Bilgileri
+                    close_time TIMESTAMP,            -- İşlem kapanış tarihi/saati
+                    close_price REAL,                -- Çıkış fiyatı
+                    close_qty REAL,                  -- Kapatılan miktar
+                    close_reason TEXT,               -- 'TP1', 'TP2', 'Trailing', 'Hard Stop', 'Başabaş', 'Acil Tasfiye'
+                    
+                    -- PnL Metrikleri
+                    pnl_percent REAL,                -- Yüzde bazında PnL
+                    pnl_usdt REAL,                   -- Dolar bazında net zarar/kâr
+                    roe_percent REAL,                -- Return on Equity (%)
+                    
+                    -- Durumu
+                    status TEXT NOT NULL DEFAULT 'open',  -- 'open' veya 'closed'
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # ─ INDEX'LER ─────────────────────────────────────────────────
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_symbol ON trades(symbol)
+            ''')
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_status ON trades(status)
+            ''')
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_open_time ON trades(open_time)
+            ''')
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_close_time ON trades(close_time)
+            ''')
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_side ON trades(side)
+            ''')
+            
+            self.conn.commit()
+            
+        except Exception as e:
+            print(f"❌ Journal DB init hatası: {e}")
+            raise
+
+    def log_trade_open(self, symbol: str, side: str, leverage: int, 
+                       entry_price: float, qty: float, initial_margin: float) -> int:
+        """
+        İşlem açıldığında kaydı başlat.
+        
+        Args:
+            symbol: Sembol (BTCUSDT)
+            side: LONG veya SHORT
+            leverage: Kaldıraç
+            entry_price: Giriş fiyatı
+            qty: Açılan miktar
+            initial_margin: Başlangıç marjini
+        
+        Returns:
+            Trade ID
+        """
+        try:
+            cursor = self.conn.cursor()
+            notional = entry_price * qty
+            
+            cursor.execute('''
+                INSERT INTO trades 
+                (symbol, side, leverage, open_time, open_price, open_qty, 
+                 open_notional, initial_margin, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                symbol, side, leverage, 
+                datetime.now(),
+                entry_price, qty,
+                notional, initial_margin,
+                'open'
+            ))
+            
+            self.conn.commit()
+            trade_id = cursor.lastrowid
+            
+            print(f"📔 [Journal] İşlem başlangıç kaydı: ID={trade_id} {symbol} {side} {leverage}x")
+            return trade_id
+            
+        except Exception as e:
+            print(f"❌ Journal trade_open hatası: {e}")
+            return -1
+
+    def log_defense_triggered(self, trade_id: int, defense_level: int, 
+                             defense_prices: Dict, weighted_avg: float) -> None:
+        """
+        Savunma tetiklendiğinde kaydı güncelle.
+        
+        Args:
+            trade_id: İşlem ID'si
+            defense_level: 1, 2 veya 3
+            defense_prices: Savunma fiyatları
+            weighted_avg: Ağırlıklı ortalama fiyat
+        """
+        try:
+            cursor = self.conn.cursor()
+            
+            cursor.execute('''
+                UPDATE trades
+                SET defense_triggered = ?,
+                    defense_prices = ?,
+                    weighted_avg_price = ?
+                WHERE id = ?
+            ''', (
+                defense_level,
+                json.dumps(defense_prices),
+                weighted_avg,
+                trade_id
+            ))
+            
+            self.conn.commit()
+            
+            print(f"📔 [Journal] D{defense_level} tetiklendi: Trade ID={trade_id}")
+            
+        except Exception as e:
+            print(f"❌ Journal defense_triggered hatası: {e}")
+
+    def log_trade_close(self, trade_id: int, close_price: float, qty: float,
+                       close_reason: str, pnl_usdt: float, pnl_percent: float,
+                       roe_percent: float) -> None:
+        """
+        İşlem kapandığında kaydı tamamla.
+        
+        Args:
+            trade_id: İşlem ID'si
+            close_price: Çıkış fiyatı
+            qty: Kapatılan miktar
+            close_reason: Kapanış nedeni
+            pnl_usdt: Net PnL (dolar)
+            pnl_percent: Yüzde PnL
+            roe_percent: ROE yüzdesi
+        """
+        try:
+            cursor = self.conn.cursor()
+            
+            cursor.execute('''
+                UPDATE trades
+                SET close_time = ?,
+                    close_price = ?,
+                    close_qty = ?,
+                    close_reason = ?,
+                    pnl_usdt = ?,
+                    pnl_percent = ?,
+                    roe_percent = ?,
+                    status = ?
+                WHERE id = ?
+            ''', (
+                datetime.now(),
+                close_price, qty,
+                close_reason,
+                pnl_usdt, pnl_percent,
+                roe_percent,
+                'closed',
+                trade_id
+            ))
+            
+            self.conn.commit()
+            
+            emoji = "📈" if pnl_usdt >= 0 else "📉"
+            print(f"📔 [Journal] İşlem kapalı: ID={trade_id} {close_reason} {emoji} PnL: ${pnl_usdt:+.2f}")
+            
+        except Exception as e:
+            print(f"❌ Journal trade_close hatası: {e}")
+
+    # ─────────────────────────────────────────────────────────────────────
+    # İSTATİSTİK VE RAPORLAMA
+    # ─────────────────────────────────────────────────────────────────────
+
+    def get_statistics(self, limit: int = 100) -> Dict:
+        """
+        Son N işlemin istatistiklerini hesapla.
+        
+        Args:
+            limit: Kaç işlem incelenecek (sample size)
+        
+        Returns:
+            İstatistik sözlüğü
+        """
+        try:
+            cursor = self.conn.cursor()
+            
+            # Son N kapalı işlemi getir
+            cursor.execute('''
+                SELECT pnl_usdt, pnl_percent, side, leverage, close_reason, 
+                       defense_triggered, symbol
+                FROM trades
+                WHERE status = 'closed'
+                ORDER BY close_time DESC
+                LIMIT ?
+            ''', (limit,))
+            
+            trades = cursor.fetchall()
+            
+            if not trades:
+                return {
+                    'sample_size': 0,
+                    'total_trades': 0,
+                    'message': 'Kapalı işlem bulunamadı'
+                }
+            
+            # Hesaplamalar
+            total_pnl = sum(t['pnl_usdt'] for t in trades)
+            winning_trades = [t for t in trades if t['pnl_usdt'] > 0]
+            losing_trades = [t for t in trades if t['pnl_usdt'] < 0]
+            break_even = [t for t in trades if t['pnl_usdt'] == 0]
+            
+            win_rate = (len(winning_trades) / len(trades) * 100) if trades else 0
+            avg_win = (sum(t['pnl_usdt'] for t in winning_trades) / len(winning_trades)) if winning_trades else 0
+            avg_loss = (sum(t['pnl_usdt'] for t in losing_trades) / len(losing_trades)) if losing_trades else 0
+            
+            # Savunma analizi
+            defended = [t for t in trades if t['defense_triggered'] > 0]
+            defense_win_rate = (sum(1 for t in defended if t['pnl_usdt'] > 0) / len(defended) * 100) if defended else 0
+            
+            # Kaldıraç analizi
+            leverage_stats = {}
+            for lev in [1, 2, 3, 4, 5, 10]:
+                lev_trades = [t for t in trades if t['leverage'] == lev]
+                if lev_trades:
+                    lev_pnl = sum(t['pnl_usdt'] for t in lev_trades)
+                    leverage_stats[lev] = {
+                        'count': len(lev_trades),
+                        'total_pnl': lev_pnl,
+                        'avg_pnl': lev_pnl / len(lev_trades),
+                        'win_count': sum(1 for t in lev_trades if t['pnl_usdt'] > 0)
+                    }
+            
+            return {
+                'sample_size': len(trades),
+                'total_pnl_usdt': round(total_pnl, 2),
+                'winning_trades': len(winning_trades),
+                'losing_trades': len(losing_trades),
+                'break_even': len(break_even),
+                'win_rate_percent': round(win_rate, 2),
+                'avg_win_usdt': round(avg_win, 2),
+                'avg_loss_usdt': round(avg_loss, 2),
+                'profit_factor': round(abs(avg_win / avg_loss), 2) if avg_loss != 0 else 0,
+                'defended_trades': len(defended),
+                'defense_win_rate': round(defense_win_rate, 2),
+                'leverage_breakdown': leverage_stats,
+                'top_symbols': self._get_top_symbols(trades, limit=5)
+            }
+            
+        except Exception as e:
+            print(f"❌ Statistics hatası: {e}")
+            return {}
+
+    def _get_top_symbols(self, trades: list, limit: int = 5) -> Dict:
+        """Semboller için performans analizi."""
+        symbol_stats = {}
+        for trade in trades:
+            sym = trade['symbol']
+            if sym not in symbol_stats:
+                symbol_stats[sym] = {'count': 0, 'pnl': 0}
+            symbol_stats[sym]['count'] += 1
+            symbol_stats[sym]['pnl'] += trade['pnl_usdt']
+        
+        sorted_symbols = sorted(symbol_stats.items(), key=lambda x: x[1]['pnl'], reverse=True)
+        return {sym: stats for sym, stats in sorted_symbols[:limit]}
+
+    def print_statistics(self, limit: int = 100) -> None:
+        """İstatistikleri güzel formatta ekrana bas."""
+        stats = self.get_statistics(limit)
+        
+        if not stats or stats.get('sample_size') == 0:
+            print("⚠️  İstatistik için yeterli veri yok")
+            return
+        
+        print(f"\n{'='*70}")
+        print(f"📊 TRADİNG JOURNAL İSTATİSTİKLERİ (Son {stats['sample_size']} İşlem)")
+        print(f"{'='*70}")
+        
+        print(f"\n💰 ÖZET:")
+        print(f"   Total PnL: ${stats['total_pnl_usdt']:+.2f}")
+        print(f"   Başarılı: {stats['winning_trades']} | Başarısız: {stats['losing_trades']} | Başabaş: {stats['break_even']}")
+        print(f"   Başarı Oranı: {stats['win_rate_percent']:.1f}%")
+        print(f"   Ortalama Kâr: ${stats['avg_win_usdt']:.2f}")
+        print(f"   Ortalama Zarar: ${stats['avg_loss_usdt']:.2f}")
+        print(f"   Kar Faktörü: {stats['profit_factor']:.2f}")
+        
+        print(f"\n🛡️  SAVUNMA ANALİZİ:")
+        print(f"   Tetiklenen: {stats['defended_trades']} ({stats['defended_trades']/stats['sample_size']*100:.1f}%)")
+        print(f"   D1/D2/D3 Başarı Oranı: {stats['defense_win_rate']:.1f}%")
+        
+        print(f"\n⚙️  KALDIRAC İSTATİSTİKLERİ:")
+        for lev in sorted(stats['leverage_breakdown'].keys()):
+            lev_data = stats['leverage_breakdown'][lev]
+            print(f"   {lev}x: {lev_data['count']} işlem | "
+                  f"PnL: ${lev_data['total_pnl']:+.2f} | "
+                  f"Avg: ${lev_data['avg_pnl']:+.2f} | "
+                  f"Wins: {lev_data['win_count']}")
+        
+        print(f"\n🏆 EN İYİ SEMBOLLER:")
+        for sym, sym_stats in stats['top_symbols'].items():
+            print(f"   {sym}: {sym_stats['count']} işlem | PnL: ${sym_stats['pnl']:+.2f}")
+        
+        print(f"{'='*70}\n")
+
+    def export_trades_csv(self, output_file: str = 'trades.csv', limit: int = 1000) -> None:
+        """İşlemleri CSV dosyasına dışa aktar."""
+        try:
+            import csv
+            cursor = self.conn.cursor()
+            
+            cursor.execute('''
+                SELECT * FROM trades WHERE status = 'closed'
+                ORDER BY close_time DESC LIMIT ?
+            ''', (limit,))
+            
+            trades = cursor.fetchall()
+            
+            if not trades:
+                print("⚠️  Dışa aktarılacak işlem yok")
+                return
+            
+            headers = [description[0] for description in cursor.description]
+            
+            with open(output_file, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerow(headers)
+                for trade in trades:
+                    writer.writerow(trade)
+            
+            print(f"✅ {len(trades)} işlem '{output_file}'ye dışa aktarıldı")
+            
+        except Exception as e:
+            print(f"❌ CSV dışa aktarma hatası: {e}")
+
+    def get_trade_history(self, symbol: Optional[str] = None, 
+                         limit: int = 50) -> List[Dict]:
+        """
+        İşlem geçmişini getir.
+        
+        Args:
+            symbol: Filtre için sembol (None = tümü)
+            limit: Kaç işlem
+        
+        Returns:
+            İşlem listesi
+        """
+        try:
+            cursor = self.conn.cursor()
+            
+            if symbol:
+                cursor.execute('''
+                    SELECT * FROM trades 
+                    WHERE symbol = ? AND status = 'closed'
+                    ORDER BY close_time DESC LIMIT ?
+                ''', (symbol, limit))
+            else:
+                cursor.execute('''
+                    SELECT * FROM trades 
+                    WHERE status = 'closed'
+                    ORDER BY close_time DESC LIMIT ?
+                ''', (limit,))
+            
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
+            
+        except Exception as e:
+            print(f"❌ get_trade_history hatası: {e}")
+            return []
+
+    def close(self) -> None:
+        """Veritabanı bağlantısını kapat."""
+        if self.conn:
+            self.conn.close()
+            print("✅ Journal DB kapatıldı")
+
+    def __del__(self):
+        """Destructor'da DB'yi kapat."""
+        self.close()
+
+
+if __name__ == '__main__':
+    # TEST
+    journal = TradingJournal()
+    
+    # Örnek işlem aç
+    trade_id = journal.log_trade_open(
+        symbol='BTCUSDT',
+        side='LONG',
+        leverage=4,
+        entry_price=77000.0,
+        qty=0.00129,
+        initial_margin=25.0
+    )
+    
+    # Savunma tetikle
+    journal.log_defense_triggered(
+        trade_id=trade_id,
+        defense_level=1,
+        defense_prices={'D1': 73150, 'D2': 67760, 'D3': 57750},
+        weighted_avg=76500.0
+    )
+    
+    # İşlem kapat
+    journal.log_trade_close(
+        trade_id=trade_id,
+        close_price=78000.0,
+        qty=0.00129,
+        close_reason='TP2',
+        pnl_usdt=25.50,
+        pnl_percent=1.29,
+        roe_percent=102.0
+    )
+    
+    # İstatistikleri göster
+    journal.print_statistics()

@@ -485,7 +485,7 @@ def cmd_durum(message):
     try:
         import psutil
         targets = {
-            'engine':         'engine/main.py',
+            'engine':         'main.py',
             'approval_bot':   'approval_bot.py',
             'ht_listener':    'ht_listener.py',
             'pdf_listener':   'pdf_listener.py',

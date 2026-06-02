@@ -127,7 +127,7 @@ class LeverageConfig:
         },
         3: {
             'name': '3x',
-            'stop_loss_percent': 3,
+            'stop_loss_percent': 2,
             'has_defense': False
         },
         4: {
