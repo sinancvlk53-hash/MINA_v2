@@ -69,8 +69,7 @@ def run() -> None:
                 print(f"\n{'='*70}\n⏰ {datetime.now().strftime('%H:%M:%S')} — {len(positions)} pozisyon\n{'='*70}")
                 for pos in positions:
                     symbol = pos["symbol"]
-                    ticker = client.futures_symbol_ticker(symbol=symbol)
-                    price = float(ticker["price"])
+                    price = float(pos["mark_price"])
                     action = mina.evaluate_position(pos, price)
                     if action.get("action") != "hold":
                         logger.info("%s %s", symbol, action)

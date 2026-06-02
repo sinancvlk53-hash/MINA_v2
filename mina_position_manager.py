@@ -58,6 +58,8 @@ class MinaPositionManager:
         self.position_states: Dict[str, Dict] = {}
         self.journal = journal  # Trading journal referansı
         self.trade_ids: Dict[str, int] = {}  # {pos_key: trade_id}
+        self._symbol_precision_cache: Dict[str, int] = {}
+        self._exchange_info_loaded: bool = False
 
         self.leverage_rules = {
             1: {'stop_loss_pct': 3.0, 'tp_type': 'standard', 'has_defense': False},
@@ -1266,20 +1268,29 @@ class MinaPositionManager:
 
     def _get_symbol_precision(self, symbol: str) -> int:
         """Sembol için step size precision'ını getir (cache'li)."""
-        try:
-            exchange_info = self.client.futures_exchange_info()
-            for s in exchange_info['symbols']:
-                if s['symbol'] == symbol:
+        if symbol in self._symbol_precision_cache:
+            return self._symbol_precision_cache[symbol]
+
+        if not self._exchange_info_loaded:
+            try:
+                import math
+                exchange_info = self.client.futures_exchange_info()
+                for s in exchange_info['symbols']:
+                    sym = s['symbol']
+                    precision = 5
                     for f in s['filters']:
                         if f['filterType'] == 'LOT_SIZE':
                             step_size = float(f['stepSize'])
-                            if step_size == 0:
-                                return 5
-                            import math
-                            return abs(int(math.log10(step_size)))
-            return 5  # Default
-        except Exception:
-            return 5
+                            if step_size > 0:
+                                precision = abs(int(math.log10(step_size)))
+                            break
+                    self._symbol_precision_cache[sym] = precision
+                self._exchange_info_loaded = True
+            except Exception:
+                self._symbol_precision_cache.setdefault(symbol, 5)
+                return 5
+
+        return self._symbol_precision_cache.get(symbol, 5)
 
     # ─────────────────────────────────────────────────────────────
     # JOURNAL LOGGING — DERR İntegrasyonu
