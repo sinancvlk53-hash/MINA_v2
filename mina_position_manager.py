@@ -114,6 +114,29 @@ class MinaPositionManager:
         prices = mt.load_json(mt.INITIAL_PRICE_FILE)
         return float(prices.get(self._pos_key(symbol, side), fallback))
 
+    def _open_trade_from_journal(self, symbol: str, side: str) -> Optional[Dict[str, Any]]:
+        """DERR'deki açık trade kaydı (sync / defense restore)."""
+        if not self.journal:
+            return None
+        try:
+            cursor = self.journal.conn.cursor()
+            cursor.execute(
+                """SELECT id, defense_triggered, weighted_avg_price, open_price
+                   FROM trades WHERE symbol=? AND side=? AND status='open'
+                   ORDER BY id DESC LIMIT 1""",
+                (symbol, side),
+            )
+            row = cursor.fetchone()
+            return dict(row) if row else None
+        except Exception:
+            return None
+
+    def _defense_level_from_journal(self, symbol: str, side: str) -> int:
+        row = self._open_trade_from_journal(symbol, side)
+        if not row:
+            return 0
+        return int(row.get('defense_triggered') or 0)
+
     def sync_reality_from_binance(self, verbose: bool = True) -> Dict[str, Any]:
         """Açık pozisyonları Binance'ten okuyup tracking JSON + DERR ile hizalar."""
         from position_manager import PositionManager  # noqa: circular at module level
@@ -123,7 +146,7 @@ class MinaPositionManager:
         report: Dict[str, Any] = {
             'open_count': len(positions),
             'synced_keys': [],
-            'defense_reset': [],
+            'defense_preserved': [],
             'max_prices_seeded': [],
             'journal_opened': [],
         }
@@ -146,30 +169,46 @@ class MinaPositionManager:
             leverage = int(pos.get('leverage') or 4)
 
             old_entry = initial_prices.get(key)
-            initial_prices[key] = entry
+            journal_row = self._open_trade_from_journal(symbol, side)
+            preserved_defense = max(
+                int(defense_levels.get(key, 0)),
+                self._defense_level_from_journal(symbol, side),
+            )
+
+            if preserved_defense > 0 and old_entry is not None:
+                initial_prices[key] = float(old_entry)
+            elif journal_row and journal_row.get('open_price'):
+                initial_prices[key] = float(journal_row['open_price'])
+            else:
+                initial_prices[key] = entry
+
             initial_margins[key] = round(margin, 4) if margin > 0 else round((entry * pos['amount']) / max(leverage, 1), 4)
-            defense_levels[key] = 0
-            tp_levels[key] = 0
-            max_prices[key] = mark
+            defense_levels[key] = preserved_defense
+            if preserved_defense == 0:
+                tp_levels[key] = 0
+            if key not in max_prices:
+                max_prices[key] = mark
 
             report['synced_keys'].append({
                 'key': key,
                 'old_initial_entry': old_entry,
-                'new_initial_entry': entry,
+                'new_initial_entry': initial_prices[key],
                 'mark': mark,
-                'd1_long': round(entry * 0.95, 8) if side == 'LONG' else round(entry / 0.95, 8),
-                'd2_long': round(entry * 0.88, 8) if side == 'LONG' else round(entry / 1.12, 8),
+                'defense_level': preserved_defense,
+                'd1_long': round(float(initial_prices[key]) * 0.95, 8) if side == 'LONG' else round(float(initial_prices[key]) / 0.95, 8),
+                'd2_long': round(float(initial_prices[key]) * 0.88, 8) if side == 'LONG' else round(float(initial_prices[key]) / 1.12, 8),
             })
-            report['defense_reset'].append(key)
-            report['max_prices_seeded'].append({key: mark})
+            report['defense_preserved'].append({'key': key, 'level': preserved_defense})
+            report['max_prices_seeded'].append({key: max_prices.get(key, mark)})
 
             self.init_position_state(symbol, entry)
             state = self.position_states.get(symbol, {})
-            state['defense_stage'] = 0
-            state['tp1_done'] = False
-            state['tp2_done'] = False
+            state['defense_stage'] = preserved_defense
             state['highest_price'] = mark
-            state['weighted_avg_price'] = entry
+            if preserved_defense > 0 and journal_row and journal_row.get('weighted_avg_price'):
+                state['weighted_avg_price'] = float(journal_row['weighted_avg_price'])
+            if preserved_defense >= 2:
+                state['tp_disabled'] = True
             self._save_state()
 
             if self.journal:
@@ -591,6 +630,14 @@ class MinaPositionManager:
 
         if not state or amount <= 0:
             return False
+
+        key = self._pos_key(symbol, side)
+        file_defense = int(mt.load_json(mt.DEFENSE_FILE).get(key, 0))
+        stage = int(state.get('defense_stage', 0))
+        if stage >= 1 or file_defense >= 1:
+            state['defense_stage'] = max(stage, file_defense, 1)
+            self._save_state()
+            return True
 
         add_usdt = self.slot_size / 5
         add_qty = self._round_quantity(add_usdt / current_price, symbol)
