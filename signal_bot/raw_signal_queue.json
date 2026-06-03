@@ -1,0 +1,142 @@
+{
+  "version": 1,
+  "layer": "raw_signal_queue",
+  "parsed_at": "2026-06-03T06:24:44Z",
+  "source": "HALUK_SIMULATION",
+  "system_pause": false,
+  "pause_reason": null,
+  "pause_keyword": null,
+  "macro_filters": [
+    {
+      "coin": "TOTAL",
+      "role": "F1_macro_direction",
+      "text": "--- TOTAL ---\nTOTAL: az daha salarız, kanal dibi gelebilir, ama ana yön yukarı.\nDiğer coinlere göre makro filtre — işlem açılmaz.",
+      "trade_allowed": false
+    }
+  ],
+  "signals": [
+    {
+      "coin": "SOLUSDT",
+      "side": "LONG",
+      "leverage": 2,
+      "leverage_label": "2x",
+      "entry": "140.50-142.00",
+      "entry_price": 141.25,
+      "stop": "135.20",
+      "d1_price": 135.2,
+      "d1_trigger_type": "spot_price",
+      "tp1": null,
+      "tp2": null,
+      "status": "approved",
+      "source": "HALUK_PDF",
+      "chart_rule": "chart_defined_override"
+    },
+    {
+      "coin": "BTCUSDT",
+      "side": "LONG",
+      "leverage": 5,
+      "leverage_label": "5x",
+      "entry": "75000-76000",
+      "entry_price": 75500.0,
+      "stop": "72000",
+      "d1_price": 72000.0,
+      "d1_trigger_type": "spot_price",
+      "tp1": null,
+      "tp2": null,
+      "status": "approved",
+      "source": "HALUK_PDF",
+      "chart_rule": "standard"
+    }
+  ],
+  "rejected": [
+    {
+      "coin": "ETHUSDT",
+      "reason": "update_trap",
+      "keyword": "UPDATE",
+      "action": "reject_new_position",
+      "snippet": "--- ETH ---\nUPDATE: ETH pozisyon durum güncellemesi — RETEST bölgesi.\nBu bölüm yeni sinyal değil, güncelleme mesajıdır.\nGiriş: 3200\nStop: 3050\nLong devam notu."
+    }
+  ],
+  "meta": {
+    "raw_text_length": 706,
+    "tables_count": 0,
+    "signal_count": 2
+  },
+  "entries": [
+    {
+      "source": "merter",
+      "symbol": "BTCUSDT",
+      "direction": "LONG",
+      "entry_price": 65000.0,
+      "stop_price": 63000.0,
+      "leverage": 5,
+      "status": "approved",
+      "reject_reason": null,
+      "timestamp": "2026-06-03T09:58:16Z",
+      "raw_snippet": "$BTC için Long, giriş 65000, stop 63000"
+    },
+    {
+      "source": "merter",
+      "symbol": "SOLUSDT",
+      "direction": "LONG",
+      "entry_price": 120.0,
+      "stop_price": null,
+      "leverage": 2,
+      "status": "approved",
+      "reject_reason": null,
+      "timestamp": "2026-06-03T09:58:16Z",
+      "tp_price": 133.0,
+      "raw_snippet": "solana var. 125 maliyet 115-125 çift alım 131-135 çift satım"
+    },
+    {
+      "source": "haluk_telegram",
+      "symbol": "BTCUSDT",
+      "direction": null,
+      "entry_price": null,
+      "stop_price": null,
+      "leverage": 5,
+      "status": "rejected",
+      "reject_reason": "UPDATE tuzağı (UPDATE)",
+      "timestamp": "2026-06-03T09:58:16Z",
+      "raw_snippet": "BTCUSDT UPDATE: stop seviyesi güncellendi"
+    },
+    {
+      "source": "merter",
+      "symbol": "BTCUSDT",
+      "direction": "LONG",
+      "entry_price": 65000.0,
+      "stop_price": 63000.0,
+      "leverage": 5,
+      "status": "approved",
+      "reject_reason": null,
+      "timestamp": "2026-06-03T09:59:23Z",
+      "raw_snippet": "$BTC için Long, giriş 65000, stop 63000"
+    },
+    {
+      "source": "merter",
+      "symbol": "SOLUSDT",
+      "direction": "LONG",
+      "entry_price": 125.0,
+      "stop_price": null,
+      "leverage": 2,
+      "status": "approved",
+      "reject_reason": null,
+      "timestamp": "2026-06-03T09:59:23Z",
+      "tp_price": 133.0,
+      "raw_snippet": "solana var. 125 maliyet 115-125 çift alım 131-135 çift satım"
+    },
+    {
+      "source": "haluk_telegram",
+      "symbol": "BTCUSDT",
+      "direction": null,
+      "entry_price": null,
+      "stop_price": null,
+      "leverage": 5,
+      "status": "rejected",
+      "reject_reason": "UPDATE tuzağı (UPDATE)",
+      "timestamp": "2026-06-03T09:59:23Z",
+      "raw_snippet": "BTCUSDT UPDATE: stop seviyesi güncellendi"
+    }
+  ],
+  "updated_at": "2026-06-03T09:59:23Z"
+}

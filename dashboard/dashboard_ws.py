@@ -121,6 +121,36 @@ async def get_data():
         log.error(f"get_data: {e}")
         return {'error': str(e), 'positions': [], 'logs': list(_log_buf)}
 
+# ── Tek pozisyon kapat ───────────────────────────────────────────────────────
+async def close_position(websocket, symbol, side):
+    try:
+        if not symbol or not side:
+            raise ValueError('symbol and side required')
+        client = get_client()
+        raw = client.futures_position_information(symbol=symbol)
+        closed = False
+        for p in raw:
+            amt = float(p['positionAmt'])
+            if amt == 0:
+                continue
+            pos_side = 'LONG' if amt > 0 else 'SHORT'
+            if pos_side != side:
+                continue
+            c_side = 'SELL' if amt > 0 else 'BUY'
+            qty = abs(amt)
+            client.futures_create_order(
+                symbol=symbol, side=c_side, type='MARKET',
+                quantity=qty, positionSide=side)
+            closed = True
+            log.warning(f"Client closed: {symbol} {side} qty={qty}")
+            break
+        await websocket.send(json.dumps({
+            'action': 'close_position_result',
+            'symbol': symbol, 'side': side, 'closed': closed,
+        }))
+    except Exception as e:
+        await websocket.send(json.dumps({'action': 'error', 'message': str(e)}))
+
 # ── Panik: tüm pozisyonları kapat ───────────────────────────────────────────
 async def close_all(websocket):
     try:
@@ -164,6 +194,8 @@ async def handler(websocket):
                 if msg.get('action') == 'close_all':
                     log.warning("PANIC triggered by client!")
                     await close_all(websocket)
+                elif msg.get('action') == 'close_position':
+                    await close_position(websocket, msg.get('symbol'), msg.get('side'))
             except Exception as e:
                 log.error(f"handler msg: {e}")
     except websockets.exceptions.ConnectionClosed:

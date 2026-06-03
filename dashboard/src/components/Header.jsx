@@ -1,83 +1,70 @@
 import React from 'react'
+import PanicButton from './PanicButton.jsx'
 
 const WS_STATUS = {
-  connected:    { color: '#10b981', label: 'CANLI' },
-  disconnected: { color: '#ef4444', label: 'BAĞLANTI YOK' },
-  error:        { color: '#ef4444', label: 'HATA' },
-  connecting:   { color: '#f59e0b', label: 'BAĞLANIYOR' },
+  connected:    { color: '#0ecb81', label: 'CANLI' },
+  disconnected: { color: '#f6465d', label: 'KESİK' },
+  error:        { color: '#f6465d', label: 'HATA' },
+  connecting:   { color: '#f0b90b', label: 'BAĞLANIYOR' },
 }
 
-export default function Header({ data, status }) {
-  const balance      = data?.balance != null ? data.balance.toFixed(2) : '—'
-  const floatingPnl  = data?.floatingPnl
-  const posCount     = data?.positionCount ?? '—'
-  const engineOn     = data?.engineRunning
+export default function Header({ data, status, onPanic }) {
+  const balance     = data?.balance
+  const dailyPnl    = data?.dailyPnl ?? data?.floatingPnl
+  const posCount    = data?.positionCount ?? 0
+  const winRate     = data?.derr?.winRate ?? data?.winRate
+  const ws          = WS_STATUS[status] || WS_STATUS.connecting
+  const wsConnected = status === 'connected'
 
-  const ws = WS_STATUS[status] || WS_STATUS.connecting
-
-  const pnlColor = floatingPnl == null ? 'var(--text-dim)'
-    : floatingPnl >= 0 ? 'var(--green)' : 'var(--red)'
-
-  const pnlStr = floatingPnl != null
-    ? (floatingPnl >= 0 ? '+' : '') + floatingPnl.toFixed(2) + ' USDT'
+  const pnlPositive = dailyPnl != null && dailyPnl >= 0
+  const pnlStr = dailyPnl != null
+    ? `${dailyPnl >= 0 ? '+' : ''}${dailyPnl.toFixed(2)}`
     : '—'
+
+  const winStr = winRate != null ? `${Number(winRate).toFixed(1)}%` : '—'
 
   return (
     <header className="header">
-      {/* Logo */}
-      <div className="logo">
-        <div className="logo-icon">M</div>
-        <div className="logo-text">
-          <div className="logo-title">MINA v2</div>
-          <div className="logo-sub">Algorithmic Trading</div>
+      <div className="header-left">
+        <div className="header-logo">
+          <span className="header-logo-mark">◆</span>
+          <div className="header-logo-text">
+            <div className="header-logo-title">MINA v2</div>
+          </div>
         </div>
       </div>
 
-      <div className="header-spacer" />
-
-      {/* Bakiye */}
-      <div className="stat-card">
-        <div className="stat-label">Bakiye</div>
-        <div className="stat-value">${balance}</div>
-      </div>
-
-      {/* Floating PnL */}
-      <div className="stat-card">
-        <div className="stat-label">Floating PnL</div>
-        <div className="stat-value" style={{ color: pnlColor }}>{pnlStr}</div>
-      </div>
-
-      {/* Pozisyon sayısı */}
-      <div className="stat-card">
-        <div className="stat-label">Pozisyon</div>
-        <div className="stat-value">{posCount}/10</div>
-      </div>
-
-      {/* Engine durumu */}
-      <div className="stat-card">
-        <div className="stat-label">Engine</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{
-            width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-            background: engineOn ? 'var(--green)' : engineOn === false ? 'var(--red)' : 'var(--text-mute)',
-            boxShadow: engineOn ? '0 0 7px var(--green)' : 'none',
-          }} />
-          <span className="stat-value" style={{
-            color: engineOn ? 'var(--green)' : engineOn === false ? 'var(--red)' : 'var(--text-mute)',
-            fontSize: 12
-          }}>
-            {engineOn ? 'AKTİF' : engineOn === false ? 'PASİF' : '—'}
-          </span>
+      <div className="header-center">
+        <div className="header-stats">
+          <div className="header-stat">
+            <span className="header-stat-label">Bakiye</span>
+            <span className="header-stat-value">
+              {balance != null ? balance.toFixed(2) : '—'}
+            </span>
+          </div>
+          <div className="header-stat">
+            <span className="header-stat-label">PnL</span>
+            <span className={`header-stat-value ${pnlPositive ? 'text-green' : 'text-red'}`}>
+              {pnlStr}
+            </span>
+          </div>
+          <div className="header-stat">
+            <span className="header-stat-label">Pozisyon</span>
+            <span className="header-stat-value">{posCount}/10</span>
+          </div>
+          <div className="header-stat">
+            <span className="header-stat-label">Win Rate</span>
+            <span className="header-stat-value accent">{winStr}</span>
+          </div>
         </div>
       </div>
 
-      {/* WS bağlantı */}
-      <div className="ws-badge" style={{
-        background: ws.color + '18',
-        border: '1px solid ' + ws.color + '44',
-        color: ws.color
-      }}>
-        ● {ws.label}
+      <div className="header-right">
+        <div className="header-ws" style={{ '--ws-color': ws.color }}>
+          <span className="header-ws-dot" />
+          <span className="header-ws-label">{ws.label}</span>
+        </div>
+        <PanicButton onPanic={onPanic} disabled={!wsConnected} compact />
       </div>
     </header>
   )

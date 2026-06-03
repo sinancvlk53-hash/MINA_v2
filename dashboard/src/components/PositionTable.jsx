@@ -1,308 +1,324 @@
-import React from 'react'
+import React, { useRef, useEffect, useState } from 'react'
+import { fmt, defenseStageLabel, calcDefense } from '../utils/trading.js'
+import PositionChartEmbed from './PositionChartEmbed.jsx'
+import ChartBottomSheet from './ChartBottomSheet.jsx'
+import useMediaQuery from '../hooks/useMediaQuery.js'
 
-const DEF_COLORS = ['#F0B90B', '#F6465D', '#7c3aed']
+function PnlValue({ value, className = '' }) {
+  const prev = useRef(value)
+  const ref = useRef(null)
 
-function getLevRules(lev) {
-  if (lev === 10) return { tp_type: 'fast', tp1_pct: 2, tp2_pct: 4, tp2_close: 1.00, trailing_callback: null }
-  return { tp_type: 'standard', tp1_pct: 3, tp2_pct: 5, tp2_close: 0.50, trailing_callback: 2.0 }
-}
+  useEffect(() => {
+    if (prev.current !== value && ref.current) {
+      ref.current.classList.remove('pnl-flash-up', 'pnl-flash-down')
+      void ref.current.offsetWidth
+      ref.current.classList.add(value >= 0 ? 'pnl-flash-up' : 'pnl-flash-down')
+      prev.current = value
+    }
+  }, [value])
 
-function calcTP(pos) {
-  const { entryPrice, amount, leverage, side } = pos
-  const rules = getLevRules(leverage)
-  const { tp1_pct, tp2_pct, tp2_close, trailing_callback, tp_type } = rules
-  const dir = side === 'LONG' ? 1 : -1
-
-  const tp1Price = entryPrice * (1 + dir * tp1_pct / 100)
-  const tp2Price = entryPrice * (1 + dir * tp2_pct / 100)
-  const tp1Qty   = amount * 0.50
-  const tp2Qty   = amount * 0.50 * tp2_close
-  const tp1Usdt  = (tp1Price - entryPrice) * tp1Qty * dir
-  const tp2Usdt  = (tp2Price - entryPrice) * tp2Qty * dir
-
-  return { tp1Price, tp2Price, tp1Usdt, tp2Usdt, trailing_callback, tp_type, tp1_pct, tp2_pct }
-}
-
-function DefenseBadges({ level }) {
+  const positive = value >= 0
   return (
-    <div className="def-badges">
-      {[1, 2, 3].map(l => (
-        <div key={l} className="def-badge" style={
-          l <= level
-            ? { background: DEF_COLORS[l - 1] + '28', border: '1px solid ' + DEF_COLORS[l - 1] + '66', color: DEF_COLORS[l - 1] }
-            : { background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-mute)' }
-        }>D{l}</div>
+    <span ref={ref} className={`pnl-cell ${positive ? 'text-green' : 'text-red'} ${className}`}>
+      {positive ? '+' : ''}{fmt(value, 2)}
+    </span>
+  )
+}
+
+function PnlCell({ value }) {
+  return (
+    <td className="pnl-cell-wrap">
+      <PnlValue value={value} />
+    </td>
+  )
+}
+
+function DefenseBars({ pos, slotSize }) {
+  const def = calcDefense(pos, slotSize)
+  if (!def || pos.leverage !== 4) return null
+
+  const bars = [
+    { key: 'D1', price: def.d1Price, cls: 'def-bar-d1' },
+    { key: 'D2', price: def.d2Price, cls: 'def-bar-d2' },
+    { key: 'D3', price: def.d3Price, cls: 'def-bar-d3' },
+  ]
+
+  return (
+    <div className="pos-card-def-bars">
+      {bars.map(({ key, price, cls }) => (
+        <div key={key} className={`def-bar ${cls}`}>
+          <span className="def-bar-tag">{key}</span>
+          <span className="def-bar-line" />
+          <span className="def-bar-price mono">${fmt(price, 4)}</span>
+        </div>
       ))}
     </div>
   )
 }
 
-function fmt(n, d = 4) {
-  if (n == null || isNaN(n)) return '—'
-  return n.toFixed(d)
+function avgPrice(p) {
+  return p.avgPrice ?? p.weightedAvg ?? p.entryPrice
 }
 
-function TPRow({ pos }) {
-  const tp = calcTP(pos)
-  const isFast = tp.tp_type === 'fast'
-  const green = 'var(--green)'
-  const mute  = 'var(--text-mute)'
-  const mono  = 'var(--mono)'
-
-  const cellStyle = {
-    padding: '8px 12px',
-    borderRight: '1px solid var(--border)',
-    minWidth: 140,
-    verticalAlign: 'top',
-  }
-  const labelStyle = { fontSize: 9, color: mute, letterSpacing: '0.8px', textTransform: 'uppercase', marginBottom: 4, fontWeight: 700 }
-  const priceStyle = { fontSize: 12, fontFamily: mono, color: 'var(--text)', fontWeight: 600 }
-  const usdtStyle  = { fontSize: 11, fontFamily: mono, color: green, fontWeight: 700, marginTop: 2 }
-  const noteStyle  = { fontSize: 9, color: mute, marginTop: 2 }
-
-  return (
-    <tr>
-      <td colSpan={8} style={{ padding: 0, background: 'var(--bg)', borderBottom: '1px solid var(--border)' }}>
-        <div style={{
-          display: 'flex', alignItems: 'stretch',
-          borderTop: '1px solid var(--border)',
-          fontSize: 11,
-        }}>
-          {/* Etiket */}
-          <div style={{ ...cellStyle, background: 'var(--surface)', minWidth: 90, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 9, color: mute, letterSpacing: '0.8px', fontWeight: 700 }}>TP PLANI</div>
-              <div style={{ fontSize: 10, color: isFast ? 'var(--amber)' : 'var(--accent)', fontWeight: 700, marginTop: 3 }}>
-                {pos.leverage}x {isFast ? 'FAST' : 'STD'}
-              </div>
-            </div>
-          </div>
-
-          {/* TP1 */}
-          <div style={cellStyle}>
-            <div style={labelStyle}>TP1 (+%{tp.tp1_pct})</div>
-            <div style={priceStyle}>${fmt(tp.tp1Price, 4)}</div>
-            <div style={usdtStyle}>+{fmt(tp.tp1Usdt, 2)} USDT</div>
-            <div style={noteStyle}>Giriş × {(1 + (pos.side === 'LONG' ? 1 : -1) * tp.tp1_pct / 100).toFixed(2)} · %50 kapat</div>
-          </div>
-
-          {/* TP2 */}
-          <div style={cellStyle}>
-            <div style={labelStyle}>TP2 (+%{tp.tp2_pct})</div>
-            <div style={priceStyle}>${fmt(tp.tp2Price, 4)}</div>
-            <div style={usdtStyle}>+{fmt(tp.tp2Usdt, 2)} USDT</div>
-            <div style={noteStyle}>
-              {isFast ? 'Kalan %100 kapat' : 'Kalan %50 kapat (%25 toplam)'}
-            </div>
-          </div>
-
-          {/* Trailing */}
-          <div style={{ ...cellStyle, borderRight: 'none' }}>
-            <div style={labelStyle}>Trailing Stop</div>
-            {isFast ? (
-              <>
-                <div style={{ fontSize: 12, color: 'var(--red)', fontWeight: 700 }}>YOK</div>
-                <div style={noteStyle}>10x TP2 ile pozisyon kapanır</div>
-              </>
-            ) : (
-              <>
-                <div style={priceStyle}>Başlangıç: TP2 fiyatı</div>
-                <div style={{ fontSize: 11, fontFamily: mono, color: 'var(--amber)', fontWeight: 700, marginTop: 2 }}>
-                  callbackRate: %{tp.trailing_callback}
-                </div>
-                <div style={noteStyle}>TRAILING_STOP_MARKET · Tepeden -%{tp.trailing_callback} düşünce kapanır</div>
-              </>
-            )}
-          </div>
-
-          {/* Giriş referansı */}
-          <div style={{ ...cellStyle, borderRight: 'none', marginLeft: 'auto', background: 'var(--surface)', minWidth: 130 }}>
-            <div style={labelStyle}>Giriş Fiyatı</div>
-            <div style={priceStyle}>${fmt(pos.entryPrice, 4)}</div>
-            <div style={noteStyle}>Miktar: {fmt(pos.amount, 4)}</div>
-            <div style={{ fontSize: 9, color: mute, marginTop: 2 }}>
-              {pos.side === 'LONG' ? '↑ LONG' : '↓ SHORT'}
-            </div>
-          </div>
-        </div>
-      </td>
-    </tr>
-  )
+function notionalUsdt(p) {
+  const mark = p.markPrice ?? p.entryPrice
+  return (p.amount ?? 0) * mark
 }
 
-function DefenseRow({ pos }) {
-  if (pos.leverage !== 4) return null
+export default function PositionTable({
+  positions = [],
+  onDetail,
+  onClose,
+  sendMessage,
+  slotSize = 0,
+  mobileMode = false,
+  onSelectPos,
+  chartSheetOpen = false,
+  onChartSheetChange,
+  showInlineChart = true,
+}) {
+  const isMobile = useMediaQuery('(max-width: 768px)')
+  const mobile = mobileMode || isMobile
+  const [selected, setSelected] = useState(null)
+  const [localSheetOpen, setLocalSheetOpen] = useState(false)
 
-  const { entryPrice, side } = pos
-  const isLong = side === 'LONG'
-  const mono   = 'var(--mono)'
-  const mute   = 'var(--text-mute)'
+  const sheetOpen = onChartSheetChange ? chartSheetOpen : localSheetOpen
 
-  const d1Trigger = entryPrice * (isLong ? 0.95 : 1.05)
-  const d2Trigger = entryPrice * (isLong ? 0.88 : 1.12)
-  // BE hedefi: D2 sonrası ağırlıklı ortalama × 1.0035
-  const beTarget  = isLong ? d2Trigger * 1.0035 : d2Trigger * 0.9965
-
-  const cellStyle = {
-    padding: '8px 12px',
-    borderRight: '1px solid var(--border)',
-    minWidth: 150,
-    verticalAlign: 'top',
+  function setSheetOpen(open) {
+    if (onChartSheetChange) onChartSheetChange(open)
+    else setLocalSheetOpen(open)
   }
-  const labelStyle = {
-    fontSize: 9, color: mute, letterSpacing: '0.8px',
-    textTransform: 'uppercase', marginBottom: 4, fontWeight: 700,
-  }
 
-  return (
-    <tr>
-      <td colSpan={8} style={{ padding: 0, background: 'var(--bg)', borderBottom: '1px solid var(--border)' }}>
-        <div style={{
-          display: 'flex', alignItems: 'stretch',
-          borderTop: '1px dashed var(--border)',
-          fontSize: 11,
-        }}>
-          {/* Etiket */}
-          <div style={{ ...cellStyle, background: 'var(--surface)', minWidth: 90, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 9, color: mute, letterSpacing: '0.8px', fontWeight: 700 }}>DEFANS</div>
-              <div style={{ fontSize: 10, color: 'var(--amber)', fontWeight: 700, marginTop: 3 }}>4x PLAN</div>
-            </div>
-          </div>
+  useEffect(() => {
+    if (!positions.length) {
+      setSelected(null)
+      return
+    }
+    if (selected && !positions.find((p) => p.posKey === selected.posKey || p.symbol === selected.symbol)) {
+      const next = positions[0]
+      setSelected(next)
+      onSelectPos?.(next)
+    }
+  }, [positions, selected, onSelectPos])
 
-          {/* D1 */}
-          <div style={cellStyle}>
-            <div style={labelStyle}>D1 Tetik (-%5)</div>
-            <div style={{ fontSize: 12, fontFamily: mono, color: 'var(--amber)', fontWeight: 600 }}>
-              ${fmt(d1Trigger, 4)}
-            </div>
-            <div style={{ fontSize: 9, color: mute, marginTop: 3 }}>
-              D1 Tetik: {fmt(d1Trigger, 2)} USDT (girişten -%5)
-            </div>
-            <div style={{ fontSize: 9, color: mute, marginTop: 1 }}>DCA +%20 slot · Binance ent. güncellenir</div>
-          </div>
-
-          {/* D2 */}
-          <div style={cellStyle}>
-            <div style={labelStyle}>D2 Tetik (-%12)</div>
-            <div style={{ fontSize: 12, fontFamily: mono, color: 'var(--red)', fontWeight: 600 }}>
-              ${fmt(d2Trigger, 4)}
-            </div>
-            <div style={{ fontSize: 9, color: mute, marginTop: 2 }}>
-              D2 Tetik: {fmt(d2Trigger, 2)} USDT (girişten -%12)
-            </div>
-            <div style={{ fontSize: 11, fontFamily: mono, color: 'var(--green)', fontWeight: 700, marginTop: 3 }}>
-              BE Hedefi: ${fmt(beTarget, 4)}
-            </div>
-            <div style={{ fontSize: 9, color: mute, marginTop: 1 }}>D1+D2 ağ.ort. × 1.0035</div>
-          </div>
-
-          {/* D3 */}
-          <div style={{ ...cellStyle, borderRight: 'none', flex: 1 }}>
-            <div style={labelStyle}>D3 (-%25)</div>
-            <div style={{ fontSize: 11, color: 'var(--purple)', fontWeight: 700 }}>Hayalet SFP</div>
-            <div style={{ fontSize: 9, color: mute, marginTop: 2 }}>
-              Ana destek bölgesinde 5m Bull Bar onayı bekleniyor
-            </div>
-            <div style={{ fontSize: 9, color: 'var(--red)', marginTop: 4, fontWeight: 600 }}>
-              Hard Stop: D3 iğnesi altına dinamik konur
-            </div>
-          </div>
-        </div>
-      </td>
-    </tr>
-  )
-}
-
-export default function PositionTable({ positions, selected, onSelect }) {
-  if (!positions || positions.length === 0) {
+  if (!positions.length) {
     return (
-      <div className="section-card">
-        <div className="section-header">
-          <span className="section-title">Pozisyonlar (0)</span>
+      <div className="panel panel-positions">
+        <div className="panel-head">
+          <span className="panel-title">Pozisyonlar</span>
+          <span className="panel-badge">0</span>
         </div>
-        <div style={{
-          padding: '40px 20px', textAlign: 'center',
-          color: 'var(--text-mute)', fontSize: 12
-        }}>Açık pozisyon yok</div>
+        <div className="empty-state">Açık pozisyon yok</div>
       </div>
     )
   }
 
-  return (
-    <div className="section-card">
-      <div className="section-header">
-        <span className="section-title">Pozisyonlar ({positions.length})</span>
-        <span style={{ marginLeft: 'auto', color: 'var(--text-mute)', fontSize: 9 }}>
-          Grafik için satıra tıkla
-        </span>
-      </div>
-      <div className="pos-table-wrap">
-        <table className="pos-table">
-          <thead>
-            <tr>
-              <th>Coin</th>
-              <th>Yön</th>
-              <th>Giriş</th>
-              <th>Mark</th>
-              <th>PnL (USDT)</th>
-              <th>ROE %</th>
-              <th>Savunma</th>
-              <th>Likidasyon</th>
-            </tr>
-          </thead>
-          <tbody>
-            {positions.map((p, i) => {
+  function selectPos(p) {
+    setSelected(p)
+    onSelectPos?.(p)
+  }
+
+  function handleClose(p, e) {
+    e?.stopPropagation()
+    if (sendMessage) {
+      sendMessage({ action: 'close_position', symbol: p.symbol, side: p.side })
+    }
+    onClose?.(p)
+  }
+
+  function handleDetail(p, e) {
+    e?.stopPropagation()
+    onDetail?.(p)
+  }
+
+  function handleRowClick(p) {
+    selectPos(p)
+    if (mobile) {
+      setSheetOpen(true)
+    }
+  }
+
+  const chartPos = selected ?? positions[0]
+
+  if (mobile) {
+    return (
+      <>
+        <div className="panel panel-positions panel-positions-mobile">
+          <div className="panel-head">
+            <span className="panel-title">Pozisyonlar</span>
+            <span className="panel-badge">{positions.length}</span>
+          </div>
+          <div className="pos-cards">
+            {positions.map((p) => {
               const isLong = p.side === 'LONG'
-              const pnlC   = p.pnlUSDT >= 0 ? 'var(--green)' : 'var(--red)'
-              const roeC   = p.roe    >= 0 ? 'var(--green)' : 'var(--red)'
-              const isSelected = selected === p.symbol
+              const stage = defenseStageLabel(p.defenseLevel || 0)
+              const roePositive = p.roe >= 0
+              const isSelected =
+                (selected?.posKey && selected.posKey === p.posKey) ||
+                (selected?.symbol === p.symbol && selected?.side === p.side)
 
               return (
-                <React.Fragment key={p.posKey || i}>
-                  <tr
-                    className={isSelected ? 'selected' : ''}
-                    onClick={() => onSelect && onSelect(p.symbol)}
-                  >
-                    <td>
-                      <span style={{ color: 'var(--text)', fontWeight: 700, fontSize: 12 }}>
-                        {p.symbol.replace(/USDT$/, '')}
+                <article
+                  key={p.posKey || `${p.symbol}_${p.side}`}
+                  className={`pos-card ${isSelected ? 'pos-card-selected' : ''}`}
+                  onClick={() => handleRowClick(p)}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div className="pos-card-top">
+                    <div className="pos-card-symbol">
+                      <span className="sym-name">{p.symbol.replace(/USDT$/, '')}</span>
+                      <span className="sym-pair">/USDT</span>
+                    </div>
+                    <div className="pos-card-badges">
+                      <span className={`badge-pill ${isLong ? 'badge-pill-long' : 'badge-pill-short'}`}>
+                        {p.side}
                       </span>
-                      <span style={{ color: 'var(--text-mute)', fontSize: 10 }}>/USDT</span>
-                    </td>
-                    <td>
-                      <span style={{
-                        padding: '2px 7px', borderRadius: 4,
-                        background: isLong ? '#0ECB8118' : '#F6465D18',
-                        color: isLong ? 'var(--green)' : 'var(--red)',
-                        fontSize: 10, fontWeight: 700
-                      }}>{p.side}</span>
-                    </td>
-                    <td style={{ color: 'var(--text-mute)', fontFamily: 'var(--mono)', fontSize: 11 }}>
-                      ${fmt(p.entryPrice)}
-                    </td>
-                    <td style={{ color: 'var(--text)', fontFamily: 'var(--mono)', fontSize: 11 }}>
-                      ${fmt(p.markPrice)}
-                    </td>
-                    <td style={{ color: pnlC, fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 600 }}>
-                      {p.pnlUSDT >= 0 ? '+' : ''}{fmt(p.pnlUSDT, 2)}
-                    </td>
-                    <td style={{ color: roeC, fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 600 }}>
-                      {p.roe >= 0 ? '+' : ''}{fmt(p.roe, 1)}%
-                    </td>
-                    <td><DefenseBadges level={p.defenseLevel || 0} /></td>
-                    <td style={{ color: '#F6465Daa', fontFamily: 'var(--mono)', fontSize: 11 }}>
-                      ${fmt(p.liqPrice)}
-                    </td>
-                  </tr>
-                  <TPRow pos={p} />
-                  <DefenseRow pos={p} />
-                </React.Fragment>
+                      <span className="badge-lev">{p.leverage}x</span>
+                      {p.leverage === 4 && (
+                        <span className={`def-stage ${stage.cls}`}>{stage.text}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="pos-card-pnl-row">
+                    <div className="pos-card-metric">
+                      <span className="pos-card-metric-label">PnL (USDT)</span>
+                      <PnlValue value={p.pnlUSDT} className="pos-card-pnl-big" />
+                    </div>
+                    <div className="pos-card-metric pos-card-metric-right">
+                      <span className="pos-card-metric-label">ROE</span>
+                      <span className={`pos-card-roe-big mono ${roePositive ? 'text-green' : 'text-red'}`}>
+                        {roePositive ? '+' : ''}{fmt(p.roe, 1)}%
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pos-card-grid">
+                    <div><span className="pos-card-k">Giriş</span><span className="mono">${fmt(p.entryPrice)}</span></div>
+                    <div><span className="pos-card-k">Ort.</span><span className="mono">${fmt(avgPrice(p))}</span></div>
+                    <div><span className="pos-card-k">Mark</span><span className="mono">${fmt(p.markPrice)}</span></div>
+                    <div><span className="pos-card-k">Liq</span><span className="mono liq">${fmt(p.liqPrice)}</span></div>
+                    <div><span className="pos-card-k">Miktar</span><span className="mono">{fmt(p.amount, 4)}</span></div>
+                    <div><span className="pos-card-k">Büyüklük</span><span className="mono">{fmt(notionalUsdt(p), 2)}</span></div>
+                    <div><span className="pos-card-k">Marjin</span><span className="mono">{fmt(p.margin, 2)}</span></div>
+                  </div>
+
+                  <DefenseBars pos={p} slotSize={slotSize} />
+
+                  <div className="pos-card-actions">
+                    <button type="button" className="btn btn-ghost touch-target" onClick={(e) => handleDetail(p, e)}>
+                      Detay
+                    </button>
+                    <button type="button" className="btn btn-close touch-target" onClick={(e) => handleClose(p, e)}>
+                      Kapat
+                    </button>
+                  </div>
+                </article>
               )
             })}
-          </tbody>
-        </table>
+          </div>
+        </div>
+
+        {sheetOpen && chartPos && (
+          <ChartBottomSheet
+            pos={chartPos}
+            slotSize={slotSize}
+            onClose={() => setSheetOpen(false)}
+          />
+        )}
+      </>
+    )
+  }
+
+  return (
+    <>
+      <div className="panel panel-positions">
+        <div className="panel-head">
+          <span className="panel-title">Pozisyonlar</span>
+          <span className="panel-badge">{positions.length}</span>
+          <span className="field-hint" style={{ marginLeft: 'auto', marginTop: 0 }}>
+            Grafik için satıra tıkla
+          </span>
+        </div>
+        <div className="table-scroll">
+          <table className="pos-table pos-table-wide">
+            <thead>
+              <tr>
+                <th>Sembol</th>
+                <th>Yön</th>
+                <th>Kaldıraç</th>
+                <th>Giriş Fiyatı</th>
+                <th>Ortalama Fiyat</th>
+                <th>Mark Fiyat</th>
+                <th>Likidasyon</th>
+                <th>Miktar</th>
+                <th>Büyüklük</th>
+                <th>Marjin</th>
+                <th>ROE %</th>
+                <th>PnL</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {positions.map((p) => {
+                const isLong = p.side === 'LONG'
+                const stage = defenseStageLabel(p.defenseLevel || 0)
+                const roePositive = p.roe >= 0
+                const isSelected =
+                  (selected?.posKey && selected.posKey === p.posKey) ||
+                  (selected?.symbol === p.symbol && selected?.side === p.side) ||
+                  (!selected && p === positions[0])
+
+                return (
+                  <tr
+                    key={p.posKey || `${p.symbol}_${p.side}`}
+                    className={isSelected ? 'row-selected' : ''}
+                    onClick={() => handleRowClick(p)}
+                  >
+                    <td className="sym-cell">
+                      <span className="sym-name">{p.symbol.replace(/USDT$/, '')}</span>
+                      <span className="sym-pair">/USDT</span>
+                    </td>
+                    <td>
+                      <span className={`badge ${isLong ? 'badge-long' : 'badge-short'}`}>
+                        {p.side}
+                      </span>
+                    </td>
+                    <td className="mono">{p.leverage}x</td>
+                    <td className="mono dim">${fmt(p.entryPrice)}</td>
+                    <td className="mono">${fmt(avgPrice(p))}</td>
+                    <td className="mono">${fmt(p.markPrice)}</td>
+                    <td className="mono liq">${fmt(p.liqPrice)}</td>
+                    <td className="mono">{fmt(p.amount, 4)}</td>
+                    <td className="mono">{fmt(notionalUsdt(p), 2)}</td>
+                    <td className="mono">{fmt(p.margin, 2)}</td>
+                    <td className={`mono ${roePositive ? 'text-green' : 'text-red'}`}>
+                      {roePositive ? '+' : ''}{fmt(p.roe, 1)}%
+                    </td>
+                    <PnlCell value={p.pnlUSDT} />
+                    <td className="actions-cell">
+                      <button type="button" className="btn btn-sm btn-ghost" onClick={(e) => handleDetail(p, e)}>
+                        Detay
+                      </button>
+                      <button type="button" className="btn btn-sm btn-close" onClick={(e) => handleClose(p, e)}>
+                        Kapat
+                      </button>
+                      {p.leverage === 4 && (
+                        <span className={`def-stage ${stage.cls}`}>{stage.text}</span>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+
+      {showInlineChart && chartPos && (
+        <PositionChartEmbed pos={chartPos} slotSize={slotSize} />
+      )}
+    </>
   )
 }

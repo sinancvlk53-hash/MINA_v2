@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import os
+from decimal import Decimal, ROUND_DOWN
 from typing import Any, Dict, List, Optional
 
 from binance.client import Client
@@ -58,7 +59,7 @@ class MinaPositionManager:
         self.position_states: Dict[str, Dict] = {}
         self.journal = journal  # Trading journal referansı
         self.trade_ids: Dict[str, int] = {}  # {pos_key: trade_id}
-        self._symbol_precision_cache: Dict[str, int] = {}
+        self._lot_step_cache: Dict[str, float] = {}
         self._exchange_info_loaded: bool = False
 
         self.leverage_rules = {
@@ -213,7 +214,81 @@ class MinaPositionManager:
         mt.save_json(mt.TP_FILE, tp_levels)
         mt.save_json(mt.MAX_PRICE_FILE, max_prices)
         self._save_state()
+
+        reconciled = self.reconcile_journal_closed(open_keys)
+        if reconciled:
+            report['journal_reconciled'] = reconciled
+            if verbose:
+                for r in reconciled:
+                    print(f"[SYNC] journal closed (reconcile): {r['key']} id={r['trade_id']} reason={r['reason']}")
+
         return report
+
+    def reconcile_journal_closed(self, open_keys: set) -> List[Dict[str, Any]]:
+        """Binance'te kapalı ama DERR'de hâlâ open olan kayıtları kapat."""
+        if not self.journal:
+            return []
+
+        closed_report: List[Dict[str, Any]] = []
+        try:
+            cursor = self.journal.conn.cursor()
+            cursor.execute(
+                """SELECT id, symbol, side, open_price, open_qty, initial_margin
+                   FROM trades WHERE status = 'open'"""
+            )
+            rows = cursor.fetchall()
+
+            for row in rows:
+                symbol = row['symbol']
+                side = row['side']
+                key = self._pos_key(symbol, side)
+                if key in open_keys:
+                    continue
+
+                trade_id = int(row['id'])
+                entry_price = float(row['open_price'])
+                qty = float(row['open_qty'])
+                init_margin = float(row['initial_margin'] or 1)
+
+                try:
+                    ticker = self.client.futures_mark_price(symbol=symbol)
+                    close_price = float(ticker['markPrice'])
+                except Exception:
+                    close_price = entry_price
+
+                if side == 'LONG':
+                    pnl_usdt = (close_price - entry_price) * qty
+                else:
+                    pnl_usdt = (entry_price - close_price) * qty
+                notional = entry_price * qty if entry_price > 0 else 1
+                pnl_percent = (pnl_usdt / notional) * 100
+                roe_percent = (pnl_usdt / init_margin) * 100 if init_margin > 0 else 0
+
+                self.journal.log_trade_close(
+                    trade_id=trade_id,
+                    close_price=close_price,
+                    qty=qty,
+                    close_reason='Reconciliation (Binance kapalı)',
+                    pnl_usdt=pnl_usdt,
+                    pnl_percent=pnl_percent,
+                    roe_percent=roe_percent,
+                )
+                self.trade_ids.pop(key, None)
+                closed_report.append({
+                    'key': key,
+                    'trade_id': trade_id,
+                    'symbol': symbol,
+                    'side': side,
+                    'reason': 'Reconciliation (Binance kapalı)',
+                    'close_price': close_price,
+                    'pnl_usdt': round(pnl_usdt, 4),
+                })
+        except Exception as e:
+            print(f"❌ Journal reconcile hatası: {e}")
+
+        if closed_report:
+            self._save_state()
+        return closed_report
 
     def _load_trade_ids_from_journal(self) -> None:
         if not self.journal:
@@ -518,7 +593,7 @@ class MinaPositionManager:
             return False
 
         add_usdt = self.slot_size / 5
-        add_qty = self._round_quantity(add_usdt / current_price)
+        add_qty = self._round_quantity(add_usdt / current_price, symbol)
         if add_qty <= 0:
             return False
 
@@ -529,8 +604,7 @@ class MinaPositionManager:
                 side=order_side,
                 type=ORDER_TYPE_MARKET,
                 quantity=add_qty,
-                positionSide=side,
-                reduceOnly=False
+                positionSide=side
             )
         except Exception as e:
             print(f"   ❌ D1 ekleme hatası: {e}")
@@ -550,9 +624,10 @@ class MinaPositionManager:
         }
         self.log_defense_activation(
             symbol=symbol,
+            side=side,
             defense_level=1,
             defense_prices=defense_prices,
-            weighted_avg=weighted_avg
+            weighted_avg=weighted_avg,
         )
 
         print(f"   🛡️  D1 gerçekleştirildi: yeni ağırlıklı ortalama {self._round_price(weighted_avg)}")
@@ -568,7 +643,7 @@ class MinaPositionManager:
             return False
 
         add_usdt = self.slot_size / 5
-        add_qty = self._round_quantity(add_usdt / current_price)
+        add_qty = self._round_quantity(add_usdt / current_price, symbol)
         if add_qty <= 0:
             return False
 
@@ -579,8 +654,7 @@ class MinaPositionManager:
                 side=order_side,
                 type=ORDER_TYPE_MARKET,
                 quantity=add_qty,
-                positionSide=side,
-                reduceOnly=False
+                positionSide=side
             )
         except Exception as e:
             print(f"   ❌ D2 ekleme hatası: {e}")
@@ -600,9 +674,8 @@ class MinaPositionManager:
                 side=escape_side,
                 type=ORDER_TYPE_TAKE_PROFIT_MARKET,
                 stopPrice=breakeven_price,
-                quantity=self._round_quantity(total_qty),
-                positionSide=side,
-                reduceOnly=True
+                quantity=self._round_quantity(total_qty, symbol),
+                positionSide=side
             )
             state['d2_order_active'] = True
             state['d2_order_id'] = order.get('orderId')
@@ -617,9 +690,10 @@ class MinaPositionManager:
             }
             self.log_defense_activation(
                 symbol=symbol,
+                side=side,
                 defense_level=2,
                 defense_prices=defense_prices,
-                weighted_avg=weighted_avg
+                weighted_avg=weighted_avg,
             )
             
             print(f"   🛡️  D2 yürütüldü: başa baş escape fiyatı {breakeven_price}")
@@ -646,7 +720,7 @@ class MinaPositionManager:
             return False
 
         add_usdt = self.slot_size * 0.40
-        add_qty = self._round_quantity(add_usdt / current_price)
+        add_qty = self._round_quantity(add_usdt / current_price, symbol)
         if add_qty <= 0:
             return False
 
@@ -657,8 +731,7 @@ class MinaPositionManager:
                 side=order_side,
                 type=ORDER_TYPE_MARKET,
                 quantity=add_qty,
-                positionSide=side,
-                reduceOnly=False
+                positionSide=side
             )
         except Exception as e:
             print(f"   ❌ D3 ekleme hatası: {e}")
@@ -680,9 +753,8 @@ class MinaPositionManager:
                 side=escape_side,
                 type=ORDER_TYPE_TAKE_PROFIT_MARKET,
                 stopPrice=breakeven_price,
-                quantity=self._round_quantity(total_qty),
-                positionSide=side,
-                reduceOnly=True
+                quantity=self._round_quantity(total_qty, symbol),
+                positionSide=side
             )
             state['d3_order_id'] = order.get('orderId')
             self._save_state()
@@ -695,9 +767,10 @@ class MinaPositionManager:
             }
             self.log_defense_activation(
                 symbol=symbol,
+                side=side,
                 defense_level=3,
                 defense_prices=defense_prices,
-                weighted_avg=weighted_avg
+                weighted_avg=weighted_avg,
             )
             
             print(f"   🛡️  D3 tamamlandı: yeni TP kaçış emri {breakeven_price} fiyatına gönderildi")
@@ -726,34 +799,48 @@ class MinaPositionManager:
         except:
             close_price = stop_price  # Hard stop tetiklenme fiyatı
         
+        already_past = (
+            (side == 'LONG' and close_price <= stop_price)
+            or (side == 'SHORT' and close_price >= stop_price)
+        )
+
         try:
-            self.client.futures_create_order(
-                symbol=symbol,
-                side=order_side,
-                type=ORDER_TYPE_STOP_MARKET,
-                stopPrice=stop_price,
-                quantity=self._round_quantity(amount),
-                positionSide=side,
-                reduceOnly=True
-            )
-            
-            # Journal'a Hard Stop tetiklenmesini kaydet
+            if already_past:
+                self.client.futures_create_order(
+                    symbol=symbol,
+                    side=order_side,
+                    type=ORDER_TYPE_MARKET,
+                    quantity=self._round_quantity(amount, symbol),
+                    positionSide=side
+                )
+                print(f"   🔥 HARD STOP tetiklendi (MARKET): {symbol} tam kapama mark={close_price}")
+            else:
+                self.client.futures_create_order(
+                    symbol=symbol,
+                    side=order_side,
+                    type=ORDER_TYPE_STOP_MARKET,
+                    stopPrice=stop_price,
+                    quantity=self._round_quantity(amount, symbol),
+                    positionSide=side
+                )
+                print(f"   🔥 HARD STOP tetiklendi: {symbol} tam kapama stopPrice={stop_price}")
+
             pnl_usdt = (close_price - entry_price) * amount if side == 'LONG' else (entry_price - close_price) * amount
             pnl_percent = (pnl_usdt / (entry_price * amount)) * 100 if entry_price > 0 else 0
             roe_percent = (pnl_usdt / state.get('initial_margin', 1)) * 100 if state.get('initial_margin', 0) > 0 else 0
-            
+
             self.log_position_close(
                 symbol=symbol,
+                side=side,
                 close_price=close_price,
                 qty=amount,
                 close_reason='Hard Stop',
                 pnl_usdt=pnl_usdt,
                 pnl_percent=pnl_percent,
-                roe_percent=roe_percent
+                roe_percent=roe_percent,
             )
-            
+
             self.reset_position_state(symbol)
-            print(f"   🔥 HARD STOP tetiklendi: {symbol} tam kapama stopPrice={stop_price}")
             return True
         except Exception as e:
             print(f"   ❌ HARD STOP hatası: {e}")
@@ -831,7 +918,7 @@ class MinaPositionManager:
             return False
 
         if level == 1:
-            close_qty = self._round_quantity(amount * 0.50)
+            close_qty = self._round_quantity(amount * 0.50, symbol)
             if close_qty <= 0:
                 return False
 
@@ -851,31 +938,15 @@ class MinaPositionManager:
                     side=order_side,
                     type=ORDER_TYPE_MARKET,
                     quantity=close_qty,
-                    positionSide=side,
-                    reduceOnly=True
+                    positionSide=side
                 )
                 
-                # Journal'a TP1 kapanışını kaydet
-                entry_price = state.get('weighted_avg_price', position.get('entry_price', 0))
-                pnl_usdt = (close_price - entry_price) * close_qty if side == 'LONG' else (entry_price - close_price) * close_qty
-                pnl_percent = (pnl_usdt / (entry_price * close_qty)) * 100 if entry_price > 0 else 0
-                roe_percent = (pnl_usdt / state.get('initial_margin', 1)) * 100 if state.get('initial_margin', 0) > 0 else 0
-                
-                self.log_position_close(
-                    symbol=symbol,
-                    close_price=close_price,
-                    qty=close_qty,
-                    close_reason='TP1',
-                    pnl_usdt=pnl_usdt,
-                    pnl_percent=pnl_percent,
-                    roe_percent=roe_percent
-                )
-                
+                # TP1 kısmi kapama — journal tam kapanış trailing/stop'ta yazılır
             except Exception as e:
                 print(f"   ❌ TP1 market kapama hatası: {e}")
                 return False
 
-            remaining_qty = self._round_quantity(amount - close_qty)
+            remaining_qty = self._round_quantity(amount - close_qty, symbol)
             if remaining_qty > 0:
                 stop_price = self._round_price(state.get('weighted_avg_price', position.get('entry_price')))
                 try:
@@ -885,8 +956,7 @@ class MinaPositionManager:
                         type=ORDER_TYPE_STOP_MARKET,
                         stopPrice=stop_price,
                         quantity=remaining_qty,
-                        positionSide=side,
-                        reduceOnly=True
+                        positionSide=side
                     )
                     print(f"   🛡️  Breakeven stop order kuruldu: {stop_price}")
                 except Exception as e:
@@ -903,7 +973,7 @@ class MinaPositionManager:
                 print(f"   ⚠️  TP2 atlandı çünkü TP sistemi D2 ile donduruldu")
                 return False
 
-            close_qty = self._round_quantity(amount * 0.50)
+            close_qty = self._round_quantity(amount * 0.50, symbol)
             if close_qty <= 0:
                 return False
 
@@ -923,31 +993,15 @@ class MinaPositionManager:
                     side=order_side,
                     type=ORDER_TYPE_MARKET,
                     quantity=close_qty,
-                    positionSide=side,
-                    reduceOnly=True
+                    positionSide=side
                 )
                 
-                # Journal'a TP2 kapanışını kaydet
-                entry_price = state.get('weighted_avg_price', position.get('entry_price', 0))
-                pnl_usdt = (close_price - entry_price) * close_qty if side == 'LONG' else (entry_price - close_price) * close_qty
-                pnl_percent = (pnl_usdt / (entry_price * close_qty)) * 100 if entry_price > 0 else 0
-                roe_percent = (pnl_usdt / state.get('initial_margin', 1)) * 100 if state.get('initial_margin', 0) > 0 else 0
-                
-                self.log_position_close(
-                    symbol=symbol,
-                    close_price=close_price,
-                    qty=close_qty,
-                    close_reason='TP2',
-                    pnl_usdt=pnl_usdt,
-                    pnl_percent=pnl_percent,
-                    roe_percent=roe_percent
-                )
-                
+                # TP2 kısmi kapama — journal tam kapanış trailing/stop'ta yazılır
             except Exception as e:
                 print(f"   ❌ TP2 market kapama hatası: {e}")
                 return False
 
-            remaining_qty = self._round_quantity(amount - close_qty)
+            remaining_qty = self._round_quantity(amount - close_qty, symbol)
             if remaining_qty > 0 and self.tp_rules[self._get_tp_type(position)]['trailing_callback_pct'] is not None:
                 try:
                     self.client.futures_create_order(
@@ -956,8 +1010,7 @@ class MinaPositionManager:
                         type=ORDER_TYPE_TRAILING_STOP_MARKET,
                         quantity=remaining_qty,
                         positionSide=side,
-                        callbackRate=self.tp_rules[self._get_tp_type(position)]['trailing_callback_pct'],
-                        reduceOnly=True
+                        callbackRate=self.tp_rules[self._get_tp_type(position)]['trailing_callback_pct']
                     )
                     print(f"   🏁 Trailing stop market emri gönderildi: callbackRate=%{self.tp_rules[self._get_tp_type(position)]['trailing_callback_pct']}")
                     state['trailing_order_active'] = True
@@ -996,9 +1049,8 @@ class MinaPositionManager:
                 symbol=symbol,
                 side=order_side,
                 type=ORDER_TYPE_MARKET,
-                quantity=self._round_quantity(amount),
-                positionSide=side,
-                reduceOnly=True
+                quantity=self._round_quantity(amount, symbol),
+                positionSide=side
             )
             
             # Journal'a Trailing kapanışını kaydet
@@ -1009,12 +1061,13 @@ class MinaPositionManager:
             
             self.log_position_close(
                 symbol=symbol,
+                side=side,
                 close_price=close_price,
                 qty=amount,
                 close_reason='Trailing',
                 pnl_usdt=pnl_usdt,
                 pnl_percent=pnl_percent,
-                roe_percent=roe_percent
+                roe_percent=roe_percent,
             )
             
             self.reset_position_state(symbol)
@@ -1045,9 +1098,8 @@ class MinaPositionManager:
                 symbol=symbol,
                 side=order_side,
                 type=ORDER_TYPE_MARKET,
-                quantity=self._round_quantity(amount),
-                positionSide=side,
-                reduceOnly=True
+                quantity=self._round_quantity(amount, symbol),
+                positionSide=side
             )
             
             # Journal'a Stop Loss kapanışını kaydet
@@ -1058,12 +1110,13 @@ class MinaPositionManager:
             
             self.log_position_close(
                 symbol=symbol,
+                side=side,
                 close_price=close_price,
                 qty=amount,
                 close_reason='Stop Loss',
                 pnl_usdt=pnl_usdt,
                 pnl_percent=pnl_percent,
-                roe_percent=roe_percent
+                roe_percent=roe_percent,
             )
             
             self.reset_position_state(symbol)
@@ -1077,8 +1130,37 @@ class MinaPositionManager:
         state = self.position_states.get(symbol, {})
         return state.get('weighted_avg_price', position.get('entry_price'))
 
-    def _round_quantity(self, quantity: float) -> float:
-        return round(max(quantity, 0.0), 5)
+    def _ensure_lot_step_cache(self) -> None:
+        if self._exchange_info_loaded:
+            return
+        try:
+            exchange_info = self.client.futures_exchange_info()
+            for s in exchange_info['symbols']:
+                sym = s['symbol']
+                step = 0.001
+                for f in s['filters']:
+                    if f['filterType'] == 'LOT_SIZE':
+                        step = float(f['stepSize'])
+                        break
+                self._lot_step_cache[sym] = step
+            self._exchange_info_loaded = True
+        except Exception:
+            self._lot_step_cache.setdefault('', 0.001)
+
+    def _get_lot_step_size(self, symbol: str) -> float:
+        self._ensure_lot_step_cache()
+        return self._lot_step_cache.get(symbol, 0.001)
+
+    def _round_quantity(self, quantity: float, symbol: str) -> float:
+        if quantity <= 0:
+            return 0.0
+        step = self._get_lot_step_size(symbol)
+        if step <= 0:
+            return round(quantity, 8)
+        q = Decimal(str(quantity))
+        s = Decimal(str(step))
+        rounded = (q / s).to_integral_value(rounding=ROUND_DOWN) * s
+        return float(rounded)
 
     def _round_price(self, price: float) -> float:
         return round(max(price, 0.0), 2)
@@ -1209,15 +1291,12 @@ class MinaPositionManager:
             print(f"       📊 PnL: {pnl_pct:+.2f}% (${pnl_usdt:+.2f})")
             print(f"       ⚡ Miktar: {amount}")
             
-            # Precision hesapla
-            precision = self._get_symbol_precision(symbol)
-            qty_to_close = round(amount, precision)
+            qty_to_close = self._round_quantity(amount, symbol)
             
             if qty_to_close <= 0:
                 print(f"       ⚠️  Kapatılacak miktar 0 — atlanıyor\n")
                 continue
             
-            # MARKET emri ile kapatma (reduceOnly=True)
             order_side = SIDE_SELL if side == 'LONG' else SIDE_BUY
             
             try:
@@ -1226,8 +1305,7 @@ class MinaPositionManager:
                     side=order_side,
                     type=ORDER_TYPE_MARKET,
                     quantity=qty_to_close,
-                    positionSide=side,
-                    reduceOnly=True
+                    positionSide=side
                 )
                 
                 # Journal'a acil tasfiyeyi kaydet
@@ -1235,12 +1313,13 @@ class MinaPositionManager:
                 
                 self.log_position_close(
                     symbol=symbol,
+                    side=side,
                     close_price=mark_price,
                     qty=qty_to_close,
                     close_reason='Acil Tasfiye',
                     pnl_usdt=pnl_usdt,
                     pnl_percent=pnl_pct,
-                    roe_percent=roe_percent
+                    roe_percent=roe_percent,
                 )
                 
                 print(f"       ✅ KAPATILDI! Order ID: {order.get('orderId')}")
@@ -1267,51 +1346,34 @@ class MinaPositionManager:
         return closed
 
     def _get_symbol_precision(self, symbol: str) -> int:
-        """Sembol için step size precision'ını getir (cache'li)."""
-        if symbol in self._symbol_precision_cache:
-            return self._symbol_precision_cache[symbol]
-
-        if not self._exchange_info_loaded:
-            try:
-                import math
-                exchange_info = self.client.futures_exchange_info()
-                for s in exchange_info['symbols']:
-                    sym = s['symbol']
-                    precision = 5
-                    for f in s['filters']:
-                        if f['filterType'] == 'LOT_SIZE':
-                            step_size = float(f['stepSize'])
-                            if step_size > 0:
-                                precision = abs(int(math.log10(step_size)))
-                            break
-                    self._symbol_precision_cache[sym] = precision
-                self._exchange_info_loaded = True
-            except Exception:
-                self._symbol_precision_cache.setdefault(symbol, 5)
-                return 5
-
-        return self._symbol_precision_cache.get(symbol, 5)
+        """Sembol için step size ondalık basamak sayısı (cache'li)."""
+        step = self._get_lot_step_size(symbol)
+        if step >= 1:
+            return 0
+        step_str = f"{step:.12f}".rstrip('0')
+        if '.' not in step_str:
+            return 0
+        return len(step_str.split('.')[1])
 
     # ─────────────────────────────────────────────────────────────
     # JOURNAL LOGGING — DERR İntegrasyonu
     # ─────────────────────────────────────────────────────────────
 
+    def _trade_id_for(self, symbol: str, side: str) -> Optional[int]:
+        """pos_key ile trade_id; eski symbol-only kayıtlar için geriye dönük uyum."""
+        key = self._pos_key(symbol, side)
+        if key in self.trade_ids:
+            return self.trade_ids[key]
+        if symbol in self.trade_ids:
+            return self.trade_ids[symbol]
+        return None
+
     def log_position_open(self, symbol: str, side: str, leverage: int,
                          entry_price: float, qty: float, initial_margin: float) -> None:
-        """
-        Pozisyon açıldığında journal'a kaydet.
-        
-        Args:
-            symbol: Sembol
-            side: LONG/SHORT
-            leverage: Kaldıraç
-            entry_price: Giriş fiyatı
-            qty: Açılan miktar
-            initial_margin: Başlangıç marjini
-        """
+        """Pozisyon açıldığında journal'a kaydet."""
         if not self.journal:
             return
-        
+
         try:
             trade_id = self.journal.log_trade_open(
                 symbol=symbol,
@@ -1319,62 +1381,49 @@ class MinaPositionManager:
                 leverage=leverage,
                 entry_price=entry_price,
                 qty=qty,
-                initial_margin=initial_margin
+                initial_margin=initial_margin,
             )
-            
-            # Trade ID'sini state'e kaydet
-            self.trade_ids[symbol] = trade_id
-            self._save_state()
-            
+            if trade_id > 0:
+                self.trade_ids[self._pos_key(symbol, side)] = trade_id
+                self._save_state()
         except Exception as e:
             print(f"❌ Journal log_position_open hatası: {e}")
 
-    def log_defense_activation(self, symbol: str, defense_level: int,
+    def log_defense_activation(self, symbol: str, side: str, defense_level: int,
                               defense_prices: Dict, weighted_avg: float) -> None:
-        """
-        Savunma tetiklendiğinde journal'a kaydet.
-        
-        Args:
-            symbol: Sembol
-            defense_level: D1/D2/D3
-            defense_prices: Savunma fiyatları
-            weighted_avg: Ağırlıklı ortalama
-        """
-        if not self.journal or symbol not in self.trade_ids:
+        """Savunma tetiklendiğinde journal'a kaydet."""
+        trade_id = self._trade_id_for(symbol, side)
+        if not self.journal or trade_id is None:
             return
-        
+
         try:
-            trade_id = self.trade_ids[symbol]
             self.journal.log_defense_triggered(
                 trade_id=trade_id,
                 defense_level=defense_level,
                 defense_prices=defense_prices,
-                weighted_avg=weighted_avg
+                weighted_avg=weighted_avg,
             )
-            
         except Exception as e:
             print(f"❌ Journal log_defense_activation hatası: {e}")
 
-    def log_position_close(self, symbol: str, close_price: float, qty: float,
-                          close_reason: str, pnl_usdt: float, 
-                          pnl_percent: float, roe_percent: float) -> None:
-        """
-        Pozisyon kapandığında journal'a kaydet.
-        
-        Args:
-            symbol: Sembol
-            close_price: Çıkış fiyatı
-            qty: Kapatılan miktar
-            close_reason: Kapanış nedeni (TP1/TP2/Trailing/Hard Stop/Başabaş/Acil Tasfiye)
-            pnl_usdt: Net PnL dolar
-            pnl_percent: PnL yüzdesi
-            roe_percent: ROE yüzdesi
-        """
-        if not self.journal or symbol not in self.trade_ids:
+    def log_position_close(
+        self,
+        symbol: str,
+        side: str,
+        close_price: float,
+        qty: float,
+        close_reason: str,
+        pnl_usdt: float,
+        pnl_percent: float,
+        roe_percent: float,
+    ) -> None:
+        """Pozisyon tamamen kapandığında journal.log_trade_close çağırır."""
+        trade_id = self._trade_id_for(symbol, side)
+        if not self.journal or trade_id is None:
+            print(f"⚠️  Journal close atlandı (trade_id yok): {symbol} {side}")
             return
-        
+
         try:
-            trade_id = self.trade_ids[symbol]
             self.journal.log_trade_close(
                 trade_id=trade_id,
                 close_price=close_price,
@@ -1382,13 +1431,18 @@ class MinaPositionManager:
                 close_reason=close_reason,
                 pnl_usdt=pnl_usdt,
                 pnl_percent=pnl_percent,
-                roe_percent=roe_percent
+                roe_percent=roe_percent,
             )
-            
-            # Trade ID'sini sil
-            del self.trade_ids[symbol]
+            key = self._pos_key(symbol, side)
+            self.trade_ids.pop(key, None)
+            self.trade_ids.pop(symbol, None)
             self._save_state()
-            
+
+            try:
+                from signal_bot.signal_slot_bridge import try_fill_freed_slot
+                try_fill_freed_slot(self)
+            except Exception as bridge_err:
+                print(f"⚠️  Slot bridge hatası: {bridge_err}")
         except Exception as e:
             print(f"❌ Journal log_position_close hatası: {e}")
 

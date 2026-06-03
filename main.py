@@ -52,6 +52,11 @@ def run() -> None:
     journal = TradingJournal(db_path=db_path)
     mina = MinaPositionManager(client, slot, journal=journal, data_root=ROOT)
 
+    lock_path = os.path.join(ROOT, "engine.lock")
+    with open(lock_path, "w", encoding="utf-8") as lf:
+        lf.write(str(os.getpid()))
+    logger.info("engine.lock yazıldı pid=%s", os.getpid())
+
     print("\n>>> BOOTSTRAP (Binance gerçeklik senkronu)")
     report = mina.sync_reality_from_binance(verbose=True)
     print(report)

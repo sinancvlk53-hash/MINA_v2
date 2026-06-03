@@ -38,12 +38,13 @@ load_dotenv(os.path.join(_ROOT, '.env'))
 import telebot
 from binance.enums import *
 from config import BinanceConfig, AccountManager
-from signal_bot.pdf_parser import parse_pdf_for_signals
+from signal_bot.signal_parser import parse_haluk_pdf_path, enqueue_records
 
 TOKEN        = os.getenv('TELEGRAM_BOT_TOKEN')
 CHAT_ID      = int(os.getenv('TELEGRAM_CHAT_ID'))
 LEVERAGE     = 4
 HT_QUEUE_FILE = os.path.join(os.path.dirname(__file__), 'ht_signals_queue.json')
+RAW_QUEUE_FILE = os.path.join(os.path.dirname(__file__), 'raw_signal_queue.json')
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -235,12 +236,14 @@ def ask_approval(signals: list, pdf_time: str = None, source: str = 'PDF'):
     lines.append(f"📊 Açık pozisyon: {open_count}/10 slot\n")
 
     for i, s in enumerate(signals, 1):
-        lev   = s.get('leverage') or ('5x' if source == 'HT' else '3x')
+        lev   = s.get('leverage_label') or s.get('leverage') or ('5x' if source == 'HT' else '3x')
+        lev   = re.sub(r'^(\d+)x?$', r'\1x', str(lev)) if str(lev).isdigit() else str(lev)
         lev   = re.sub(r'^(\d+x)\d+$', r'\1', str(lev))
+        d1    = s.get('d1_price') or s.get('stop')
         entry = s.get('entry') or '—'
         tp1   = s.get('tp1')   or '—'
         tp2   = s.get('tp2')   or '—'
-        stop  = s.get('stop')  or '—'
+        stop  = s.get('stop')  or (str(d1) if d1 else '—')
         risk  = s.get('risk')  or ''
         ttype = s.get('trade_type') or ''
         extra = f" [{ttype}]" if ttype else ""
@@ -312,40 +315,59 @@ def handle_reply(message, signals):
 # ---------------------------------------------------------------------------
 
 def process_new_pdf(pdf_path: str):
-    """PDF'i parse et, filtrelerden geçir, onay akışını başlat."""
+    """PDF'i haluk_pdf_parser ile işle → raw_signal_queue → onay akışı."""
     pdf_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
     bot.send_message(CHAT_ID, f"📥 Yeni PDF alındı, analiz ediliyor...\n`{os.path.basename(pdf_path)}`",
                      parse_mode='Markdown')
     try:
-        raw     = parse_pdf_for_signals(pdf_path)
-        raw     = raw.strip().lstrip('```json').lstrip('```').rstrip('```').strip()
-        signals = json.loads(raw)
+        records, pause = parse_haluk_pdf_path(pdf_path)
+        enqueue_records(records)
     except Exception as e:
         bot.send_message(CHAT_ID, f"❌ PDF parse hatası: {e}")
         return
 
-    # Filtre kontrolü — tek elemanlı liste ve blocked:true ise
-    if len(signals) == 1 and signals[0].get('blocked'):
-        reason  = signals[0].get('reason', '?')
-        keyword = signals[0].get('keyword', '?')
+    if pause:
+        kw = next((r.get('reject_reason', '') for r in records if r.get('symbol') == 'SYSTEM'), '?')
+        msg = bot.send_message(
+            CHAT_ID,
+            f"⚠️ *HABER ALARMI* — Sistem PAUSE!\n"
+            f"Tetikleyen: `{kw}`\n\n"
+            f"Mimar manuel onayı: `DEVAM` veya `HAYIR`",
+            parse_mode='Markdown',
+        )
+        bot.register_next_step_handler(msg, lambda m: _handle_news_alarm(m, pdf_path, pdf_time))
+        return
 
-        if reason == 'haber_alarmi':
-            msg = bot.send_message(
-                CHAT_ID,
-                f"⚠️ *HABER ALARMI* — Otomatik işlem durduruldu!\n"
-                f"Tetikleyen: `{keyword}`\n\n"
-                f"Devam etmek için `DEVAM` yaz, atlamak için `HAYIR` yaz.",
-                parse_mode='Markdown'
-            )
-            bot.register_next_step_handler(msg, lambda m: _handle_news_alarm(m, pdf_path, pdf_time))
+    macro = [r for r in records if 'makro filtre' in str(r.get('reject_reason', ''))]
+    if macro:
+        bot.send_message(
+            CHAT_ID,
+            f"📊 *Makro F1:* {len(macro)} kayıt (işlem yok)",
+            parse_mode='Markdown',
+        )
 
-        elif reason == 'update_mesaji':
-            bot.send_message(
-                CHAT_ID,
-                f"ℹ️ *UPDATE/RETEST mesajı* — Yeni pozisyon açılmadı.\n"
-                f"Tetikleyen: `{keyword}`",
-                parse_mode='Markdown'
-            )
+    rejected = [r for r in records if r.get('status') == 'rejected' and 'UPDATE' in str(r.get('reject_reason', ''))]
+    if rejected:
+        bot.send_message(
+            CHAT_ID,
+            f"ℹ️ *UPDATE tuzağı* — {len(rejected)} bölüm reddedildi.",
+            parse_mode='Markdown',
+        )
+
+    signals = [
+        {
+            'coin': r['symbol'],
+            'side': r['direction'],
+            'entry': str(r.get('entry_price') or '—'),
+            'stop': str(r.get('stop_price') or '—'),
+            'leverage': r.get('leverage'),
+            'leverage_label': f"{r.get('leverage')}x",
+            'd1_price': r.get('stop_price'),
+        }
+        for r in records if r.get('status') == 'approved'
+    ]
+    if not signals:
+        bot.send_message(CHAT_ID, "⚠️ Onaylanan sinyal bulunamadı.")
         return
 
     ask_approval(signals, pdf_time=pdf_time)
@@ -404,23 +426,62 @@ Sadece JSON array döndür, başka hiçbir şey yazma.
 # HT sinyal kuyruğu izleyici
 # ---------------------------------------------------------------------------
 
+def _consume_queue_file(path: str, default_source: str = 'HT'):
+    if not os.path.exists(path):
+        return
+    with open(path, encoding='utf-8') as f:
+        data = json.load(f)
+
+    # Yeni format: entries[] (signal_parser)
+    entries = data.get('entries', [])
+    if entries:
+        pending = [e for e in entries if e.get('status') == 'approved' and e.get('symbol') not in ('SYSTEM',)]
+        if pending:
+            signals = [
+                {
+                    'coin': e['symbol'],
+                    'side': e['direction'],
+                    'entry': str(e.get('entry_price') or '—'),
+                    'stop': str(e.get('stop_price') or '—'),
+                    'leverage': e.get('leverage'),
+                    'leverage_label': f"{e.get('leverage')}x",
+                    'd1_price': e.get('stop_price'),
+                    'source': e.get('source'),
+                }
+                for e in pending
+            ]
+            src = 'HT' if any('haluk' in str(s.get('source', '')) for s in signals) else 'PDF'
+            print(f"[QUEUE] {len(signals)} sinyal (entries) ← {path}")
+            ask_approval(signals, pdf_time=data.get('updated_at', ''), source=src)
+        data['entries'] = [e for e in entries if e.get('status') != 'approved' or e.get('symbol') == 'SYSTEM']
+        if data['entries']:
+            with open(path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+        else:
+            os.remove(path)
+        return
+
+    os.remove(path)
+    if data.get('system_pause'):
+        print(f"[QUEUE] PAUSE — {data.get('pause_keyword')}")
+        return
+    signals = data.get('signals', [])
+    source_info = data.get('source', default_source)
+    if signals:
+        src = 'HT' if 'HT' in str(source_info).upper() else 'PDF'
+        print(f"[QUEUE] {len(signals)} sinyal ← {path}")
+        ask_approval(signals, pdf_time=source_info, source=src)
+
+
 def _ht_queue_checker():
-    """Arka planda 5 sn'de bir ht_signals_queue.json kontrol eder."""
+    """Arka planda 5 sn'de bir HT + RAW SIGNAL kuyruklarını kontrol eder."""
     while True:
         time.sleep(5)
-        if not os.path.exists(HT_QUEUE_FILE):
-            continue
-        try:
-            with open(HT_QUEUE_FILE, encoding='utf-8') as f:
-                data = json.load(f)
-            os.remove(HT_QUEUE_FILE)
-            signals     = data.get('signals', [])
-            source_info = data.get('source', 'HT')
-            if signals:
-                print(f"[QUEUE] {len(signals)} sinyal alındı: {[s['coin'] for s in signals]}")
-                ask_approval(signals, pdf_time=source_info, source='HT')
-        except Exception as e:
-            print(f"[QUEUE] Hata: {e}")
+        for qpath in (RAW_QUEUE_FILE, HT_QUEUE_FILE):
+            try:
+                _consume_queue_file(qpath)
+            except Exception as e:
+                print(f"[QUEUE] {qpath} hata: {e}")
 
 
 # ---------------------------------------------------------------------------

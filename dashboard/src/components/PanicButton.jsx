@@ -1,59 +1,67 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 
-export default function PanicButton({ onPanic, disabled }) {
-  const [phase, setPhase] = useState('idle') // idle | confirm | closing | done
+export default function PanicButton({ onPanic, disabled, compact = false }) {
+  const [modalOpen, setModalOpen] = useState(false)
+  const [closing, setClosing] = useState(false)
 
-  useEffect(() => {
-    if (phase === 'confirm') {
-      const t = setTimeout(() => setPhase('idle'), 4000)
-      return () => clearTimeout(t)
-    }
-    if (phase === 'done') {
-      const t = setTimeout(() => setPhase('idle'), 3000)
-      return () => clearTimeout(t)
-    }
-  }, [phase])
-
-  function handleClick() {
-    if (disabled || phase === 'closing') return
-    if (phase === 'idle') {
-      setPhase('confirm')
-    } else if (phase === 'confirm') {
-      setPhase('closing')
-      onPanic?.()
-      setTimeout(() => setPhase('done'), 2500)
-    }
+  function handleConfirm() {
+    setClosing(true)
+    onPanic?.()
+    setTimeout(() => {
+      setClosing(false)
+      setModalOpen(false)
+    }, 2000)
   }
-
-  const cfg = {
-    idle:    { bg: 'linear-gradient(135deg,#ef4444,#b91c1c)', border: '#ef4444', shadow: '0 4px 18px #ef444430', label: '🚨 PANİK — TÜM POZİSYONLARI KAPAT' },
-    confirm: { bg: 'linear-gradient(135deg,#dc2626,#7f1d1d)', border: '#fca5a5', shadow: '0 0 28px #ef444460', label: '⚠️  EMİN MİSİN? — TEKRAR TIKLA' },
-    closing: { bg: '#0f1824',                                  border: '#1c2a3a', shadow: 'none',               label: '⏳ Kapatılıyor...' },
-    done:    { bg: 'linear-gradient(135deg,#065f46,#047857)', border: '#10b981', shadow: '0 4px 18px #10b98130', label: '✅ Tüm pozisyonlar kapatıldı' },
-  }
-  const s = cfg[phase] || cfg.idle
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <>
       <button
-        className="panic-btn"
-        onClick={handleClick}
-        disabled={disabled || phase === 'closing'}
-        style={{ background: s.bg, borderColor: s.border, color: '#fff', boxShadow: s.shadow }}
+        type="button"
+        className={compact ? 'panic-btn-header' : 'panic-btn'}
+        disabled={disabled || closing}
+        onClick={() => setModalOpen(true)}
+        aria-label="Panik — tüm pozisyonları kapat"
+        title="Panik kapat"
       >
-        {s.label}
+        {compact ? (
+          <span className="panic-btn-header-text">{closing ? '…' : 'PANIK'}</span>
+        ) : (
+          closing ? '⏳ Kapatılıyor...' : '🚨 PANİK — TÜM POZİSYONLARI KAPAT'
+        )}
       </button>
 
-      {phase === 'confirm' && (
-        <div style={{ textAlign: 'center', color: '#fca5a5', fontSize: 10, fontWeight: 600 }}>
-          4 saniye içinde otomatik iptal
+      {modalOpen && (
+        <div className="modal-overlay" onClick={() => !closing && setModalOpen(false)}>
+          <div className="modal panic-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="panic-modal-icon">⚠️</div>
+            <h2 className="panic-modal-title">Panik Kapatma</h2>
+            <p className="panic-modal-text">
+              Tüm açık pozisyonlar MARKET emri ile anında kapatılacak. Bu işlem geri alınamaz.
+            </p>
+            <div className="panic-modal-actions">
+              <button
+                type="button"
+                className="btn btn-ghost touch-target"
+                disabled={closing}
+                onClick={() => setModalOpen(false)}
+              >
+                İptal
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger touch-target"
+                disabled={closing || disabled}
+                onClick={handleConfirm}
+              >
+                {closing ? 'Kapatılıyor...' : 'Evet, Hepsini Kapat'}
+              </button>
+            </div>
+            {disabled && (
+              <p className="panic-modal-hint">WebSocket bağlantısı gerekli</p>
+            )}
+          </div>
         </div>
       )}
-      {disabled && phase === 'idle' && (
-        <div style={{ textAlign: 'center', color: 'var(--text-mute)', fontSize: 10 }}>
-          WebSocket bağlantısı gerekli
-        </div>
-      )}
-    </div>
+    </>
   )
 }

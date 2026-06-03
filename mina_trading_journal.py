@@ -95,12 +95,85 @@ class TradingJournal:
             cursor.execute('''
                 CREATE INDEX IF NOT EXISTS idx_side ON trades(side)
             ''')
+
+            # ─ SİNYAL KARAR GÜNLÜĞÜ (Katman 1-3 audit) ───────────────────
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS signal_decisions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    scenario_label TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    merter_symbol TEXT,
+                    merter_direction TEXT,
+                    trading_session TEXT,
+                    has_sfp INTEGER DEFAULT 0,
+                    total_direction TEXT,
+                    k1_json TEXT,
+                    k2_verdict TEXT,
+                    k2_brightness INTEGER,
+                    k2_label TEXT,
+                    k2_reason TEXT,
+                    k3_action TEXT,
+                    k3_reason TEXT,
+                    final_label TEXT
+                )
+            ''')
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_signal_scenario
+                ON signal_decisions(scenario_label)
+            ''')
             
             self.conn.commit()
             
         except Exception as e:
             print(f"❌ Journal DB init hatası: {e}")
             raise
+
+    def log_signal_decision(
+        self,
+        *,
+        scenario_label: str,
+        merter_symbol: str,
+        merter_direction: str,
+        trading_session: str,
+        has_sfp: bool,
+        total_direction: Optional[str],
+        k1: Dict,
+        k2: Dict,
+        k3: Dict,
+    ) -> int:
+        """Katman 1-3 sinyal değerlendirmesini DERR'e yaz."""
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                '''
+                INSERT INTO signal_decisions (
+                    scenario_label, merter_symbol, merter_direction, trading_session,
+                    has_sfp, total_direction, k1_json, k2_verdict, k2_brightness,
+                    k2_label, k2_reason, k3_action, k3_reason, final_label
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''',
+                (
+                    scenario_label,
+                    merter_symbol,
+                    merter_direction,
+                    trading_session,
+                    1 if has_sfp else 0,
+                    total_direction,
+                    json.dumps(k1, ensure_ascii=False),
+                    k2.get("verdict"),
+                    k2.get("brightness"),
+                    k2.get("label"),
+                    k2.get("reason"),
+                    k3.get("action"),
+                    k3.get("reason"),
+                    k2.get("label"),
+                ),
+            )
+            self.conn.commit()
+            return cursor.lastrowid
+        except Exception as e:
+            print(f"❌ Journal signal_decision hatası: {e}")
+            return -1
 
     def log_trade_open(self, symbol: str, side: str, leverage: int, 
                        entry_price: float, qty: float, initial_margin: float) -> int:

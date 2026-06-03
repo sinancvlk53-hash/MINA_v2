@@ -1,0 +1,16 @@
+[Unit]
+Description=MINA raw_signal_queue watcher (Merter pipeline + DERR)
+After=network.target mina-listener.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/MINA_v2
+ExecStart=/root/MINA_v2/venv/bin/python -u signal_bot/queue_watcher.py
+Restart=always
+RestartSec=5
+StandardOutput=append:/root/MINA_v2/signal_bot/pipeline_audit.log
+StandardError=append:/root/MINA_v2/signal_bot/pipeline_audit.log
+
+[Install]
+WantedBy=multi-user.target

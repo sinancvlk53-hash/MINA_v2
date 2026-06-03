@@ -4,120 +4,77 @@ function classify(line) {
   if (!line) return 'mute'
   const u = line.toUpperCase()
   if (u.includes('ERROR') || u.includes('KRİTİK') || u.includes('HATA')) return 'error'
-  if (u.includes('WARNING') || u.includes('UYARI') || u.includes('IP BAN')) return 'warn'
-  if (u.includes('SAVUNMA') || u.includes('TP') || u.includes('STOP') || u.includes('KÂR') || u.includes('BAŞABAŞ')) return 'action'
-  if (u.includes('BAŞLATILDI') || u.includes('ENGINE')) return 'boot'
+  if (u.includes('WARNING') || u.includes('UYARI')) return 'warn'
+  if (u.includes('TP') || u.includes('STOP') || u.includes('SAVUNMA') || u.includes('DEFENSE')) return 'action'
   return 'info'
 }
 
-const COLORS = {
-  error:  '#F6465D',
-  warn:   '#F0B90B',
-  action: '#3b82f6',
-  boot:   '#0ECB81',
-  info:   '#5E6673',
-  mute:   '#2d3f50',
-}
-
-export default function LogStream({ logs = [], testLogs = [] }) {
-  const [expanded,   setExpanded]   = useState(false)
-  const [liveMode,   setLiveMode]   = useState(true)
-  const [testMode,   setTestMode]   = useState(false)
-  const [frozenLogs, setFrozenLogs] = useState(null)
-  const [blink,      setBlink]      = useState(true)
+export default function LogStream({ logs = [], testLogs = [], compact = false, fullscreen = false }) {
+  const [liveMode, setLiveMode] = useState(true)
+  const [testMode, setTestMode] = useState(false)
+  const [seenCount, setSeenCount] = useState(0)
   const endRef = useRef(null)
+  const prevLen = useRef(0)
 
-  const sourceLogs    = testMode ? testLogs : logs
-  const displayedLogs = (liveMode || frozenLogs === null) ? sourceLogs : frozenLogs
+  const sourceLogs = testMode ? testLogs : logs
+  const [newFrom, setNewFrom] = useState(0)
 
-  // Blink yeşil yanıp sönme — canlı mod aktifken
   useEffect(() => {
-    if (!liveMode) return
-    const t = setInterval(() => setBlink(b => !b), 600)
-    return () => clearInterval(t)
-  }, [liveMode])
-
-  // Canlı + açık modda otomatik alta kaydır
-  useEffect(() => {
-    if (liveMode && expanded) endRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [displayedLogs, liveMode, expanded])
-
-  const toggleLive = () => {
-    if (liveMode) {
-      setFrozenLogs([...sourceLogs])
-      setLiveMode(false)
-    } else {
-      setFrozenLogs(null)
-      setLiveMode(true)
+    if (sourceLogs.length > prevLen.current) {
+      setNewFrom(prevLen.current)
+      setSeenCount(sourceLogs.length)
     }
-  }
+    prevLen.current = sourceLogs.length
+  }, [sourceLogs.length])
 
-  const shownLogs   = expanded ? displayedLogs : displayedLogs.slice(-3)
-  const hiddenCount = Math.max(0, displayedLogs.length - 3)
+  useEffect(() => {
+    if (liveMode) endRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [sourceLogs, liveMode])
 
-  const btnBase = {
-    padding: '2px 8px', borderRadius: 3, fontSize: 9, fontWeight: 700,
-    cursor: 'pointer',
-  }
+  const displayLogs = fullscreen ? sourceLogs : (compact ? sourceLogs.slice(-8) : sourceLogs.slice(-40))
 
   return (
-    <div className="section-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <div className="section-header">
-        <span className="section-title">Log Akışı</span>
-        <span style={{ marginLeft: 6, color: 'var(--text-mute)', fontSize: 9, fontFamily: 'var(--mono)' }}>
-          {displayedLogs.length}
-        </span>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 5, alignItems: 'center' }}>
-          {/* Canlı İzle */}
-          <button onClick={toggleLive} style={{
-            ...btnBase,
-            background: liveMode ? (blink ? '#0ECB8135' : '#0ECB8115') : 'transparent',
-            color: liveMode ? '#0ECB81' : 'var(--text-mute)',
-            border: `1px solid ${liveMode ? '#0ECB8155' : 'var(--border)'}`,
-            transition: 'background .3s',
-          }}>🔴 Canlı İzle</button>
-
-          {/* Test Akışı */}
-          <button onClick={() => setTestMode(t => !t)} style={{
-            ...btnBase,
-            background: testMode ? '#F0B90B18' : 'transparent',
-            color: testMode ? '#F0B90B' : 'var(--text-mute)',
-            border: `1px solid ${testMode ? '#F0B90B55' : 'var(--border)'}`,
-          }}>🧪 Test Akışını İzle</button>
+    <div className={`panel panel-logs ${compact ? 'compact' : ''} ${fullscreen ? 'fullscreen' : ''}`}>
+      <div className="panel-head">
+        <span className="panel-title">Log Akışı</span>
+        <span className="panel-badge mono">{sourceLogs.length}</span>
+        <div className="log-toolbar">
+          <button
+            type="button"
+            className={`log-tool-btn ${liveMode ? 'active' : ''}`}
+            onClick={() => setLiveMode(true)}
+          >
+            Canlı
+          </button>
+          <button
+            type="button"
+            className={`log-tool-btn ${testMode ? 'active' : ''}`}
+            onClick={() => setTestMode((t) => !t)}
+          >
+            Test
+          </button>
         </div>
       </div>
-
-      {/* Log satırları */}
-      <div
-        className="log-stream"
-        style={{ maxHeight: expanded ? 220 : 'none', overflowY: expanded ? 'auto' : 'visible' }}
-      >
-        {displayedLogs.length === 0 ? (
-          <span style={{ color: '#2d4a63' }}>
-            {testMode ? 'Test logu yok...' : 'WebSocket bağlantısı bekleniyor...'}
-          </span>
+      <div className="log-stream">
+        {displayLogs.length === 0 ? (
+          <div className="log-line mute">WebSocket bağlantısı bekleniyor...</div>
         ) : (
-          shownLogs.map((line, i) => (
-            <div key={i} style={{ color: testMode ? '#F0B90B' : COLORS[classify(line)] }}>
-              {line}
-            </div>
-          ))
+          displayLogs.map((line, i) => {
+            const globalIdx = sourceLogs.length - displayLogs.length + i
+            const isNew = globalIdx >= newFrom && globalIdx >= seenCount - 5
+            const kind = testMode ? 'test' : classify(line)
+            return (
+              <div
+                key={`${globalIdx}-${line.slice(0, 24)}`}
+                className={`log-line log-${kind} ${isNew ? 'log-slide-in' : ''}`}
+              >
+                {line}
+              </div>
+            )
+          })
         )}
-        {expanded && <div ref={endRef} />}
+        <div ref={endRef} />
       </div>
-
-      {/* Devamını Gör / Daralt */}
-      {hiddenCount > 0 && (
-        <button onClick={() => setExpanded(e => !e)} style={{
-          margin: '0 10px 8px',
-          padding: '5px 10px', borderRadius: 5,
-          background: 'var(--card)', color: 'var(--text-mute)',
-          border: '1px solid var(--border)', fontSize: 10, fontWeight: 700,
-          cursor: 'pointer', width: 'calc(100% - 20px)', textAlign: 'center',
-        }}>
-          {expanded ? '▲ Daralt' : `Devamını Gör ▼  (+${hiddenCount} satır)`}
-        </button>
-      )}
     </div>
   )
 }
