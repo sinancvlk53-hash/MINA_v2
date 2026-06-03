@@ -13,11 +13,20 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 SIGNAL_BOT_DIR = os.path.dirname(os.path.abspath(__file__))
 RAW_QUEUE_FILE = os.path.join(SIGNAL_BOT_DIR, "raw_signal_queue.json")
+MERter_FILTER_LOG = os.path.join(SIGNAL_BOT_DIR, "merter_filter.log")
+
+EMA_PERIOD = 20
+ATR_PERIOD = 14
+SR_ATR_MULT = 1.0
+KLINES_15M_LIMIT = 80
+
+_binance_client: Any = None
 
 # ── Paylaşılan anayasa ───────────────────────────────────────────────────────
 LEVERAGE_5X_BASES = frozenset({"BTC", "ETH", "XAU", "XAG"})
@@ -67,6 +76,42 @@ RE_SOLANA_CHAT = re.compile(
     r"(\w+)\s+var\.\s*([\d.,]+)\s*maliyet",
     re.IGNORECASE,
 )
+
+# ── Merter kanal formatları (EI Bot / RSI Bot / sohbet) ─────────────────────
+RE_EI_AL_SECTION = re.compile(
+    r"🟢\s*\*\*Yeni AL Sinyalleri:\*\*\s*(.*?)(?=🔴\s*\*\*Yeni SAT|🕒|\Z)",
+    re.IGNORECASE | re.DOTALL,
+)
+RE_EI_SAT_SECTION = re.compile(
+    r"🔴\s*\*\*Yeni SAT Sinyalleri:\*\*\s*(.*?)(?=🟢\s*\*\*Yeni AL|🕒|\Z)",
+    re.IGNORECASE | re.DOTALL,
+)
+RE_SYMBOL_LINK = re.compile(r"\[([A-Za-z0-9]+USDT)\]", re.IGNORECASE)
+RE_PLAIN_USDT = re.compile(r"\b([A-Z0-9]{2,20}USDT)\b")
+RE_RSI_ENTRY = re.compile(
+    r"[🟢🔴]\s*\[\*\*([A-Za-z0-9]+USDT)\*\*\].*?(\(<20\)|\(>90\)).*?"
+    r"RSI\(5dk\):\s*([\d.]+)(?:.*?Fiyat:\s*([\d.]+)\$)?",
+    re.IGNORECASE | re.DOTALL,
+)
+RE_CHAT_BULL = re.compile(
+    r"\b(al|alim|alım|long|yukari|yukarı|yukselis|yükseliş|devam|pozitif)\b",
+    re.IGNORECASE,
+)
+RE_CHAT_BEAR = re.compile(
+    r"\b(sat|satis|satış|short|asagi|aşağı|dusus|düşüş|stopla|negatif)\b",
+    re.IGNORECASE,
+)
+RE_USDT_D = re.compile(r"usdt\.?\s*d\b", re.IGNORECASE)
+RE_CHAT_SKIP = re.compile(
+    r"docs\.google|Portf[oö]y Takibi|sess[iı]ze al|EI Trading Bot|RSI Analizi|Sinyal Taramas",
+    re.IGNORECASE,
+)
+RE_DOLLAR_COIN = re.compile(r"\$([A-Za-z0-9]+)")
+
+CHAT_COIN_BASES = frozenset(COIN_ALIASES.values()) | frozenset({
+    "BTC", "ETH", "SOL", "XRP", "BNB", "ADA", "DOGE", "AVAX", "DOT", "LINK",
+    "MATIC", "POL", "NEAR", "INJ", "SUI", "APT", "ARB", "OP", "LTC", "BCH",
+})
 
 # ── Haluk telegram regex ─────────────────────────────────────────────────────
 RE_HALUK_ENTRY = re.compile(
@@ -206,47 +251,461 @@ def send_pause_telegram(keyword: str) -> None:
         print(f"[signal_parser] Telegram hatası: {e}")
 
 
-# ── KAYNAK 1: Merter ─────────────────────────────────────────────────────────
+# ── Merter bot filtreleri (EI / RSI) — Binance 15m teknik ───────────────────
 
-def parse_merter(text: str) -> List[Dict[str, Any]]:
-    """Merter Telegram sinyallerini ayrıştır."""
-    text = text.strip()
-    if not text:
+def _get_binance_client() -> Any:
+    global _binance_client
+    if _binance_client is not None:
+        return _binance_client
+    import sys
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    for p in (root, os.path.join(root, "backend")):
+        if p not in sys.path:
+            sys.path.insert(0, p)
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(os.path.join(root, ".env"))
+        from config import BinanceConfig
+        _binance_client = BinanceConfig().get_client()
+    except Exception as e:
+        print(f"[signal_parser] Binance client yok: {e}")
+        _binance_client = None
+    return _binance_client
+
+
+def _log_filter_rejection(symbol: str, signal_format: str, reason: str, detail: Optional[Dict] = None) -> None:
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    line = f"[{ts}] REJECT {signal_format} {symbol} — {reason}"
+    if detail:
+        line += f" | {json.dumps(detail, ensure_ascii=False)}"
+    print(line, flush=True)
+    try:
+        with open(MERter_FILTER_LOG, "a", encoding="utf-8") as f:
+            f.write(line + "\n")
+    except OSError:
+        pass
+
+
+def _calc_ema(values: List[float], period: int = EMA_PERIOD) -> Optional[float]:
+    if len(values) < period:
+        return None
+    ema = sum(values[:period]) / period
+    mult = 2 / (period + 1)
+    for v in values[period:]:
+        ema = v * mult + ema * (1 - mult)
+    return ema
+
+
+def _calc_atr(klines: List[list], period: int = ATR_PERIOD) -> Optional[float]:
+    if len(klines) < period + 1:
+        return None
+    trs: List[float] = []
+    for i in range(1, len(klines)):
+        h, l = float(klines[i][2]), float(klines[i][3])
+        pc = float(klines[i - 1][4])
+        trs.append(max(h - l, abs(h - pc), abs(l - pc)))
+    if len(trs) < period:
+        return None
+    return sum(trs[-period:]) / period
+
+
+def _swing_lows(klines: List[list], window: int = 2) -> List[float]:
+    lows = [float(k[3]) for k in klines]
+    out: List[float] = []
+    for i in range(window, len(lows) - window):
+        if all(lows[i] < lows[i - j] for j in range(1, window + 1)) and all(
+            lows[i] < lows[i + j] for j in range(1, window + 1)
+        ):
+            out.append(lows[i])
+    return out
+
+
+def _swing_highs(klines: List[list], window: int = 2) -> List[float]:
+    highs = [float(k[2]) for k in klines]
+    out: List[float] = []
+    for i in range(window, len(highs) - window):
+        if all(highs[i] > highs[i - j] for j in range(1, window + 1)) and all(
+            highs[i] > highs[i + j] for j in range(1, window + 1)
+        ):
+            out.append(highs[i])
+    return out
+
+
+def _ohlc(k: list) -> Tuple[float, float, float, float]:
+    return float(k[1]), float(k[2]), float(k[3]), float(k[4])
+
+
+def _is_sfp_candle(o: float, h: float, l: float, c: float, direction: str) -> bool:
+    rng = h - l
+    if rng <= 0:
+        return False
+    body = abs(c - o)
+    if direction == "LONG":
+        lower_wick = min(o, c) - l
+        return lower_wick >= max(body * 1.5, rng * 0.33)
+    upper_wick = h - max(o, c)
+    return upper_wick >= max(body * 1.5, rng * 0.33)
+
+
+def _is_pin_bar(o: float, h: float, l: float, c: float, direction: str) -> bool:
+    rng = h - l
+    if rng <= 0:
+        return False
+    body = abs(c - o)
+    if direction == "LONG":
+        lower_wick = min(o, c) - l
+        return lower_wick / rng >= 0.55 and body / rng <= 0.30
+    upper_wick = h - max(o, c)
+    return upper_wick / rng >= 0.55 and body / rng <= 0.30
+
+
+def _is_engulfing(prev: list, cur: list, direction: str) -> bool:
+    po, _, _, pc = _ohlc(prev)
+    co, _, _, cc = _ohlc(cur)
+    if direction == "LONG":
+        return pc < po and cc > co and co <= pc and cc >= po
+    return pc > po and cc < co and co >= pc and cc <= po
+
+
+def _candle_patterns(klines: List[list], direction: str) -> Tuple[bool, Optional[str]]:
+    """Son kapalı 15m mum (+ bir önceki) üzerinde Pin / Engulfing / SFP."""
+    if len(klines) < 3:
+        return False, None
+    prev, cur = klines[-3], klines[-2]
+    o, h, l, c = _ohlc(cur)
+    if _is_sfp_candle(o, h, l, c, direction):
+        return True, "SFP"
+    if _is_pin_bar(o, h, l, c, direction):
+        return True, "pin_bar"
+    if _is_engulfing(prev, cur, direction):
+        return True, "engulfing"
+    return False, None
+
+
+class _MarketCache:
+    def __init__(self) -> None:
+        self.k15: Dict[str, List[list]] = {}
+        self.mark: Dict[str, float] = {}
+
+    def klines_15m(self, client: Any, symbol: str) -> List[list]:
+        if symbol not in self.k15:
+            for attempt in range(3):
+                try:
+                    self.k15[symbol] = client.futures_klines(
+                        symbol=symbol, interval="15m", limit=KLINES_15M_LIMIT,
+                    )
+                    break
+                except Exception as e:
+                    if attempt == 2:
+                        self.k15[symbol] = []
+                    else:
+                        time.sleep(0.4)
+        return self.k15[symbol]
+
+    def mark_price(self, client: Any, symbol: str) -> Optional[float]:
+        if symbol not in self.mark:
+            try:
+                t = client.futures_mark_price(symbol=symbol)
+                self.mark[symbol] = float(t["markPrice"])
+            except Exception:
+                self.mark[symbol] = None  # type: ignore[assignment]
+        return self.mark.get(symbol)
+
+
+def _near_sr_zone(klines: List[list], price: float, direction: str, atr: float) -> Tuple[bool, float]:
+    """Fiyat taze destek/direnç bölgesinde mi (ATR toleransı içinde)."""
+    if atr is None or atr <= 0:
+        return False, 999.0
+    lookback = klines[-48:] if len(klines) >= 48 else klines
+    if direction == "LONG":
+        supports = [s for s in _swing_lows(lookback) if s <= price]
+        if not supports:
+            return False, 999.0
+        nearest = max(supports)
+        dist = price - nearest
+        return dist <= atr * SR_ATR_MULT, dist
+    resistances = [r for r in _swing_highs(lookback) if r >= price]
+    if not resistances:
+        return False, 999.0
+    nearest = min(resistances)
+    dist = nearest - price
+    return dist <= atr * SR_ATR_MULT, dist
+
+
+def _filter_ei_candidate(
+    client: Any,
+    cache: _MarketCache,
+    symbol: str,
+    direction: str,
+) -> Tuple[bool, str, float, Dict[str, Any]]:
+    klines = cache.klines_15m(client, symbol)
+    if len(klines) < EMA_PERIOD + 3:
+        return False, "yetersiz 15m kline", 0.0, {}
+
+    closes = [float(k[4]) for k in klines[:-1]]
+    ema20 = _calc_ema(closes, EMA_PERIOD)
+    mark = cache.mark_price(client, symbol)
+    if ema20 is None or mark is None:
+        return False, "EMA20 veya mark price alınamadı", 0.0, {}
+
+    if direction == "LONG" and mark <= ema20:
+        return False, "Adım1: fiyat EMA20 altında", 0.0, {"mark": mark, "ema20": ema20}
+    if direction == "SHORT" and mark >= ema20:
+        return False, "Adım1: fiyat EMA20 üstünde (SHORT)", 0.0, {"mark": mark, "ema20": ema20}
+
+    atr = _calc_atr(klines[:-1], ATR_PERIOD)
+    in_zone, sr_dist = _near_sr_zone(klines[:-1], mark, direction, atr or 0.0)
+    if not in_zone:
+        return False, "Adım2: destek/direnç bölgesinde değil (boşluk)", 0.0, {
+            "mark": mark, "sr_dist": sr_dist, "atr": atr,
+        }
+
+    has_pattern, pattern = _candle_patterns(klines, direction)
+    if not has_pattern:
+        return False, "Adım3: Pin Bar / Engulfing / SFP yok", 0.0, {"mark": mark}
+
+    ema_gap = abs(mark - ema20) / ema20 * 100 if ema20 else 0.0
+    sr_score = max(0.0, 100.0 - (sr_dist / max(atr or 1e-9, 1e-9)) * 40.0)
+    pattern_score = {"SFP": 40.0, "engulfing": 30.0, "pin_bar": 25.0}.get(pattern or "", 0.0)
+    score = sr_score + pattern_score + max(0.0, 10.0 - ema_gap)
+    meta = {
+        "mark": mark,
+        "ema20": round(ema20, 8),
+        "atr": round(atr or 0, 8),
+        "sr_dist": round(sr_dist, 8),
+        "pattern": pattern,
+        "filter_score": round(score, 2),
+    }
+    return True, "OK", score, meta
+
+
+def _filter_rsi_candidate(
+    client: Any,
+    cache: _MarketCache,
+    symbol: str,
+    direction: str,
+    rsi_5: Optional[float],
+) -> Tuple[bool, str, float, Dict[str, Any]]:
+    if rsi_5 is None:
+        return False, "RSI(5dk) okunamadı", 0.0, {}
+
+    if direction == "LONG" and rsi_5 >= 20:
+        return False, f"RSI {rsi_5:.1f} >= 20 (aşırı satım şartı sağlanmadı)", 0.0, {"rsi_5m": rsi_5}
+    if direction == "SHORT" and rsi_5 <= 80:
+        return False, f"RSI {rsi_5:.1f} <= 80 (aşırı alım şartı sağlanmadı)", 0.0, {"rsi_5m": rsi_5}
+
+    klines = cache.klines_15m(client, symbol)
+    if len(klines) < 3:
+        return False, "yetersiz 15m kline", 0.0, {}
+
+    o, h, l, c = _ohlc(klines[-2])
+    if not _is_sfp_candle(o, h, l, c, direction):
+        return False, "son 15m mumda SFP iğnesi yok", 0.0, {"rsi_5m": rsi_5}
+
+    mark = cache.mark_price(client, symbol)
+    if mark is None:
+        return False, "mark price alınamadı", 0.0, {}
+
+    if direction == "LONG":
+        score = max(0.0, 20.0 - rsi_5) * 5.0 + 30.0
+    else:
+        score = max(0.0, rsi_5 - 80.0) * 5.0 + 30.0
+
+    meta = {
+        "mark": mark,
+        "rsi_5m": rsi_5,
+        "pattern": "SFP",
+        "filter_score": round(score, 2),
+    }
+    return True, "OK", score, meta
+
+
+def _select_filtered_bot_record(
+    candidates: List[Dict[str, Any]],
+    signal_format: str,
+) -> List[Dict[str, Any]]:
+    """Bot adaylarından filtre geçen en yüksek skorlu tek kayıt."""
+    if not candidates:
         return []
 
+    client = _get_binance_client()
+    if client is None:
+        for c in candidates:
+            _log_filter_rejection(
+                c.get("symbol", "?"), signal_format, "Binance client kullanılamıyor",
+            )
+        return []
+
+    cache = _MarketCache()
+    best: Optional[Dict[str, Any]] = None
+    best_score = -1.0
+
+    for cand in candidates:
+        symbol = cand["symbol"]
+        direction = cand["direction"]
+        fmt = cand.get("signal_format", signal_format)
+
+        if fmt == "ei_scan":
+            ok, reason, score, meta = _filter_ei_candidate(client, cache, symbol, direction)
+        elif fmt == "rsi_bot":
+            ok, reason, score, meta = _filter_rsi_candidate(
+                client, cache, symbol, direction, cand.get("rsi_5m"),
+            )
+        else:
+            continue
+
+        if not ok:
+            _log_filter_rejection(symbol, fmt, reason, meta or None)
+            continue
+
+        if score > best_score:
+            best_score = score
+            mark = meta.get("mark")
+            best = _merter_record(
+                symbol,
+                direction,
+                entry_price=mark,
+                stop_price=None,
+                signal_format=fmt,
+                raw_text=cand.get("raw_snippet") or cand.get("raw_text"),
+            )
+            best["filter_score"] = meta.get("filter_score", score)
+            best["filter_meta"] = meta
+            if cand.get("rsi_5m") is not None:
+                best["rsi_5m"] = cand["rsi_5m"]
+
+    if best is None:
+        return []
+    return [best]
+
+
+# ── KAYNAK 1: Merter ─────────────────────────────────────────────────────────
+
+def _merter_record(
+    symbol: str,
+    direction: str,
+    *,
+    entry_price: Optional[float] = None,
+    stop_price: Optional[float] = None,
+    tp_price: Optional[float] = None,
+    reference_price: Optional[float] = None,
+    signal_format: Optional[str] = None,
+    raw_text: Optional[str] = None,
+) -> Dict[str, Any]:
+    rec = make_record(
+        source="merter",
+        symbol=symbol,
+        direction=direction,
+        entry_price=entry_price,
+        stop_price=stop_price,
+        tp_price=tp_price,
+        status="approved",
+        raw_text=raw_text,
+    )
+    if reference_price is not None:
+        rec["reference_price"] = reference_price
+    if signal_format:
+        rec["signal_format"] = signal_format
+    return rec
+
+
+def _extract_usdt_symbols(segment: str) -> List[str]:
+    found: List[str] = []
+    seen = set()
+    for m in RE_SYMBOL_LINK.finditer(segment):
+        sym = normalize_symbol(m.group(1))
+        if sym not in seen and sym not in MACRO_FILTER_BASES:
+            seen.add(sym)
+            found.append(sym)
+    if not found:
+        for m in RE_PLAIN_USDT.finditer(segment.upper()):
+            sym = m.group(1)
+            if sym not in seen and sym not in MACRO_FILTER_BASES:
+                seen.add(sym)
+                found.append(sym)
+    return found
+
+
+def _parse_ei_trading_bot(text: str) -> List[Dict[str, Any]]:
+    """Format 1: EI Trading Bot — Yeni AL / SAT listeleri + 3 aşamalı filtre."""
+    if "Yeni AL Sinyalleri" not in text and "Yeni SAT Sinyalleri" not in text:
+        return []
+
+    candidates: List[Dict[str, Any]] = []
+    seen: set = set()
+    for direction, pattern in (
+        ("LONG", RE_EI_AL_SECTION),
+        ("SHORT", RE_EI_SAT_SECTION),
+    ):
+        for m in pattern.finditer(text):
+            for sym in _extract_usdt_symbols(m.group(1)):
+                key = (sym, direction)
+                if key in seen:
+                    continue
+                seen.add(key)
+                candidates.append(_merter_record(
+                    sym,
+                    direction,
+                    signal_format="ei_scan",
+                    raw_text=text,
+                ))
+    return _select_filtered_bot_record(candidates, "ei_scan")
+
+
+def _parse_rsi_bot(text: str) -> List[Dict[str, Any]]:
+    """Format 2: RSI Bot — RSI<20 + 15m SFP filtre, tek coin."""
+    if "RSI Analizi" not in text:
+        return []
+
+    candidates: List[Dict[str, Any]] = []
+    for m in RE_RSI_ENTRY.finditer(text):
+        symbol = normalize_symbol(m.group(1))
+        zone = m.group(2)
+        rsi_5 = _parse_num(m.group(3))
+        if "(<20)" in zone:
+            direction = "LONG"
+        elif "(>90)" in zone:
+            direction = "SHORT"
+        else:
+            continue
+        rec = _merter_record(
+            symbol,
+            direction,
+            signal_format="rsi_bot",
+            raw_text=text,
+        )
+        if rsi_5 is not None:
+            rec["rsi_5m"] = rsi_5
+        candidates.append(rec)
+    return _select_filtered_bot_record(candidates, "rsi_bot")
+
+
+def _parse_merter_legacy_structured(text: str) -> List[Dict[str, Any]]:
+    """Eski yapılandırılmış Merter: solana var / $COIN için Long."""
     records: List[Dict[str, Any]] = []
 
-    # Sohbet formatı: solana var. 125 maliyet 115-125 çift alım ...
     chat = RE_SOLANA_CHAT.search(text)
     if chat:
         coin_raw, maliyet = chat.group(1), _parse_num(chat.group(2))
         symbol = normalize_symbol(coin_raw)
-        direction = "LONG"
-        entry = maliyet
-        stop = None
+        entry: Optional[float] = maliyet
         tp = None
-
-        alim = RE_CIFT_ALIM.search(text)
         satim = RE_CIFT_SATIM.search(text)
         if satim:
             tp = _mid(_parse_num(satim.group(1)), _parse_num(satim.group(2)))
-        # maliyet = giriş; çift alım = giriş bölgesi (maliyet öncelikli)
+        alim = RE_CIFT_ALIM.search(text)
         if alim and entry is None:
             entry = _mid(_parse_num(alim.group(1)), _parse_num(alim.group(2)))
-
-        records.append(make_record(
-            source="merter",
-            symbol=symbol,
-            direction=direction,
+        records.append(_merter_record(
+            symbol,
+            "LONG",
             entry_price=entry,
-            stop_price=stop,
             tp_price=tp,
-            status="approved",
+            signal_format="legacy_chat",
             raw_text=text,
         ))
         return records
 
-    # $BTC için Long / $SFP için Short
     dollar = RE_MERTER_DOLLAR.search(text)
     if not dollar:
         return records
@@ -260,9 +719,9 @@ def parse_merter(text: str) -> List[Dict[str, Any]]:
         entry = _parse_num(gs.group(1))
         stop = _parse_num(gs.group(2))
     else:
-        m = RE_MALIYET.search(text)
-        if m:
-            entry = _parse_num(m.group(1))
+        mal = RE_MALIYET.search(text)
+        if mal:
+            entry = _parse_num(mal.group(1))
         alim = RE_CIFT_ALIM.search(text)
         satim = RE_CIFT_SATIM.search(text)
         if alim:
@@ -270,17 +729,112 @@ def parse_merter(text: str) -> List[Dict[str, Any]]:
         if satim:
             tp = _mid(_parse_num(satim.group(1)), _parse_num(satim.group(2)))
 
-    records.append(make_record(
-        source="merter",
-        symbol=symbol,
-        direction=direction,
+    records.append(_merter_record(
+        symbol,
+        direction,
         entry_price=entry,
         stop_price=stop,
         tp_price=tp,
-        status="approved",
+        signal_format="legacy_dollar",
         raw_text=text,
     ))
     return records
+
+
+def _chat_macro_direction(text: str) -> Optional[str]:
+    upper = _norm_upper(text)
+    if RE_USDT_D.search(text):
+        if re.search(r"DESTEK\s+UST|DESTEK USTU|DESTEK UST", upper):
+            return "LONG"
+        if re.search(r"DESTEK\s+ALT|DESTEK ALTI", upper):
+            return "SHORT"
+    bull = len(RE_CHAT_BULL.findall(text))
+    bear = len(RE_CHAT_BEAR.findall(text))
+    if bull > bear:
+        return "LONG"
+    if bear > bull:
+        return "SHORT"
+    return None
+
+
+def _extract_chat_coins(text: str) -> List[str]:
+    found: List[str] = []
+    seen = set()
+    for m in RE_COIN_TICKER.finditer(text):
+        sym = normalize_symbol(m.group(1))
+        if sym not in seen:
+            seen.add(sym)
+            found.append(sym)
+    for m in RE_DOLLAR_COIN.finditer(text):
+        sym = normalize_symbol(m.group(1))
+        if sym not in seen and sym not in MACRO_FILTER_BASES:
+            seen.add(sym)
+            found.append(sym)
+    upper = _norm_upper(text)
+    for m in re.finditer(r"\b([A-Z0-9]{2,12})\b", upper):
+        base = m.group(1)
+        if base in CHAT_COIN_BASES:
+            sym = normalize_symbol(base)
+            if sym not in seen:
+                seen.add(sym)
+                found.append(sym)
+    for alias, sym in COIN_ALIASES.items():
+        if re.search(rf"\b{_norm_upper(alias)}\b", upper):
+            norm = normalize_symbol(sym)
+            if norm not in seen:
+                seen.add(norm)
+                found.append(norm)
+    return found
+
+
+def _parse_merter_chat(text: str) -> List[Dict[str, Any]]:
+    """Format 3: Merter sohbet — coin + yön çıkarımı (giriş/stop yok)."""
+    if RE_CHAT_SKIP.search(text):
+        return []
+    if text.startswith("📊"):
+        return []
+
+    direction = _chat_macro_direction(text)
+    coins = _extract_chat_coins(text)
+    if not direction or not coins:
+        return []
+
+    mal = RE_MALIYET.search(text)
+    entry = _parse_num(mal.group(1)) if mal else None
+    gs = RE_GIRIS_STOP.search(text)
+    if gs:
+        entry = _parse_num(gs.group(1))
+        stop = _parse_num(gs.group(2))
+    else:
+        stop = None
+
+    records: List[Dict[str, Any]] = []
+    for sym in coins:
+        records.append(_merter_record(
+            sym,
+            direction,
+            entry_price=entry,
+            stop_price=stop,
+            signal_format="merter_chat",
+            raw_text=text,
+        ))
+    return records
+
+
+def parse_merter(text: str) -> List[Dict[str, Any]]:
+    """Merter Telegram — legacy + sohbet (EI/RSI → merter_dca_manager)."""
+    text = text.strip()
+    if not text:
+        return []
+
+    for parser in (
+        _parse_merter_legacy_structured,
+        _parse_merter_chat,
+    ):
+        records = parser(text)
+        if records:
+            return records
+    return []
 
 
 # ── KAYNAK 2: Haluk Telegram ─────────────────────────────────────────────────

@@ -1,0 +1,15 @@
+[Unit]
+Description=MINA Merter 1x DCA monitor (TP/trailing/48h)
+After=network.target mina-engine.service
+
+[Service]
+Type=simple
+WorkingDirectory=/root/MINA_v2
+ExecStart=/root/MINA_v2/venv/bin/python -u signal_bot/merter_dca_runner.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+Environment=MINA_DATA_ROOT=/root/MINA_v2
+
+[Install]
+WantedBy=multi-user.target

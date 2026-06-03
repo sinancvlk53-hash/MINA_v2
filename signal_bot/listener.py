@@ -96,6 +96,15 @@ def _validate_config() -> None:
 def _dispatch_merter(text: str, msg_id: int) -> None:
     preview = text[:200].replace("\n", " ")
     _log(f"[MERTER] İLK MESAJ / YENİ | id={msg_id} | metin: {preview}")
+
+    try:
+        from signal_bot.merter_dca_manager import get_merter_dca_manager
+        if get_merter_dca_manager().handle_message(text):
+            _log("[MERTER] → merter_dca_manager işledi (EI/RSI 1x DCA)")
+            return
+    except Exception as e:
+        _log(f"[MERTER] DCA hatası (devam): {e}")
+
     records = parse_merter(text)
     if records:
         enqueue_records(records)

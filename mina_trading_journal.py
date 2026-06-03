@@ -96,6 +96,11 @@ class TradingJournal:
                 CREATE INDEX IF NOT EXISTS idx_side ON trades(side)
             ''')
 
+            try:
+                cursor.execute("ALTER TABLE trades ADD COLUMN signal_source TEXT")
+            except sqlite3.OperationalError:
+                pass
+
             # ─ SİNYAL KARAR GÜNLÜĞÜ (Katman 1-3 audit) ───────────────────
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS signal_decisions (
@@ -176,7 +181,8 @@ class TradingJournal:
             return -1
 
     def log_trade_open(self, symbol: str, side: str, leverage: int, 
-                       entry_price: float, qty: float, initial_margin: float) -> int:
+                       entry_price: float, qty: float, initial_margin: float,
+                       signal_source: Optional[str] = None) -> int:
         """
         İşlem açıldığında kaydı başlat.
         
@@ -195,7 +201,21 @@ class TradingJournal:
             cursor = self.conn.cursor()
             notional = entry_price * qty
             
-            cursor.execute('''
+            if signal_source:
+                cursor.execute('''
+                INSERT INTO trades 
+                (symbol, side, leverage, open_time, open_price, open_qty, 
+                 open_notional, initial_margin, status, signal_source)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                symbol, side, leverage, 
+                datetime.now(),
+                entry_price, qty,
+                notional, initial_margin,
+                'open', signal_source,
+            ))
+            else:
+                cursor.execute('''
                 INSERT INTO trades 
                 (symbol, side, leverage, open_time, open_price, open_qty, 
                  open_notional, initial_margin, status)
