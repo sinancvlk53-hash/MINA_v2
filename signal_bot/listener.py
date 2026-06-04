@@ -60,14 +60,34 @@ LOCK_FILE = os.path.join(SIGNAL_BOT_DIR, "listener.lock")
 LOG_FILE = os.path.join(SIGNAL_BOT_DIR, "signals_log.txt")
 
 
+def _pid_alive(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    return True
+
+
 def _acquire_lock() -> None:
     if os.path.exists(LOCK_FILE):
+        stale = False
         try:
-            pid = open(LOCK_FILE, encoding="utf-8").read().strip()
-        except OSError:
-            pid = "?"
-        print(f"listener zaten çalışıyor (PID {pid}). Çıkılıyor.")
-        sys.exit(1)
+            pid = int(open(LOCK_FILE, encoding="utf-8").read().strip())
+        except (OSError, ValueError):
+            stale = True
+        else:
+            if not _pid_alive(pid):
+                stale = True
+        if stale:
+            try:
+                os.remove(LOCK_FILE)
+            except OSError:
+                pass
+        else:
+            print(f"listener zaten çalışıyor (PID {pid}). Çıkılıyor.")
+            sys.exit(1)
     with open(LOCK_FILE, "w", encoding="utf-8") as f:
         f.write(str(os.getpid()))
     atexit.register(lambda: os.remove(LOCK_FILE) if os.path.exists(LOCK_FILE) else None)
