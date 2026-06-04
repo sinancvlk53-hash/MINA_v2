@@ -65,8 +65,299 @@ function notionalUsdt(p) {
   return (p.amount ?? 0) * mark
 }
 
+function RvolBadge({ rvol }) {
+  if (rvol == null || rvol === undefined) {
+    return (
+      <span className="badge-rvol badge-rvol-na" title="RVOL hesaplanamadı">RVOL —</span>
+    )
+  }
+  const hot = rvol >= 2
+  return (
+    <span className={`badge-rvol ${hot ? 'badge-rvol-hot' : ''}`} title="Son 5m / 1s ort. hacim">
+      RVOL {fmt(rvol, 2)}
+    </span>
+  )
+}
+
+function MerterEmptySlot({ slot }) {
+  if (!slot) return null
+  return (
+    <article className="pos-card pos-card-merter-empty">
+      <div className="pos-card-top">
+        <div className="pos-card-symbol">
+          <span className="sym-name merter-slot-label">{slot.label}</span>
+        </div>
+        <span className="badge-pill badge-merter-idle">BOŞ</span>
+      </div>
+      <p className="merter-empty-hint">1x DCA · 10 parça · Sinyal bekleniyor</p>
+      <div className="merter-parts-bar">
+        <div className="merter-parts-fill" style={{ width: '0%' }} />
+      </div>
+      <span className="field-hint">0 / {slot.partsTotal ?? 10} parça</span>
+    </article>
+  )
+}
+
+function MerterOccupiedMeta({ pos, slotMeta }) {
+  const filled = slotMeta?.partsFilled ?? pos.partsFilled ?? 0
+  const total = slotMeta?.partsTotal ?? 10
+  const pct = total > 0 ? (filled / total) * 100 : 0
+  return (
+    <div className="merter-meta">
+      <span className="badge-pill badge-merter-active">{slotMeta?.label ?? 'Merter'}</span>
+      {slotMeta?.breakevenMode && (
+        <span className="badge-pill badge-breakeven">BE modu</span>
+      )}
+      <div className="merter-parts-bar">
+        <div className="merter-parts-fill" style={{ width: `${pct}%` }} />
+      </div>
+      <span className="field-hint">{filled} / {total} parça</span>
+    </div>
+  )
+}
+
+function PositionCards({
+  positions,
+  slotSize,
+  mobile,
+  selected,
+  onRowClick,
+  onDetail,
+  onClose,
+  sendMessage,
+  merterSlots,
+  isMerterSection,
+}) {
+  return (
+    <div className="pos-cards">
+      {positions.map((p) => {
+        const isLong = p.side === 'LONG'
+        const stage = defenseStageLabel(p.defenseLevel || 0)
+        const roePositive = p.roe >= 0
+        const isSelected =
+          (selected?.posKey && selected.posKey === p.posKey) ||
+          (selected?.symbol === p.symbol && selected?.side === p.side)
+        const slotMeta = p.merterYuva ? merterSlots?.[p.merterYuva] : null
+
+        return (
+          <article
+            key={p.posKey || `${p.symbol}_${p.side}`}
+            className={`pos-card ${isMerterSection ? 'pos-card-merter' : ''} ${isSelected ? 'pos-card-selected' : ''}`}
+            onClick={() => onRowClick(p)}
+            role="button"
+            tabIndex={0}
+          >
+            <div className="pos-card-top">
+              <div className="pos-card-symbol">
+                <span className="sym-name">{p.symbol.replace(/USDT$/, '')}</span>
+                <span className="sym-pair">/USDT</span>
+              </div>
+              <div className="pos-card-badges">
+                <span className={`badge-pill ${isLong ? 'badge-pill-long' : 'badge-pill-short'}`}>
+                  {p.side}
+                </span>
+                <span className="badge-lev">{p.leverage}x</span>
+                <RvolBadge rvol={p.rvol} />
+                {p.leverage === 4 && (
+                  <span className={`def-stage ${stage.cls}`}>{stage.text}</span>
+                )}
+              </div>
+            </div>
+
+            {isMerterSection && <MerterOccupiedMeta pos={p} slotMeta={slotMeta} />}
+
+            <div className="pos-card-pnl-row">
+              <div className="pos-card-metric">
+                <span className="pos-card-metric-label">PnL (USDT)</span>
+                <PnlValue value={p.pnlUSDT} className="pos-card-pnl-big" />
+              </div>
+              <div className="pos-card-metric pos-card-metric-right">
+                <span className="pos-card-metric-label">ROE</span>
+                <span className={`pos-card-roe-big mono ${roePositive ? 'text-green' : 'text-red'}`}>
+                  {roePositive ? '+' : ''}{fmt(p.roe, 1)}%
+                </span>
+              </div>
+            </div>
+
+            <div className="pos-card-grid">
+              <div><span className="pos-card-k">Giriş</span><span className="mono">${fmt(p.entryPrice)}</span></div>
+              <div><span className="pos-card-k">Ort.</span><span className="mono">${fmt(avgPrice(p))}</span></div>
+              <div><span className="pos-card-k">Mark</span><span className="mono">${fmt(p.markPrice)}</span></div>
+              <div><span className="pos-card-k">Liq</span><span className="mono liq">${fmt(p.liqPrice)}</span></div>
+              <div><span className="pos-card-k">Miktar</span><span className="mono">{fmt(p.amount, 4)}</span></div>
+              <div><span className="pos-card-k">Büyüklük</span><span className="mono">{fmt(notionalUsdt(p), 2)}</span></div>
+              <div><span className="pos-card-k">Marjin</span><span className="mono">{fmt(p.margin, 2)}</span></div>
+              {p.rvol != null && (
+                <div><span className="pos-card-k">RVOL</span><span className={`mono ${p.rvol >= 2 ? 'text-green' : ''}`}>{fmt(p.rvol, 2)}</span></div>
+              )}
+            </div>
+
+            <DefenseBars pos={p} slotSize={slotSize} />
+
+            <div className="pos-card-actions">
+              <button type="button" className="btn btn-ghost touch-target" onClick={(e) => { e.stopPropagation(); onDetail?.(p) }}>
+                Detay
+              </button>
+              <button type="button" className="btn btn-close touch-target" onClick={(e) => { e.stopPropagation(); onClose?.(p, e, sendMessage) }}>
+                Kapat
+              </button>
+            </div>
+          </article>
+        )
+      })}
+    </div>
+  )
+}
+
+function PositionTableDesktop({
+  positions,
+  slotSize,
+  selected,
+  onRowClick,
+  onDetail,
+  onClose,
+  sendMessage,
+}) {
+  return (
+    <div className="table-scroll">
+      <table className="pos-table pos-table-wide">
+        <thead>
+          <tr>
+            <th>Sembol</th>
+            <th>Yön</th>
+            <th>Kaldıraç</th>
+            <th>RVOL</th>
+            <th>Giriş</th>
+            <th>Mark</th>
+            <th>ROE %</th>
+            <th>PnL</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {positions.map((p) => {
+            const isLong = p.side === 'LONG'
+            const stage = defenseStageLabel(p.defenseLevel || 0)
+            const roePositive = p.roe >= 0
+            const isSelected =
+              (selected?.posKey && selected.posKey === p.posKey) ||
+              (selected?.symbol === p.symbol && selected?.side === p.side)
+
+            return (
+              <tr
+                key={p.posKey || `${p.symbol}_${p.side}`}
+                className={`${isSelected ? 'row-selected' : ''} ${p.slotType === 'merter' ? 'row-merter' : ''}`}
+                onClick={() => onRowClick(p)}
+              >
+                <td className="sym-cell">
+                  <span className="sym-name">{p.symbol.replace(/USDT$/, '')}</span>
+                  <span className="sym-pair">/USDT</span>
+                </td>
+                <td>
+                  <span className={`badge ${isLong ? 'badge-long' : 'badge-short'}`}>{p.side}</span>
+                </td>
+                <td className="mono">{p.leverage}x</td>
+                <td className={`mono ${p.rvol >= 2 ? 'text-green' : 'dim'}`}>
+                  {p.rvol != null ? fmt(p.rvol, 2) : '—'}
+                </td>
+                <td className="mono dim">${fmt(p.entryPrice)}</td>
+                <td className="mono">${fmt(p.markPrice)}</td>
+                <td className={`mono ${roePositive ? 'text-green' : 'text-red'}`}>
+                  {roePositive ? '+' : ''}{fmt(p.roe, 1)}%
+                </td>
+                <PnlCell value={p.pnlUSDT} />
+                <td className="actions-cell">
+                  <button type="button" className="btn btn-sm btn-ghost" onClick={(e) => { e.stopPropagation(); onDetail?.(p) }}>Detay</button>
+                  <button type="button" className="btn btn-sm btn-close" onClick={(e) => { e.stopPropagation(); onClose?.(p, e, sendMessage) }}>Kapat</button>
+                  {p.leverage === 4 && <span className={`def-stage ${stage.cls}`}>{stage.text}</span>}
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function PositionSection({
+  title,
+  subtitle,
+  badge,
+  positions,
+  emptyText,
+  merterSlots,
+  isMerterSection,
+  mobile,
+  slotSize,
+  selected,
+  onRowClick,
+  onDetail,
+  onClose,
+  sendMessage,
+  showTable,
+}) {
+  const emptyMerter = isMerterSection && merterSlots
+    ? ['merter_ei', 'merter_rsi'].filter((k) => !merterSlots[k]?.occupied)
+    : []
+
+  return (
+    <div className={`panel panel-positions ${isMerterSection ? 'panel-merter' : 'panel-motor'}`}>
+      <div className="panel-head">
+        <div>
+          <span className="panel-title">{title}</span>
+          {subtitle && <span className="panel-subtitle">{subtitle}</span>}
+        </div>
+        <span className={`panel-badge ${isMerterSection ? 'badge-merter-count' : ''}`}>{badge}</span>
+      </div>
+
+      {!positions.length && !emptyMerter.length ? (
+        <div className="empty-state">{emptyText}</div>
+      ) : mobile ? (
+        <>
+          <PositionCards
+            positions={positions}
+            slotSize={slotSize}
+            mobile={mobile}
+            selected={selected}
+            onRowClick={onRowClick}
+            onDetail={onDetail}
+            onClose={onClose}
+            sendMessage={sendMessage}
+            merterSlots={merterSlots}
+            isMerterSection={isMerterSection}
+          />
+          {emptyMerter.map((k) => (
+            <MerterEmptySlot key={k} slot={merterSlots[k]} />
+          ))}
+        </>
+      ) : (
+        <>
+          {emptyMerter.map((k) => (
+            <MerterEmptySlot key={k} slot={merterSlots[k]} />
+          ))}
+          {positions.length > 0 && (
+            <PositionTableDesktop
+              positions={positions}
+              slotSize={slotSize}
+              selected={selected}
+              onRowClick={onRowClick}
+              onDetail={onDetail}
+              onClose={onClose}
+              sendMessage={sendMessage}
+            />
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
 export default function PositionTable({
-  positions = [],
+  motorPositions = [],
+  merterPositions = [],
+  merterSlots = {},
+  positions: legacyPositions,
   onDetail,
   onClose,
   sendMessage,
@@ -82,6 +373,10 @@ export default function PositionTable({
   const [selected, setSelected] = useState(null)
   const [localSheetOpen, setLocalSheetOpen] = useState(false)
 
+  const motor = motorPositions.length ? motorPositions : (legacyPositions ?? []).filter((p) => p.slotType !== 'merter')
+  const merter = merterPositions.length ? merterPositions : (legacyPositions ?? []).filter((p) => p.slotType === 'merter')
+  const allPositions = [...motor, ...merter]
+
   const sheetOpen = onChartSheetChange ? chartSheetOpen : localSheetOpen
 
   function setSheetOpen(open) {
@@ -90,18 +385,47 @@ export default function PositionTable({
   }
 
   useEffect(() => {
-    if (!positions.length) {
+    if (!allPositions.length) {
       setSelected(null)
       return
     }
-    if (selected && !positions.find((p) => p.posKey === selected.posKey || p.symbol === selected.symbol)) {
-      const next = positions[0]
+    if (selected && !allPositions.find((p) => p.posKey === selected.posKey || (p.symbol === selected.symbol && p.side === selected.side))) {
+      const next = allPositions[0]
       setSelected(next)
       onSelectPos?.(next)
     }
-  }, [positions, selected, onSelectPos])
+  }, [allPositions, selected, onSelectPos, motor, merter])
 
-  if (!positions.length) {
+  function selectPos(p) {
+    setSelected(p)
+    onSelectPos?.(p)
+  }
+
+  function handleClose(p, e, msgFn) {
+    e?.stopPropagation()
+    if (msgFn || sendMessage) {
+      (msgFn || sendMessage)({ action: 'close_position', symbol: p.symbol, side: p.side })
+    }
+    onClose?.(p)
+  }
+
+  function handleRowClick(p) {
+    selectPos(p)
+    if (mobile) setSheetOpen(true)
+  }
+
+  const chartPos = selected ?? allPositions[0]
+  const common = {
+    mobile,
+    slotSize,
+    selected,
+    onRowClick: handleRowClick,
+    onDetail,
+    onClose: handleClose,
+    sendMessage,
+  }
+
+  if (!allPositions.length && !Object.keys(merterSlots).length) {
     return (
       <div className="panel panel-positions">
         <div className="panel-head">
@@ -113,119 +437,32 @@ export default function PositionTable({
     )
   }
 
-  function selectPos(p) {
-    setSelected(p)
-    onSelectPos?.(p)
-  }
-
-  function handleClose(p, e) {
-    e?.stopPropagation()
-    if (sendMessage) {
-      sendMessage({ action: 'close_position', symbol: p.symbol, side: p.side })
-    }
-    onClose?.(p)
-  }
-
-  function handleDetail(p, e) {
-    e?.stopPropagation()
-    onDetail?.(p)
-  }
-
-  function handleRowClick(p) {
-    selectPos(p)
-    if (mobile) {
-      setSheetOpen(true)
-    }
-  }
-
-  const chartPos = selected ?? positions[0]
-
   if (mobile) {
     return (
       <>
-        <div className="panel panel-positions panel-positions-mobile">
-          <div className="panel-head">
-            <span className="panel-title">Pozisyonlar</span>
-            <span className="panel-badge">{positions.length}</span>
-          </div>
-          <div className="pos-cards">
-            {positions.map((p) => {
-              const isLong = p.side === 'LONG'
-              const stage = defenseStageLabel(p.defenseLevel || 0)
-              const roePositive = p.roe >= 0
-              const isSelected =
-                (selected?.posKey && selected.posKey === p.posKey) ||
-                (selected?.symbol === p.symbol && selected?.side === p.side)
-
-              return (
-                <article
-                  key={p.posKey || `${p.symbol}_${p.side}`}
-                  className={`pos-card ${isSelected ? 'pos-card-selected' : ''}`}
-                  onClick={() => handleRowClick(p)}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <div className="pos-card-top">
-                    <div className="pos-card-symbol">
-                      <span className="sym-name">{p.symbol.replace(/USDT$/, '')}</span>
-                      <span className="sym-pair">/USDT</span>
-                    </div>
-                    <div className="pos-card-badges">
-                      <span className={`badge-pill ${isLong ? 'badge-pill-long' : 'badge-pill-short'}`}>
-                        {p.side}
-                      </span>
-                      <span className="badge-lev">{p.leverage}x</span>
-                      {p.leverage === 4 && (
-                        <span className={`def-stage ${stage.cls}`}>{stage.text}</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="pos-card-pnl-row">
-                    <div className="pos-card-metric">
-                      <span className="pos-card-metric-label">PnL (USDT)</span>
-                      <PnlValue value={p.pnlUSDT} className="pos-card-pnl-big" />
-                    </div>
-                    <div className="pos-card-metric pos-card-metric-right">
-                      <span className="pos-card-metric-label">ROE</span>
-                      <span className={`pos-card-roe-big mono ${roePositive ? 'text-green' : 'text-red'}`}>
-                        {roePositive ? '+' : ''}{fmt(p.roe, 1)}%
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="pos-card-grid">
-                    <div><span className="pos-card-k">Giriş</span><span className="mono">${fmt(p.entryPrice)}</span></div>
-                    <div><span className="pos-card-k">Ort.</span><span className="mono">${fmt(avgPrice(p))}</span></div>
-                    <div><span className="pos-card-k">Mark</span><span className="mono">${fmt(p.markPrice)}</span></div>
-                    <div><span className="pos-card-k">Liq</span><span className="mono liq">${fmt(p.liqPrice)}</span></div>
-                    <div><span className="pos-card-k">Miktar</span><span className="mono">{fmt(p.amount, 4)}</span></div>
-                    <div><span className="pos-card-k">Büyüklük</span><span className="mono">{fmt(notionalUsdt(p), 2)}</span></div>
-                    <div><span className="pos-card-k">Marjin</span><span className="mono">{fmt(p.margin, 2)}</span></div>
-                  </div>
-
-                  <DefenseBars pos={p} slotSize={slotSize} />
-
-                  <div className="pos-card-actions">
-                    <button type="button" className="btn btn-ghost touch-target" onClick={(e) => handleDetail(p, e)}>
-                      Detay
-                    </button>
-                    <button type="button" className="btn btn-close touch-target" onClick={(e) => handleClose(p, e)}>
-                      Kapat
-                    </button>
-                  </div>
-                </article>
-              )
-            })}
-          </div>
-        </div>
-
-        {sheetOpen && chartPos && (
-          <ChartBottomSheet
-            pos={chartPos}
-            slotSize={slotSize}
-            onClose={() => setSheetOpen(false)}
+        <div className="positions-stack">
+          <PositionSection
+            title="4x Motor"
+            subtitle="Ana slotlar (max 8)"
+            badge={motor.length}
+            positions={motor}
+            emptyText="Motor pozisyonu yok"
+            isMerterSection={false}
+            {...common}
           />
+          <PositionSection
+            title="Merter 1x DCA"
+            subtitle="EI + RSI yuvaları"
+            badge={`${merter.length}/2`}
+            positions={merter}
+            emptyText=""
+            merterSlots={merterSlots}
+            isMerterSection
+            {...common}
+          />
+        </div>
+        {sheetOpen && chartPos && (
+          <ChartBottomSheet pos={chartPos} slotSize={slotSize} onClose={() => setSheetOpen(false)} />
         )}
       </>
     )
@@ -233,89 +470,29 @@ export default function PositionTable({
 
   return (
     <>
-      <div className="panel panel-positions">
-        <div className="panel-head">
-          <span className="panel-title">Pozisyonlar</span>
-          <span className="panel-badge">{positions.length}</span>
-          <span className="field-hint" style={{ marginLeft: 'auto', marginTop: 0 }}>
-            Grafik için satıra tıkla
-          </span>
-        </div>
-        <div className="table-scroll">
-          <table className="pos-table pos-table-wide">
-            <thead>
-              <tr>
-                <th>Sembol</th>
-                <th>Yön</th>
-                <th>Kaldıraç</th>
-                <th>Giriş Fiyatı</th>
-                <th>Ortalama Fiyat</th>
-                <th>Mark Fiyat</th>
-                <th>Likidasyon</th>
-                <th>Miktar</th>
-                <th>Büyüklük</th>
-                <th>Marjin</th>
-                <th>ROE %</th>
-                <th>PnL</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {positions.map((p) => {
-                const isLong = p.side === 'LONG'
-                const stage = defenseStageLabel(p.defenseLevel || 0)
-                const roePositive = p.roe >= 0
-                const isSelected =
-                  (selected?.posKey && selected.posKey === p.posKey) ||
-                  (selected?.symbol === p.symbol && selected?.side === p.side) ||
-                  (!selected && p === positions[0])
-
-                return (
-                  <tr
-                    key={p.posKey || `${p.symbol}_${p.side}`}
-                    className={isSelected ? 'row-selected' : ''}
-                    onClick={() => handleRowClick(p)}
-                  >
-                    <td className="sym-cell">
-                      <span className="sym-name">{p.symbol.replace(/USDT$/, '')}</span>
-                      <span className="sym-pair">/USDT</span>
-                    </td>
-                    <td>
-                      <span className={`badge ${isLong ? 'badge-long' : 'badge-short'}`}>
-                        {p.side}
-                      </span>
-                    </td>
-                    <td className="mono">{p.leverage}x</td>
-                    <td className="mono dim">${fmt(p.entryPrice)}</td>
-                    <td className="mono">${fmt(avgPrice(p))}</td>
-                    <td className="mono">${fmt(p.markPrice)}</td>
-                    <td className="mono liq">${fmt(p.liqPrice)}</td>
-                    <td className="mono">{fmt(p.amount, 4)}</td>
-                    <td className="mono">{fmt(notionalUsdt(p), 2)}</td>
-                    <td className="mono">{fmt(p.margin, 2)}</td>
-                    <td className={`mono ${roePositive ? 'text-green' : 'text-red'}`}>
-                      {roePositive ? '+' : ''}{fmt(p.roe, 1)}%
-                    </td>
-                    <PnlCell value={p.pnlUSDT} />
-                    <td className="actions-cell">
-                      <button type="button" className="btn btn-sm btn-ghost" onClick={(e) => handleDetail(p, e)}>
-                        Detay
-                      </button>
-                      <button type="button" className="btn btn-sm btn-close" onClick={(e) => handleClose(p, e)}>
-                        Kapat
-                      </button>
-                      {p.leverage === 4 && (
-                        <span className={`def-stage ${stage.cls}`}>{stage.text}</span>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+      <div className="positions-stack">
+        <PositionSection
+          title="4x Motor"
+          subtitle="Ana slotlar (max 8)"
+          badge={motor.length}
+          positions={motor}
+          emptyText="Motor pozisyonu yok"
+          isMerterSection={false}
+          showTable
+          {...common}
+        />
+        <PositionSection
+          title="Merter 1x DCA"
+          subtitle="EI Tarama + RSI Bot"
+          badge={`${merter.length}/2`}
+          positions={merter}
+          emptyText=""
+          merterSlots={merterSlots}
+          isMerterSection
+          showTable
+          {...common}
+        />
       </div>
-
       {showInlineChart && chartPos && (
         <PositionChartEmbed pos={chartPos} slotSize={slotSize} />
       )}

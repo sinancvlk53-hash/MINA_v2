@@ -4,11 +4,14 @@
 MINA v2 — Dashboard WebSocket Server  port 8765
 5 sn'de bir Binance verisi + log akışı yayınlar.
 """
-import asyncio, json, os, sys, logging
+import asyncio, json, os, sys, logging, time
 sys.path.insert(0, '/root/MINA_v2')
 
 import websockets
 from backend.config import BinanceConfig, AccountManager
+
+MERTER_STATE_PATH = '/root/MINA_v2/signal_bot/merter_dca_state.json'
+_rvol_cache = {}  # symbol -> (value, ts)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 log = logging.getLogger('mina-ws')
@@ -42,6 +45,49 @@ LOG_PATH     = '/root/MINA_v2/mina_bot.log'
 _log_buf     = []
 _log_pos     = 0
 
+def get_merter_slots_meta():
+    """Merter EI / RSI yuva durumu (boş veya dolu)."""
+    state = read_json(MERTER_STATE_PATH)
+    positions = state.get('positions') or {}
+    labels = {'merter_ei': 'EI Tarama', 'merter_rsi': 'RSI Bot'}
+    slots = {}
+    for yuva in ('merter_ei', 'merter_rsi'):
+        p = positions.get(yuva) or {}
+        slots[yuva] = {
+            'yuva': yuva,
+            'label': labels[yuva],
+            'occupied': bool(p),
+            'symbol': p.get('symbol'),
+            'partsFilled': int(p.get('parts_filled') or 0),
+            'partsTotal': int(p.get('parts_total') or 10),
+            'breakevenMode': bool(p.get('breakeven_mode')),
+            'avgPrice': p.get('avg_price'),
+        }
+    return slots
+
+
+def calculate_rvol(client, symbol):
+    """RVOL = son kapalı 5m hacim / son 1s ortalama 5m hacmi."""
+    now = time.time()
+    cached = _rvol_cache.get(symbol)
+    if cached and now - cached[1] < 30:
+        return cached[0]
+    try:
+        kl = client.futures_klines(symbol=symbol, interval='5m', limit=14)
+        closed = kl[:-1]
+        if len(closed) < 12:
+            return None
+        vols = [float(k[7]) for k in closed[-12:]]
+        avg = sum(vols) / len(vols)
+        if avg <= 0:
+            return None
+        rvol = float(closed[-1][7]) / avg
+        _rvol_cache[symbol] = (round(rvol, 2), now)
+        return round(rvol, 2)
+    except Exception:
+        return None
+
+
 def update_logs():
     global _log_buf, _log_pos
     try:
@@ -70,6 +116,12 @@ async def get_data():
 
         raw            = client.futures_position_information()
         defense_levels = read_json('/root/MINA_v2/defense_levels.json')
+        merter_slots   = get_merter_slots_meta()
+        merter_by_sym  = {
+            s['symbol']: yuva
+            for yuva, s in merter_slots.items()
+            if s.get('occupied') and s.get('symbol')
+        }
 
         positions = []
         for p in raw:
@@ -91,6 +143,9 @@ async def get_data():
             pnl_pct = ((mark - entry) / entry * 100) if side == 'LONG' and entry else \
                       ((entry - mark) / entry * 100) if entry else 0
 
+            is_merter = sym in merter_by_sym and lev == 1 and side == 'LONG'
+            rvol = calculate_rvol(client, sym)
+
             positions.append({
                 'symbol':       sym,
                 'side':         side,
@@ -105,17 +160,35 @@ async def get_data():
                 'margin':       iso_m,
                 'defenseLevel': defense_levels.get(pos_key, 0),
                 'posKey':       pos_key,
+                'slotType':     'merter' if is_merter else 'motor',
+                'merterYuva':   merter_by_sym.get(sym),
+                'rvol':         rvol,
             })
+
+        motor_positions  = [p for p in positions if p['slotType'] == 'motor']
+        merter_positions = [p for p in positions if p['slotType'] == 'merter']
+        merter_used      = sum(1 for s in merter_slots.values() if s['occupied'])
 
         update_logs()
 
         return {
-            'balance':       balance,
-            'floatingPnl':   sum(p['pnlUSDT'] for p in positions),
-            'positionCount': len(positions),
-            'engineRunning': engine_running(),
-            'positions':     positions,
-            'logs':          list(_log_buf),
+            'balance':         balance,
+            'floatingPnl':     sum(p['pnlUSDT'] for p in positions),
+            'positionCount':   len(positions),
+            'motorCount':      len(motor_positions),
+            'merterCount':     len(merter_positions),
+            'engineRunning':   engine_running(),
+            'positions':       positions,
+            'motorPositions':  motor_positions,
+            'merterPositions': merter_positions,
+            'merterSlots':     merter_slots,
+            'slotSummary': {
+                'motorUsed':  len(motor_positions),
+                'motorMax':   8,
+                'merterUsed': merter_used,
+                'merterMax':  2,
+            },
+            'logs':            list(_log_buf),
         }
     except Exception as e:
         log.error(f"get_data: {e}")

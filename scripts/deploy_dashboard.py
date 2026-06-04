@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-"""Deploy dashboard dist/ to production server."""
+"""Deploy dashboard dist/ + WS backend to production server."""
 import os
 import paramiko
 
 HOST, USER, PASS = "178.105.150.40", "root", "REDACTED"
-REMOTE = "/root/MINA_v2/dashboard/dist"
-LOCAL = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "dashboard", "dist")
+ROOT = "/root/MINA_v2"
+REMOTE_DIST = f"{ROOT}/dashboard/dist"
+LOCAL_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+LOCAL_DIST = os.path.join(LOCAL_ROOT, "dashboard", "dist")
+LOCAL_WS = os.path.join(LOCAL_ROOT, "dashboard", "dashboard_ws.py")
 
 
 def ensure_remote_dir(sftp, path):
@@ -24,11 +27,14 @@ def main():
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     c.connect(HOST, username=USER, password=PASS, timeout=20)
     sftp = c.open_sftp()
-    ensure_remote_dir(sftp, REMOTE)
+    ensure_remote_dir(sftp, REMOTE_DIST)
 
-    for root, _, files in os.walk(LOCAL):
-        rel = os.path.relpath(root, LOCAL).replace("\\", "/")
-        remote_dir = REMOTE if rel == "." else f"{REMOTE}/{rel}"
+    sftp.put(LOCAL_WS, f"{ROOT}/dashboard/dashboard_ws.py")
+    print("PUT dashboard/dashboard_ws.py")
+
+    for root, _, files in os.walk(LOCAL_DIST):
+        rel = os.path.relpath(root, LOCAL_DIST).replace("\\", "/")
+        remote_dir = REMOTE_DIST if rel == "." else f"{REMOTE_DIST}/{rel}"
         ensure_remote_dir(sftp, remote_dir)
         for f in files:
             lp = os.path.join(root, f)
@@ -36,10 +42,14 @@ def main():
             print("PUT", rp)
             sftp.put(lp, rp)
 
+    sftp.close()
+
     for cmd in (
+        "systemctl restart mina-dashboard-ws.service",
         "systemctl restart mina-dashboard-vite.service",
-        "systemctl is-active mina-dashboard-vite.service",
-        'curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/',
+        "sleep 2",
+        "systemctl is-active mina-dashboard-ws.service mina-dashboard-vite.service",
+        'curl -s -o /dev/null -w "HTTP %{http_code}" http://127.0.0.1:3000/',
     ):
         print(">>>", cmd)
         _, out, err = c.exec_command(cmd, timeout=30)

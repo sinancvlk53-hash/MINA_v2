@@ -23,6 +23,9 @@ export default function App() {
   const isMobile = useMediaQuery('(max-width: 768px)')
 
   const positions = data?.positions ?? []
+  const motorPositions = data?.motorPositions ?? positions.filter((p) => p.slotType !== 'merter')
+  const merterPositions = data?.merterPositions ?? positions.filter((p) => p.slotType === 'merter')
+  const merterSlots = data?.merterSlots ?? {}
   const logs = data?.logs ?? []
   const slotSize = (data?.balance ?? 0) / 10
   const chartPos = selectedPos ?? positions[0] ?? null
@@ -52,6 +55,9 @@ export default function App() {
         <section className={`col-center ${showCenter ? 'mobile-show' : 'mobile-hide'}`}>
           {(!isMobile || mobileTab === 'positions') && (
             <PositionTable
+              motorPositions={motorPositions}
+              merterPositions={merterPositions}
+              merterSlots={merterSlots}
               positions={positions}
               onDetail={setDetailPos}
               sendMessage={sendMessage}

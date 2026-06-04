@@ -424,6 +424,146 @@ body {
   box-shadow: 0 0 6px rgba(240, 185, 11, 0.4);
 }
 
+.slot-cell.slot-merter.used {
+  background: #7c6cf0;
+  border-color: #7c6cf0;
+  box-shadow: 0 0 6px rgba(124, 108, 240, 0.45);
+}
+
+.slot-bar-section {
+  margin-top: 10px;
+}
+
+.slot-bar-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.slot-bar-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.slot-bar-label-merter {
+  color: #9d8fff;
+}
+
+.positions-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+}
+
+.panel-merter {
+  border-color: rgba(124, 108, 240, 0.35);
+}
+
+.panel-merter .panel-head {
+  border-bottom-color: rgba(124, 108, 240, 0.2);
+}
+
+.panel-subtitle {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 400;
+  margin-top: 2px;
+}
+
+.badge-merter-count {
+  background: rgba(124, 108, 240, 0.2);
+  color: #b8adff;
+}
+
+.badge-rvol {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.badge-rvol-hot {
+  color: #3dd68c;
+  border-color: rgba(61, 214, 140, 0.4);
+}
+
+.badge-rvol-na {
+  opacity: 0.5;
+}
+
+.pos-card-merter {
+  border-color: rgba(124, 108, 240, 0.3);
+}
+
+.pos-card-merter-empty {
+  border-style: dashed;
+  border-color: rgba(124, 108, 240, 0.35);
+  opacity: 0.85;
+  cursor: default;
+}
+
+.merter-slot-label {
+  color: #b8adff !important;
+}
+
+.merter-empty-hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 8px 0;
+}
+
+.merter-meta {
+  margin: 8px 0 4px;
+}
+
+.merter-parts-bar {
+  height: 4px;
+  background: var(--bg);
+  border-radius: 2px;
+  margin: 6px 0 4px;
+  overflow: hidden;
+}
+
+.merter-parts-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7c6cf0, #9d8fff);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.badge-merter-idle {
+  background: rgba(124, 108, 240, 0.15);
+  color: #9d8fff;
+  font-size: 10px;
+}
+
+.badge-merter-active {
+  background: rgba(124, 108, 240, 0.25);
+  color: #c4bbff;
+  font-size: 10px;
+}
+
+.badge-breakeven {
+  background: rgba(240, 185, 11, 0.15);
+  color: var(--accent);
+  font-size: 10px;
+  margin-left: 6px;
+}
+
+.row-merter td {
+  background: rgba(124, 108, 240, 0.04);
+}
+
 .rules-box {
   margin-top: 14px;
   padding: 12px;

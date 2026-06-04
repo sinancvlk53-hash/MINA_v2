@@ -16,6 +16,11 @@ export default function OrderPanel({ data, status }) {
   const balance  = data?.balance ?? 0
   const slot     = balance / 10
   const entryMargin = slot / 5
+  const slotSummary = data?.slotSummary ?? {}
+  const motorUsed = slotSummary.motorUsed ?? data?.motorCount ?? 0
+  const merterUsed = slotSummary.merterUsed ?? data?.merterCount ?? 0
+  const motorMax = slotSummary.motorMax ?? 8
+  const merterMax = slotSummary.merterMax ?? 2
   const posCount = data?.positionCount ?? 0
 
   const symbols = useMemo(() => {
@@ -138,11 +143,31 @@ export default function OrderPanel({ data, status }) {
           </div>
         </div>
 
-        {/* Slot görsel */}
-        <div className="slot-bar">
-          {Array.from({ length: 10 }, (_, i) => (
-            <div key={i} className={`slot-cell ${i < posCount ? 'used' : ''}`} />
-          ))}
+        {/* Slot görsel — 8 motor + 2 Merter */}
+        <div className="slot-bar-section">
+          <div className="slot-bar-label-row">
+            <span className="slot-bar-label">4x Motor</span>
+            <span className="field-hint">{motorUsed}/{motorMax}</span>
+          </div>
+          <div className="slot-bar">
+            {Array.from({ length: motorMax }, (_, i) => (
+              <div key={`m${i}`} className={`slot-cell slot-motor ${i < motorUsed ? 'used' : ''}`} />
+            ))}
+          </div>
+        </div>
+        <div className="slot-bar-section">
+          <div className="slot-bar-label-row">
+            <span className="slot-bar-label slot-bar-label-merter">Merter 1x</span>
+            <span className="field-hint">{merterUsed}/{merterMax}</span>
+          </div>
+          <div className="slot-bar">
+            {Array.from({ length: merterMax }, (_, i) => (
+              <div key={`r${i}`} className={`slot-cell slot-merter ${i < merterUsed ? 'used' : ''}`} />
+            ))}
+          </div>
+        </div>
+        <div className="field-hint" style={{ marginTop: 6 }}>
+          Toplam açık: {posCount} · Merter yuvaları sinyal ile dolar
         </div>
 
         {/* Sistem kuralları */}
