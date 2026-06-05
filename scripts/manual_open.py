@@ -31,6 +31,7 @@ import mina_tracking as mt
 
 LEVERAGE_DEFAULT = 4
 ENTRY_SLOT_RATIO = 0.20
+ALLOWED_LEVERAGES = frozenset({1, 2, 3, 4, 5, 10})
 
 
 def _count_motor_slots(client) -> tuple[int, int, int]:
@@ -81,6 +82,11 @@ def main() -> None:
     ap.add_argument("--source", default="haluk", choices=["haluk", "merter"])
     ap.add_argument("--entry-price", type=float, default=None, help="Giriş fiyatı (limit/market seçimi)")
     args = ap.parse_args()
+
+    if args.leverage not in ALLOWED_LEVERAGES:
+        allowed = ", ".join(f"{x}x" for x in sorted(ALLOWED_LEVERAGES))
+        print(f"RED: Geçersiz kaldıraç {args.leverage}x — izin verilen: {allowed}")
+        sys.exit(1)
 
     try:
         from mina_dashboard_settings import is_motor_paused

@@ -10,7 +10,6 @@ export default function OrderPanel({ data, status, sendMessage }) {
   const [side, setSide]         = useState('LONG')
   const [leverage, setLeverage] = useState(4)
   const [orderType, setOrderType] = useState('Market')
-  const [amount, setAmount]     = useState('')
   const [limitPrice, setLimitPrice] = useState('')
   const [showList, setShowList] = useState(false)
   const searchRef = useRef(null)
@@ -146,17 +145,10 @@ export default function OrderPanel({ data, status, sendMessage }) {
           </>
         )}
 
-        {/* Miktar */}
-        <label className="field-label">Miktar (coin)</label>
-        <input
-          className="field-input"
-          type="number"
-          min="0"
-          step="any"
-          placeholder="0.00"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-        />
+        {/* Miktar — anayasa marjini otomatik */}
+        <div className="field-hint" style={{ marginTop: 8 }}>
+          Marjin slot/5 formülüyle otomatik hesaplanır
+        </div>
 
         <button
           type="button"

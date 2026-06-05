@@ -380,6 +380,7 @@ async def close_all(websocket):
 
 async def manual_open_position(websocket, symbol, side, leverage=4, entry_price=None):
     """Dashboard / WS üzerinden manuel motor girişi."""
+    allowed_leverages = {1, 2, 3, 4, 5, 10}
     try:
         from mina_dashboard_settings import is_motor_paused
         if is_motor_paused():
@@ -395,6 +396,15 @@ async def manual_open_position(websocket, symbol, side, leverage=4, entry_price=
         sym = (symbol or '').upper()
         sd = (side or 'LONG').upper()
         lev = int(leverage or 4)
+        if lev not in allowed_leverages:
+            await websocket.send(json.dumps({
+                'action': 'manual_open_result',
+                'ok': False,
+                'symbol': sym,
+                'side': sd,
+                'output': f'Geçersiz kaldıraç {lev}x — izin verilen: 1, 2, 3, 4, 5, 10',
+            }))
+            return
         cmd = [
             '/root/MINA_v2/venv/bin/python',
             '/root/MINA_v2/scripts/manual_open.py',
