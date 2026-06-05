@@ -221,6 +221,9 @@ class MinaPositionManager:
                 if row:
                     self.trade_ids[key] = int(row['id'])
                 else:
+                    from mina_signal_source import detect_orphan_signal_source, record_position_source
+                    orphan_src = detect_orphan_signal_source(symbol, side)
+                    record_position_source(symbol, side, orphan_src)
                     tid = self.journal.log_trade_open(
                         symbol=symbol,
                         side=side,
@@ -228,10 +231,11 @@ class MinaPositionManager:
                         entry_price=entry,
                         qty=float(pos['amount']),
                         initial_margin=initial_margins[key],
+                        signal_source=orphan_src,
                     )
                     if tid > 0:
                         self.trade_ids[key] = tid
-                        report['journal_opened'].append({'key': key, 'trade_id': tid})
+                        report['journal_opened'].append({'key': key, 'trade_id': tid, 'signal_source': orphan_src})
 
             if verbose:
                 print(f"[SYNC] {key} entry={entry} mark={mark} margin={initial_margins[key]}")
@@ -570,8 +574,14 @@ class MinaPositionManager:
             symbol, side, float(position.get('entry_price', 0))
         )
         state = self.position_states.get(symbol, {})
-        file_defense = mt.load_json(mt.DEFENSE_FILE).get(self._pos_key(symbol, side), 0)
-        current_stage = max(int(state.get('defense_stage', 0)), int(file_defense))
+        file_defense = int(mt.load_json(mt.DEFENSE_FILE).get(self._pos_key(symbol, side), 0))
+        journal_defense = self._defense_level_from_journal(symbol, side)
+        state_stage = int(state.get('defense_stage', 0))
+        # Journal = gerçek icra; dosya/state tek başına D1'i bloklamaz (stale fix)
+        if journal_defense >= 1:
+            current_stage = max(journal_defense, state_stage, file_defense)
+        else:
+            current_stage = 0
 
         if current_stage == 0 and self._is_d1_hit(current_price, entry_price, side):
             return 1
@@ -616,12 +626,16 @@ class MinaPositionManager:
         if defense_level == 99:
             return self.execute_hard_stop(position)
 
+        if defense_level == 1:
+            ok = self._execute_d1(position, current_price)
+            if ok:
+                self._persist_defense_level(symbol, side, 1)
+            return ok
+
         state['defense_stage'] = defense_level
         self._save_state()
         self._persist_defense_level(symbol, side, defense_level)
 
-        if defense_level == 1:
-            return self._execute_d1(position, current_price)
         if defense_level == 2:
             return self._execute_d2(position, current_price)
         if defense_level == 3:
@@ -641,8 +655,9 @@ class MinaPositionManager:
         key = self._pos_key(symbol, side)
         file_defense = int(mt.load_json(mt.DEFENSE_FILE).get(key, 0))
         stage = int(state.get('defense_stage', 0))
-        if stage >= 1 or file_defense >= 1:
-            state['defense_stage'] = max(stage, file_defense, 1)
+        journal_defense = self._defense_level_from_journal(symbol, side)
+        if journal_defense >= 1:
+            state['defense_stage'] = max(stage, file_defense, journal_defense, 1)
             self._save_state()
             return True
 
@@ -1487,6 +1502,23 @@ class MinaPositionManager:
         except Exception as e:
             print(f"❌ Journal log_defense_activation hatası: {e}")
 
+    def _cancel_merter_dca_limits(self, symbol: str) -> int:
+        """Motor kapanışında kalan Merter DCA limit emirlerini iptal et."""
+        cancelled = 0
+        try:
+            for o in self.client.futures_get_open_orders(symbol=symbol):
+                if o.get("type") != "LIMIT":
+                    continue
+                side = str(o.get("side", "")).upper()
+                if side != "BUY":
+                    continue
+                self.client.futures_cancel_order(symbol=symbol, orderId=o["orderId"])
+                cancelled += 1
+                print(f"   🚫 DCA limit iptal: {symbol} orderId={o['orderId']} price={o.get('price')}")
+        except Exception as e:
+            print(f"   ⚠️  DCA limit iptal hatası {symbol}: {e}")
+        return cancelled
+
     def log_position_close(
         self,
         symbol: str,
@@ -1499,6 +1531,7 @@ class MinaPositionManager:
         roe_percent: float,
     ) -> None:
         """Pozisyon tamamen kapandığında journal.log_trade_close çağırır."""
+        self._cancel_merter_dca_limits(symbol)
         trade_id = self._trade_id_for(symbol, side)
         if not self.journal or trade_id is None:
             print(f"⚠️  Journal close atlandı (trade_id yok): {symbol} {side}")

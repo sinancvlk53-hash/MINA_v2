@@ -165,7 +165,7 @@ def _is_trade_candidate(entry: Dict[str, Any]) -> bool:
     return direction in ("LONG", "SHORT")
 
 
-def _open_position_keys(client) -> Set[str]:
+def score_entry(
     entry: Dict[str, Any],
     queue: Dict[str, Any],
     session: Optional[str] = None,

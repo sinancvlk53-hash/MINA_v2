@@ -3,18 +3,23 @@
 
 from __future__ import annotations
 
+import os
 from typing import Optional
 
 import mina_tracking as mt
 
+_ROOT = os.path.dirname(os.path.abspath(__file__))
+
 HT = "HT"
 MZ = "MZ"
 MANUEL = "MANUEL"
+YETIM = "yetim"
 
 SOURCE_LABELS = {
     HT: "Haluk Hoca",
     MZ: "Merter",
     MANUEL: "Manuel",
+    YETIM: "Yetim",
 }
 
 
@@ -38,7 +43,60 @@ def normalize_source_code(source: Optional[str]) -> str:
         return MZ
     if s in ("MANUAL", "MANUEL", "MANUAL_OPEN"):
         return MANUEL
+    if s in ("YETIM", "ORPHAN"):
+        return YETIM
+    if s.startswith("MERTER"):
+        return MZ
     return HT
+
+
+def detect_orphan_signal_source(symbol: str, side: str) -> str:
+    """Yetim pozisyon kaynağı: Merter izi varsa MZ, yoksa yetim."""
+    key = mt.pos_key(symbol, side)
+    ps = get_position_sources()
+    if key in ps:
+        return ps[key]
+
+    state_path = os.path.join(_ROOT, "signal_bot", "merter_dca_state.json")
+    try:
+        state = mt.load_json(state_path) if os.path.isfile(state_path) else {}
+        for pos in (state.get("positions") or {}).values():
+            if pos and pos.get("symbol") == symbol:
+                return MZ
+    except Exception:
+        pass
+
+    merter_log = os.path.join(_ROOT, "signal_bot", "merter_dca.log")
+    try:
+        if os.path.isfile(merter_log):
+            sym_u = symbol.upper()
+            with open(merter_log, encoding="utf-8", errors="replace") as f:
+                for line in f:
+                    if sym_u not in line.upper():
+                        continue
+                    if "AÇILDI" in line or "MARKET" in line:
+                        return MZ
+    except Exception:
+        pass
+
+    db = os.path.join(_ROOT, "mina_trading_journal.db")
+    try:
+        if os.path.isfile(db):
+            import sqlite3
+            con = sqlite3.connect(db)
+            row = con.execute(
+                """SELECT signal_source FROM trades
+                   WHERE symbol=? AND side=? AND signal_source LIKE 'merter%'
+                   ORDER BY id DESC LIMIT 1""",
+                (symbol, side),
+            ).fetchone()
+            con.close()
+            if row and row[0]:
+                return MZ
+    except Exception:
+        pass
+
+    return YETIM
 
 
 def queue_source_to_code(queue_source: Optional[str]) -> str:

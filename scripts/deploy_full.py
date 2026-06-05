@@ -22,6 +22,8 @@ FILES = [
     "mina_tracking.py",
     "mina_signal_source.py",
     "mina_entry_orders.py",
+    "mina_trading_journal.py",
+    "scripts/reconcile_atom_derr.py",
     "backend/ghost_positions.py",
     "signal_bot/listener.py",
     "signal_bot/signal_parser.py",

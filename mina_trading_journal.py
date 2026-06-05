@@ -319,6 +319,37 @@ class TradingJournal:
         except Exception as e:
             print(f"❌ Journal trade_close hatası: {e}")
 
+    def reconcile_open_qty(
+        self,
+        trade_id: int,
+        qty: float,
+        initial_margin: float,
+    ) -> bool:
+        """Kısmi TP sonrası açık qty / notional / marjin güncelle."""
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                """
+                UPDATE trades
+                SET open_qty = ?,
+                    open_notional = open_price * ?,
+                    initial_margin = ?
+                WHERE id = ? AND status = 'open'
+                """,
+                (qty, qty, initial_margin, trade_id),
+            )
+            self.conn.commit()
+            if cursor.rowcount == 0:
+                print(f"❌ Journal reconcile_open_qty: trade id={trade_id} bulunamadi veya kapali")
+                return False
+            print(
+                f"📔 [Journal] Reconcile: id={trade_id} qty={qty} margin={initial_margin:.4f}"
+            )
+            return True
+        except Exception as e:
+            print(f"❌ Journal reconcile_open_qty hatası: {e}")
+            return False
+
     # ─────────────────────────────────────────────────────────────────────
     # İSTATİSTİK VE RAPORLAMA
     # ─────────────────────────────────────────────────────────────────────
