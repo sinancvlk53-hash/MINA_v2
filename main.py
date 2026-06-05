@@ -26,6 +26,8 @@ from position_manager import PositionManager  # noqa: E402
 from mina_position_manager import MinaPositionManager  # noqa: E402
 from mina_trading_journal import TradingJournal  # noqa: E402
 import mina_tracking as mt  # noqa: E402
+from ghost_positions import scan_and_report  # noqa: E402
+from mina_entry_orders import cancel_stale_pending_limits, process_pending_limit_fills  # noqa: E402
 
 LOG_PATH = os.path.join(ROOT, "mina_bot.log")
 logger = logging.getLogger("MİNA_v2")
@@ -62,12 +64,23 @@ def run() -> None:
     print(report)
     mt.dump_all_tracking()
 
+    ghosts = scan_and_report(client)
+    if ghosts:
+        print(f"⚠️  {len(ghosts)} hayalet pozisyon tespit edildi (log + Telegram)")
+
     interval = int(os.environ.get("MINA_CHECK_INTERVAL", "30"))
     logger.info("Motor başladı — interval=%ss", interval)
 
     while True:
         try:
+            cancel_stale_pending_limits(client)
+            filled = process_pending_limit_fills(mina)
+            if filled:
+                print(f"  📥 {filled} bekleyen limit emri doldu → tracking seed")
             positions = pm.get_all_positions()
+            ghosts = scan_and_report(client)
+            if ghosts:
+                print(f"  👻 Hayalet: {', '.join(g['symbol'] + '/' + g['side'] for g in ghosts)}")
             if not positions:
                 print(f"[{datetime.now().strftime('%H:%M:%S')}] Açık pozisyon yok.")
             else:

@@ -21,9 +21,14 @@ _BACKEND = os.path.join(_ROOT, "backend")
 if _BACKEND not in sys.path:
     sys.path.insert(0, _BACKEND)
 
-from binance.enums import ORDER_TYPE_MARKET, SIDE_BUY, SIDE_SELL
+from binance.enums import ORDER_TYPE_LIMIT, ORDER_TYPE_MARKET, SIDE_BUY, SIDE_SELL
 
 import mina_tracking as mt
+from mina_entry_orders import (
+    register_pending_limit,
+    resolve_entry_order,
+)
+from mina_signal_source import queue_source_to_code
 from signal_bot.signal_guillotine import evaluate_guillotine, evaluate_katman3
 from signal_bot.signal_parser import MACRO_FILTER_BASES, load_queue, save_queue
 from signal_bot.signal_pipeline import (
@@ -39,7 +44,66 @@ LEVERAGE = 4
 SLOT_COUNT = 10
 ENTRY_SLOT_RATIO = 0.20
 SLOT_CAP_RATIO = 0.98
-MAX_POSITIONS = 10
+from mina_slot_policy import MOTOR_SLOT_MAX, SLOTS_HALUK_MOTOR, SLOTS_MERTER_MOTOR
+
+MAX_POSITIONS = MOTOR_SLOT_MAX
+QUEUE_TTL_SEC = 30 * 60  # Sinyal kuyrukta max 30 dakika
+
+
+def _parse_entry_ts(entry: Dict[str, Any]) -> Optional[float]:
+    """Entry timestamp → unix saniye (UTC)."""
+    raw = entry.get("timestamp")
+    if raw is None:
+        return None
+    try:
+        if isinstance(raw, (int, float)):
+            return float(raw)
+        s = str(raw).strip().replace("Z", "+00:00")
+        if " " in s and "T" not in s:
+            s = s.replace(" ", "T", 1)
+        return datetime.fromisoformat(s).timestamp()
+    except Exception:
+        return None
+
+
+def expire_stale_queue_entries(
+    queue: Optional[Dict[str, Any]] = None,
+    *,
+    save: bool = True,
+) -> int:
+    """
+    30 dakikadan eski onaylı, tüketilmemiş sinyalleri iptal et.
+    Slot köprüsü bu kayıtları kullanmaz.
+    """
+    queue = queue or load_queue()
+    now = time.time()
+    expired = 0
+    changed = False
+    for entry in queue.get("entries") or []:
+        if entry.get("queue_state") in ("consumed", "cancelled", "superseded"):
+            continue
+        if entry.get("status") != "approved":
+            continue
+        ts = _parse_entry_ts(entry)
+        if ts is None:
+            continue
+        age_sec = now - ts
+        if age_sec <= QUEUE_TTL_SEC:
+            continue
+        entry["queue_state"] = "cancelled"
+        entry["cancel_reason"] = "queue_ttl_30m"
+        entry["cancelled_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        entry["queue_age_min"] = round(age_sec / 60, 1)
+        expired += 1
+        changed = True
+        sym = entry.get("symbol", "?")
+        print(
+            f"[SLOT_BRIDGE] Kuyruk iptal (30m TTL): {sym} {entry.get('direction')} "
+            f"ts={entry.get('timestamp')} age={entry['queue_age_min']}dk"
+        )
+    if changed and save:
+        save_queue(queue)
+    return expired
 
 
 def _open_position_keys(client) -> Set[str]:
@@ -89,7 +153,10 @@ def _slot_limit_check(
 def _is_trade_candidate(entry: Dict[str, Any]) -> bool:
     if entry.get("status") != "approved":
         return False
-    if entry.get("queue_state") == "consumed":
+    if entry.get("queue_state") in ("consumed", "cancelled", "superseded", "expired"):
+        return False
+    ts = _parse_entry_ts(entry)
+    if ts is not None and (time.time() - ts) > QUEUE_TTL_SEC:
         return False
     sym = str(entry.get("symbol", "")).upper()
     if sym in MACRO_FILTER_BASES or sym == "SYSTEM":
@@ -98,7 +165,7 @@ def _is_trade_candidate(entry: Dict[str, Any]) -> bool:
     return direction in ("LONG", "SHORT")
 
 
-def score_entry(
+def _open_position_keys(client) -> Set[str]:
     entry: Dict[str, Any],
     queue: Dict[str, Any],
     session: Optional[str] = None,
@@ -136,6 +203,7 @@ def rank_actionable_signals(
 ) -> List[Dict[str, Any]]:
     """Onaylı, tüketilmemiş, açılmaya uygun sinyalleri parlaklığa göre sırala."""
     queue = queue or load_queue()
+    expire_stale_queue_entries(queue, save=True)
     session = _utc_session()
     open_keys = _open_position_keys(client)
     ranked: List[Dict[str, Any]] = []
@@ -233,12 +301,24 @@ def open_signal_position(
     scored: Dict[str, Any],
     queue: Optional[Dict[str, Any]] = None,
 ) -> Optional[Dict[str, Any]]:
-    """Seçilen sinyal için MARKET giriş + tracking seed."""
+    """Seçilen sinyal için MARKET veya LIMIT giriş + tracking seed."""
+    try:
+        from mina_dashboard_settings import is_motor_paused
+        if is_motor_paused():
+            return None
+    except ImportError:
+        pass
     from config import AccountManager
 
     entry = scored["entry"]
     symbol = str(entry["symbol"])
     side = str(entry["direction"]).upper()
+    signal_entry = entry.get("entry_price")
+    if signal_entry is not None:
+        try:
+            signal_entry = float(signal_entry)
+        except (TypeError, ValueError):
+            signal_entry = None
 
     account = AccountManager(manager.client)
     manager.slot_size = account.calculate_slot_size()
@@ -253,30 +333,86 @@ def open_signal_position(
     time.sleep(0.15)
 
     try:
-        ticker = manager.client.futures_symbol_ticker(symbol=symbol)
-        mark = float(ticker["price"])
+        mark = float(manager.client.futures_mark_price(symbol=symbol)["markPrice"])
     except Exception as e:
         print(f"[SLOT_BRIDGE] Fiyat okunamadı {symbol}: {e}")
         return None
 
+    order_type, limit_px = resolve_entry_order(side, signal_entry, mark)
+    use_limit = order_type == ORDER_TYPE_LIMIT and limit_px is not None
+    exec_price = limit_px if use_limit else mark
+
     notional = margin * LEVERAGE
-    qty = manager._round_quantity(notional / mark, symbol)
+    qty = manager._round_quantity(notional / exec_price, symbol)
     if qty <= 0:
         print(f"[SLOT_BRIDGE] Miktar sıfır {symbol} margin={margin:.4f} mark={mark}")
         return None
 
     order_side = SIDE_BUY if side == "LONG" else SIDE_SELL
+    limit_px = manager._round_price(limit_px) if use_limit else None
     try:
-        order = manager.client.futures_create_order(
-            symbol=symbol,
-            side=order_side,
-            type=ORDER_TYPE_MARKET,
-            quantity=qty,
-            positionSide=side,
-        )
+        if use_limit:
+            order = manager.client.futures_create_order(
+                symbol=symbol,
+                side=order_side,
+                type=ORDER_TYPE_LIMIT,
+                price=limit_px,
+                quantity=qty,
+                positionSide=side,
+                timeInForce="GTC",
+            )
+        else:
+            order = manager.client.futures_create_order(
+                symbol=symbol,
+                side=order_side,
+                type=ORDER_TYPE_MARKET,
+                quantity=qty,
+                positionSide=side,
+            )
     except Exception as e:
         print(f"[SLOT_BRIDGE] Emir hatası {symbol} {side}: {e}")
         return None
+
+    pos_key = mt.pos_key(symbol, side)
+    src_code = queue_source_to_code(entry.get("source"))
+    if use_limit:
+        register_pending_limit(
+            pos_key,
+            order_id=int(order.get("orderId") or 0),
+            symbol=symbol,
+            side=side,
+            limit_price=float(limit_px),
+            margin=margin,
+            leverage=LEVERAGE,
+            meta={
+                "brightness": scored.get("brightness"),
+                "label": scored.get("k2", {}).get("label"),
+                "fingerprint": scored.get("fingerprint"),
+                "signal_source": src_code,
+            },
+        )
+        queue = queue or load_queue()
+        for qe in queue.get("entries") or []:
+            if entry_fingerprint(qe) != scored["fingerprint"]:
+                continue
+            qe["queue_state"] = "pending_limit"
+            qe["pending_limit_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            qe["pending_order_id"] = order.get("orderId")
+            qe["limit_price"] = limit_px
+            break
+        save_queue(queue)
+        print(
+            f"[SLOT_BRIDGE] LIMIT bekliyor {symbol} {side} @{limit_px} "
+            f"mark={mark:.6f} order={order.get('orderId')}"
+        )
+        return {
+            "symbol": symbol,
+            "side": side,
+            "order_type": "LIMIT",
+            "limit_price": limit_px,
+            "order_id": order.get("orderId"),
+            "pending": True,
+        }
 
     try:
         mark_t = manager.client.futures_mark_price(symbol=symbol)
@@ -292,6 +428,7 @@ def open_signal_position(
         entry_price=entry_price,
         qty=qty,
         initial_margin=margin,
+        signal_source=src_code,
     )
 
     meta = {
@@ -301,6 +438,7 @@ def open_signal_position(
         "qty": qty,
         "margin": margin,
         "order_id": order.get("orderId"),
+        "order_type": "MARKET",
         "brightness": scored.get("brightness"),
         "label": scored.get("k2", {}).get("label"),
         "opened_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -310,7 +448,7 @@ def open_signal_position(
     _mark_consumed(queue, scored["fingerprint"], meta)
 
     print(
-        f"[SLOT_BRIDGE] Açıldı {symbol} {side} "
+        f"[SLOT_BRIDGE] Açıldı {symbol} {side} MARKET "
         f"parlaklık={scored.get('brightness')} label={scored.get('k2', {}).get('label')} "
         f"margin={margin:.4f} qty={qty} order={order.get('orderId')}"
     )
@@ -323,6 +461,7 @@ def try_fill_freed_slot(manager: "MinaPositionManager") -> Optional[Dict[str, An
     MinaPositionManager.log_position_close sonunda çağrılır.
     """
     queue = load_queue()
+    expire_stale_queue_entries(queue, save=True)
     scored = pick_best_signal(manager.client, queue)
     if not scored:
         print("[SLOT_BRIDGE] Uygun sinyal yok — slot boş kaldı")

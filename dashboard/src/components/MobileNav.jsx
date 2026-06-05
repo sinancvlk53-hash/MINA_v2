@@ -1,11 +1,11 @@
 import React from 'react'
 
 const TABS = [
-  { id: 'positions', label: 'Pozisyonlar', icon: '▦' },
-  { id: 'defense',   label: 'Savunma',     icon: '🛡' },
-  { id: 'chart',     label: 'Grafik',      icon: '📈' },
-  { id: 'log',       label: 'Log',         icon: '📋' },
-  { id: 'settings',  label: 'Ayarlar',     icon: '⚙' },
+  { id: 'order',      label: 'Al/Sat',     icon: '⇄' },
+  { id: 'positions',  label: 'Pozisyonlar', icon: '▦' },
+  { id: 'defense',    label: 'Savunma',     icon: '🛡' },
+  { id: 'log',        label: 'Log',         icon: '📋' },
+  { id: 'settings',   label: 'Ayarlar',     icon: '⚙' },
 ]
 
 export default function MobileNav({ active, onChange, onLogOpen }) {

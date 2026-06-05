@@ -23,11 +23,13 @@ RAW_QUEUE_FILE = os.path.join(SIGNAL_BOT_DIR, "raw_signal_queue.json")
 
 # ── Anayasa sabitleri ─────────────────────────────────────────────────────
 LEVERAGE_5X_COINS = frozenset({"BTC", "ETH", "XAU", "XAG"})
-MACRO_FILTER_COINS = frozenset({"TOTAL", "OTHERS", "BRENT", "XCU"})
+MACRO_FILTER_COINS = frozenset({
+    "TOTAL", "OTHERS", "BRENT", "XCU", "TOTAL2", "TOTAL3", "BTC.D", "USDT.D",
+})
 KNOWN_COINS = (
     "BTC", "ETH", "BNB", "SOL", "XRP", "ADA", "DOGE", "LINK", "LTC", "BCH",
     "XLM", "ZEC", "ETC", "HYPE", "AVAX", "DOT", "TA", "LAB", "US", "XAU", "XAG",
-    "TOTAL", "OTHERS", "BRENT", "XCU", "CME",
+    "TOTAL", "OTHERS", "BRENT", "XCU", "CME", "TOTAL2", "TOTAL3", "BTC.D", "USDT.D",
 )
 
 UPDATE_TRAP_KEYWORDS = ("UPDATE", "RETEST", "DURUM")
@@ -37,6 +39,19 @@ PAS_PHRASES = re.compile(
     r"pas\b|şu an değil|su an degil|değil\b|degil\b|almam|iptal|bulaşm",
     re.IGNORECASE,
 )
+CHART_KEYWORDS_RE = re.compile(
+    r"kutu|grafik|giriş\s*kutusu|giris\s*kutusu|entry\s*box|chart",
+    re.IGNORECASE,
+)
+MACRO_SR_SUPPORT_RE = re.compile(
+    r"(?:destek|support|alt\s*seviye)\s*[:\-]?\s*([\d.,\s\-–—]+)",
+    re.IGNORECASE,
+)
+MACRO_SR_RESIST_RE = re.compile(
+    r"(?:direnç|direnc|resistance|üst\s*seviye|ust\s*seviye)\s*[:\-]?\s*([\d.,\s\-–—]+)",
+    re.IGNORECASE,
+)
+MACRO_LEVELS_FILE = os.path.join(SIGNAL_BOT_DIR, "macro_levels.json")
 ENTRY_RE = re.compile(
     r"(?:giriş|giris|entry|giriş\s*bölgesi|giris\s*bolgesi)\s*[:\s]*"
     r"([\d.,]+)\s*(?:-|–|—|to|ile)?\s*([\d.,]*)",
@@ -51,11 +66,11 @@ SIDE_SHORT_RE = re.compile(
     r"\b(short|satış|satis|aşağı|asagi|almam|alinmaz)\b", re.I
 )
 SECTION_HEADER_RE = re.compile(
-    r"^(?:---\s*)?([A-Z]{2,12})(?:USDT)?\s*(LONG|SHORT)?\s*(?:---)?\s*$",
+    r"^(?:---\s*)?([A-Z]{2,12}(?:\.[A-Z])?)(?:USDT)?\s*(LONG|SHORT)?\s*(?:---)?\s*$",
     re.MULTILINE | re.IGNORECASE,
 )
 BULLET_COIN_RE = re.compile(
-    r"^[•\-\*]?\s*([A-Z]{2,12})(?:USDT)?\s*[:\-]",
+    r"^[•\-\*]?\s*([A-Z]{2,12}(?:\.[A-Z])?(?:USDT)?)\s*[:\-]",
     re.MULTILINE | re.IGNORECASE,
 )
 NOT_COIN_TOKENS = frozenset({
@@ -233,19 +248,84 @@ def infer_side(section_text: str, explicit: Optional[str] = None) -> str:
     return "LONG"
 
 
-def has_chart_structure(section_text: str, entry: Optional[str], stop: Optional[str]) -> bool:
-    if entry and stop:
+def has_chart_structure(section_text: str, entry: Optional[str]) -> bool:
+    """Grafik kutusu anahtar kelimesi veya giriş bölgesi/fiyatı varsa True."""
+    if entry:
         return True
-    if re.search(r"kutu|grafik|giriş\s*kutusu|entry\s*box", section_text, re.I):
-        return True
-    return False
+    return bool(CHART_KEYWORDS_RE.search(section_text))
 
 
-def chart_approval_override(section_text: str, entry: Optional[str], stop: Optional[str]) -> bool:
-    """Pas/değil yazsa bile giriş+stop veya grafik kutusu varsa ONAYLA."""
+def chart_approval_override(section_text: str, entry: Optional[str]) -> bool:
+    """Pas/değil yazsa bile grafik + giriş bölgesi varsa ONAYLA (stop gerekmez)."""
     if not PAS_PHRASES.search(section_text):
         return True
-    return has_chart_structure(section_text, entry, stop)
+    return has_chart_structure(section_text, entry)
+
+
+def _extract_price_list(raw: str) -> List[float]:
+    prices: List[float] = []
+    for part in re.split(r"[,;/\s]+", raw):
+        part = part.strip().replace("—", "-").replace("–", "-")
+        if not part or part == "-":
+            continue
+        if "-" in part:
+            a, b = part.split("-", 1)
+            for v in (a, b):
+                p = parse_price(v)
+                if p is not None:
+                    prices.append(p)
+            continue
+        p = parse_price(part)
+        if p is not None:
+            prices.append(p)
+    return sorted(set(prices))
+
+
+def parse_macro_sr_levels(section_text: str) -> Tuple[List[float], List[float]]:
+    """TOTAL/OTHERS bölümünden destek/direnç seviyelerini çıkar."""
+    supports: List[float] = []
+    resistances: List[float] = []
+    for m in MACRO_SR_SUPPORT_RE.finditer(section_text):
+        supports.extend(_extract_price_list(m.group(1)))
+    for m in MACRO_SR_RESIST_RE.finditer(section_text):
+        resistances.extend(_extract_price_list(m.group(1)))
+    return sorted(set(supports)), sorted(set(resistances))
+
+
+def infer_macro_direction(section_text: str) -> Optional[str]:
+    upper = section_text.upper()
+    if re.search(r"\b(YUKARI|YUKARIDA|BULL|LONG|ALIM)\b", upper):
+        return "UP"
+    if re.search(r"\b(AŞAĞI|ASAGI|BEAR|SHORT|SATIŞ|SATIS)\b", upper):
+        return "DOWN"
+    return None
+
+
+def collect_panel_levels(sections: List[ParsedSection]) -> List[Dict[str, Any]]:
+    """PDF bölümlerinden makro panel kayıtları."""
+    from signal_bot.macro_levels_store import panel_key_for
+
+    out: List[Dict[str, Any]] = []
+    for sec in sections:
+        key = panel_key_for(sec.coin)
+        if not key:
+            continue
+        supports, resistances = parse_macro_sr_levels(sec.raw_text)
+        snippet = re.sub(r"^[•\-\*]\s*", "", sec.raw_text.strip())[:400]
+        out.append({
+            "coin": key,
+            "supports": supports,
+            "resistances": resistances,
+            "direction": infer_macro_direction(sec.raw_text),
+            "text": snippet,
+        })
+    return out
+
+
+def write_macro_levels(macro_filters: List[Dict[str, Any]], source: str) -> None:
+    from signal_bot.macro_levels_store import merge_macro_levels
+
+    merge_macro_levels(macro_filters, source)
 
 
 def split_sections(full_text: str) -> List[ParsedSection]:
@@ -283,10 +363,14 @@ def process_section(sec: ParsedSection, result: ParseResult) -> None:
     coin_base = sec.coin.replace("USDT", "").upper()
 
     if coin_base in MACRO_FILTER_COINS:
+        supports, resistances = parse_macro_sr_levels(sec.raw_text)
         result.macro_filters.append({
             "coin": coin_base,
             "role": "F1_macro_direction",
             "text": sec.raw_text[:500],
+            "supports": supports,
+            "resistances": resistances,
+            "direction": infer_macro_direction(sec.raw_text),
             "trade_allowed": False,
         })
         return
@@ -305,7 +389,7 @@ def process_section(sec: ParsedSection, result: ParseResult) -> None:
     entry_s, entry_mid, stop_s, d1_price = parse_entry_stop(sec.raw_text)
     side = infer_side(sec.raw_text, sec.side)
 
-    if not chart_approval_override(sec.raw_text, entry_s, stop_s):
+    if not chart_approval_override(sec.raw_text, entry_s):
         result.rejected.append({
             "coin": normalize_coin(sec.coin),
             "reason": "pas_without_chart",
@@ -314,11 +398,14 @@ def process_section(sec: ParsedSection, result: ParseResult) -> None:
         })
         return
 
-    if not entry_s and not stop_s:
+    has_entry_zone = bool(re.search(r"giriş\s*bolgesi|giris\s*bolgesi|entry\s*zone", sec.raw_text, re.I))
+    has_chart = bool(CHART_KEYWORDS_RE.search(sec.raw_text)) or has_entry_zone
+    has_entry = bool(entry_s or entry_mid is not None)
+    if not (has_chart and has_entry):
         if re.search(r"|".join(KNOWN_COINS[:20]), sec.raw_text, re.I):
             result.rejected.append({
                 "coin": normalize_coin(sec.coin),
-                "reason": "no_entry_stop",
+                "reason": "no_chart_or_entry",
                 "action": "skip",
                 "snippet": sec.raw_text[:200],
             })
@@ -326,7 +413,7 @@ def process_section(sec: ParsedSection, result: ParseResult) -> None:
 
     symbol = normalize_coin(sec.coin)
     lev = leverage_for_coin(symbol)
-    approved = has_chart_structure(sec.raw_text, entry_s, stop_s) or bool(entry_s and stop_s)
+    approved = True
 
     signal = {
         "coin": symbol,
@@ -374,8 +461,15 @@ def parse_haluk_document(
         )
         return result
 
-    for sec in split_sections(combined):
+    sections = split_sections(combined)
+    for sec in sections:
         process_section(sec, result)
+
+    panel = collect_panel_levels(sections)
+    if panel:
+        write_macro_levels(panel, source_label)
+    elif result.macro_filters:
+        write_macro_levels(result.macro_filters, source_label)
 
     return result
 

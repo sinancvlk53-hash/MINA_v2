@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react'
 import Header from './components/Header.jsx'
 import OrderPanel from './components/OrderPanel.jsx'
 import PositionTable from './components/PositionTable.jsx'
-import PositionChartEmbed from './components/PositionChartEmbed.jsx'
 import PositionDetailModal from './components/PositionDetailModal.jsx'
 import DefensePanel from './components/DefensePanel.jsx'
+import MacroLevelsPanel from './components/MacroLevelsPanel.jsx'
+import SettingsPanel from './components/SettingsPanel.jsx'
 import LogStream from './components/LogStream.jsx'
 import LogModal from './components/LogModal.jsx'
 import MobileNav from './components/MobileNav.jsx'
@@ -26,9 +27,9 @@ export default function App() {
   const motorPositions = data?.motorPositions ?? positions.filter((p) => p.slotType !== 'merter')
   const merterPositions = data?.merterPositions ?? positions.filter((p) => p.slotType === 'merter')
   const merterSlots = data?.merterSlots ?? {}
+  const macroLevels = data?.macroLevels ?? []
   const logs = data?.logs ?? []
   const slotSize = (data?.balance ?? 0) / 10
-  const chartPos = selectedPos ?? positions[0] ?? null
 
   useEffect(() => {
     if (positions.length && !selectedPos) {
@@ -40,49 +41,52 @@ export default function App() {
     sendMessage({ action: 'close_all' })
   }
 
-  const showLeft = mobileTab === 'settings'
-  const showCenter = mobileTab === 'positions' || mobileTab === 'chart'
-  const showRight = mobileTab === 'defense'
+  const showOrder = !isMobile || mobileTab === 'order'
+  const showPositions = !isMobile || mobileTab === 'positions'
+  const showDefense = !isMobile || mobileTab === 'defense'
+  const showSettings = !isMobile || mobileTab === 'settings'
+
   return (
     <div className="app">
       <Header data={data} status={status} onPanic={handlePanic} />
 
       <main className="main-grid">
-        <aside className={`col-left ${showLeft ? 'mobile-show' : 'mobile-hide'}`}>
-          <OrderPanel data={data} status={status} />
+        <aside className={`col-left ${showOrder ? 'mobile-show' : 'mobile-hide'}`}>
+          <OrderPanel data={data} status={status} sendMessage={sendMessage} />
         </aside>
 
-        <section className={`col-center ${showCenter ? 'mobile-show' : 'mobile-hide'}`}>
-          {(!isMobile || mobileTab === 'positions') && (
-            <PositionTable
-              motorPositions={motorPositions}
-              merterPositions={merterPositions}
-              merterSlots={merterSlots}
-              positions={positions}
-              onDetail={setDetailPos}
-              sendMessage={sendMessage}
-              slotSize={slotSize}
-              onSelectPos={setSelectedPos}
-            />
+        <section className={`col-center ${showPositions ? 'mobile-show' : 'mobile-hide'}`}>
+          {isMobile && (
+            <MacroLevelsPanel levels={macroLevels} />
           )}
-
-          {isMobile && mobileTab === 'chart' && (
-            chartPos ? (
-              <PositionChartEmbed pos={chartPos} slotSize={slotSize} mobile />
-            ) : (
-              <div className="panel">
-                <div className="empty-state">Grafik için önce bir pozisyon seçin</div>
-              </div>
-            )
-          )}
+          <PositionTable
+            motorPositions={motorPositions}
+            merterPositions={merterPositions}
+            merterSlots={merterSlots}
+            positions={positions}
+            onDetail={setDetailPos}
+            sendMessage={sendMessage}
+            slotSize={slotSize}
+            onSelectPos={setSelectedPos}
+            selectedPos={selectedPos}
+            showInlineChart={!isMobile}
+          />
 
           {!isMobile && (
             <LogStream logs={logs} testLogs={data?.testLogs ?? []} />
           )}
         </section>
 
-        <aside className={`col-right ${showRight ? 'mobile-show' : 'mobile-hide'}`}>
-          <DefensePanel data={data} />
+        <aside className={`col-right ${showDefense || showSettings ? 'mobile-show' : 'mobile-hide'}`}>
+          {showDefense && (
+            <>
+              {!isMobile && <MacroLevelsPanel levels={macroLevels} />}
+              <DefensePanel data={data} />
+            </>
+          )}
+          {showSettings && (
+            <SettingsPanel data={data} sendMessage={sendMessage} status={status} />
+          )}
         </aside>
       </main>
 

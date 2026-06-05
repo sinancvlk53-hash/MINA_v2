@@ -45,17 +45,102 @@ LOG_PATH     = '/root/MINA_v2/mina_bot.log'
 _log_buf     = []
 _log_pos     = 0
 
+MACRO_LEVELS_PATH = '/root/MINA_v2/signal_bot/macro_levels.json'
+
+def get_macro_levels():
+    levels: list = []
+    try:
+        sys.path.insert(0, '/root/MINA_v2')
+        from signal_bot.macro_levels_store import panel_levels_for_dashboard
+        levels = panel_levels_for_dashboard()
+    except Exception as exc:
+        log.warning(f"macro_levels: {exc}")
+        data = read_json(MACRO_LEVELS_PATH)
+        levels = data.get('levels') or []
+
+    out = []
+    for row in levels:
+        item = dict(row)
+        if not item.get('snippet') and item.get('text'):
+            item['snippet'] = item['text']
+        out.append(item)
+    return out
+
+def get_dashboard_settings():
+    try:
+        from mina_dashboard_settings import load_settings
+        return load_settings()
+    except Exception as exc:
+        log.warning(f"settings: {exc}")
+        return {
+            "merterTimeStopH": 4,
+            "halukTimeStopH": 8,
+            "breakevenMult": 1.0020,
+            "telegramNotify": True,
+            "motorActive": True,
+        }
+
+def get_slot_summary_defaults():
+    try:
+        from mina_slot_policy import SLOTS_HALUK_MOTOR, SLOTS_MERTER_MOTOR, SLOT_TOTAL
+        from mina_slot_policy import SLOTS_EI_DCA, SLOTS_MERTER_OTHER_DCA
+    except ImportError:
+        SLOTS_HALUK_MOTOR, SLOTS_MERTER_MOTOR = 7, 1
+        SLOTS_EI_DCA, SLOTS_MERTER_OTHER_DCA = 2, 1
+        SLOT_TOTAL = 10
+    return {
+        'motorUsed': 0,
+        'motorMax': SLOTS_HALUK_MOTOR,
+        'merterMotorUsed': 0,
+        'merterMotorMax': SLOTS_MERTER_MOTOR,
+        'merterUsed': 0,
+        'merterMax': SLOTS_EI_DCA + SLOTS_MERTER_OTHER_DCA,
+        'merterEiMax': SLOTS_EI_DCA,
+        'merterOtherMax': SLOTS_MERTER_OTHER_DCA,
+        'slotTotal': SLOT_TOTAL,
+    }
+
+
 def get_merter_slots_meta():
-    """Merter EI / RSI yuva durumu (boş veya dolu)."""
+    """Merter DCA yuvaları: 2× EI + 1× diğer."""
+    try:
+        from mina_slot_policy import (
+            MERTER_DCA_YUVAS, MERTER_DCA_LABELS, LEGACY_YUVA_MAP,
+            MERTER_DCA_FILTER_MODE, MERTER_DCA_FILTER_DESC,
+        )
+    except ImportError:
+        MERTER_DCA_YUVAS = ('merter_ei_1', 'merter_ei_2', 'merter_other')
+        MERTER_DCA_LABELS = {
+            'merter_ei_1': 'EI #1 — Süzgeçli',
+            'merter_ei_2': 'EI #2 — Süzgeçsiz',
+            'merter_other': 'Merter Diğer (RSI)',
+        }
+        MERTER_DCA_FILTER_MODE = {
+            'merter_ei_1': 'filtered',
+            'merter_ei_2': 'unfiltered',
+            'merter_other': 'rsi',
+        }
+        MERTER_DCA_FILTER_DESC = {
+            'merter_ei_1': 'RVOL≥2 + EMA20 + SFP + hacim + pump koruması',
+            'merter_ei_2': 'Filtre yok — EI listesinden doğrudan giriş',
+            'merter_other': 'RSI<20 + teyit + hacim',
+        }
+        LEGACY_YUVA_MAP = {'merter_ei': 'merter_ei_1', 'merter_rsi': 'merter_other'}
+
     state = read_json(MERTER_STATE_PATH)
-    positions = state.get('positions') or {}
-    labels = {'merter_ei': 'EI Tarama', 'merter_rsi': 'RSI Bot'}
+    positions = dict(state.get('positions') or {})
+    for old, new in LEGACY_YUVA_MAP.items():
+        if old in positions and new not in positions:
+            positions[new] = positions.pop(old)
+
     slots = {}
-    for yuva in ('merter_ei', 'merter_rsi'):
+    for yuva in MERTER_DCA_YUVAS:
         p = positions.get(yuva) or {}
         slots[yuva] = {
             'yuva': yuva,
-            'label': labels[yuva],
+            'label': MERTER_DCA_LABELS.get(yuva, yuva),
+            'filterMode': MERTER_DCA_FILTER_MODE.get(yuva),
+            'filterDesc': MERTER_DCA_FILTER_DESC.get(yuva, ''),
             'occupied': bool(p),
             'symbol': p.get('symbol'),
             'partsFilled': int(p.get('parts_filled') or 0),
@@ -117,6 +202,20 @@ async def get_data():
         raw            = client.futures_position_information()
         defense_levels = read_json('/root/MINA_v2/defense_levels.json')
         merter_slots   = get_merter_slots_meta()
+        try:
+            from mina_signal_source import SOURCE_LABELS, get_position_sources
+            position_sources = get_position_sources()
+        except ImportError:
+            SOURCE_LABELS = {"HT": "Haluk Hoca", "MZ": "Merter", "MANUEL": "Manuel"}
+            position_sources = read_json('/root/MINA_v2/position_sources.json')
+        try:
+            from mina_slot_policy import SLOTS_HALUK_MOTOR, SLOTS_MERTER_MOTOR, SLOT_TOTAL
+            from mina_slot_policy import SLOTS_EI_DCA, SLOTS_MERTER_OTHER_DCA
+        except ImportError:
+            SLOTS_HALUK_MOTOR, SLOTS_MERTER_MOTOR = 7, 1
+            SLOTS_EI_DCA, SLOTS_MERTER_OTHER_DCA = 2, 1
+            SLOT_TOTAL = 10
+
         merter_by_sym  = {
             s['symbol']: yuva
             for yuva, s in merter_slots.items()
@@ -145,6 +244,9 @@ async def get_data():
 
             is_merter = sym in merter_by_sym and lev == 1 and side == 'LONG'
             rvol = calculate_rvol(client, sym)
+            src_code = position_sources.get(pos_key)
+            if is_merter and not src_code:
+                src_code = 'MZ'
 
             positions.append({
                 'symbol':       sym,
@@ -163,6 +265,8 @@ async def get_data():
                 'slotType':     'merter' if is_merter else 'motor',
                 'merterYuva':   merter_by_sym.get(sym),
                 'rvol':         rvol,
+                'signalSource': src_code,
+                'signalSourceLabel': SOURCE_LABELS.get(src_code, src_code) if src_code else None,
             })
 
         motor_positions  = [p for p in positions if p['slotType'] == 'motor']
@@ -178,21 +282,47 @@ async def get_data():
             'motorCount':      len(motor_positions),
             'merterCount':     len(merter_positions),
             'engineRunning':   engine_running(),
+            'motorPaused':     not get_dashboard_settings().get('motorActive', True),
+            'settings':        get_dashboard_settings(),
             'positions':       positions,
             'motorPositions':  motor_positions,
             'merterPositions': merter_positions,
             'merterSlots':     merter_slots,
+            'macroLevels':     get_macro_levels(),
+            'halukPdfTimestamp': read_json('/root/MINA_v2/signal_bot/raw_signal_queue.json').get('haluk_pdf_timestamp'),
             'slotSummary': {
                 'motorUsed':  len(motor_positions),
-                'motorMax':   8,
+                'motorMax':   SLOTS_HALUK_MOTOR,
+                'merterMotorUsed': len(motor_positions),  # 4x motor subset
+                'merterMotorMax': SLOTS_MERTER_MOTOR,
                 'merterUsed': merter_used,
-                'merterMax':  2,
+                'merterMax':  SLOTS_EI_DCA + SLOTS_MERTER_OTHER_DCA,
+                'merterEiMax': SLOTS_EI_DCA,
+                'merterOtherMax': SLOTS_MERTER_OTHER_DCA,
+                'slotTotal': SLOT_TOTAL,
             },
             'logs':            list(_log_buf),
         }
     except Exception as e:
         log.error(f"get_data: {e}")
-        return {'error': str(e), 'positions': [], 'logs': list(_log_buf)}
+        return {
+            'error': str(e),
+            'positions': [],
+            'logs': list(_log_buf),
+            'macroLevels': get_macro_levels(),
+            'settings': get_dashboard_settings(),
+            'slotSummary': get_slot_summary_defaults(),
+            'engineRunning': engine_running(),
+            'motorPaused': not get_dashboard_settings().get('motorActive', True),
+        }
+
+async def update_dashboard_settings(websocket, settings):
+    try:
+        from mina_dashboard_settings import save_settings
+        saved = save_settings(settings or {})
+        await websocket.send(json.dumps({'action': 'settings_saved', 'settings': saved}))
+    except Exception as e:
+        await websocket.send(json.dumps({'action': 'error', 'message': str(e)}))
 
 # ── Tek pozisyon kapat ───────────────────────────────────────────────────────
 async def close_position(websocket, symbol, side):
@@ -248,6 +378,51 @@ async def close_all(websocket):
     except Exception as e:
         await websocket.send(json.dumps({'action': 'error', 'message': str(e)}))
 
+async def manual_open_position(websocket, symbol, side, leverage=4, entry_price=None):
+    """Dashboard / WS üzerinden manuel motor girişi."""
+    try:
+        from mina_dashboard_settings import is_motor_paused
+        if is_motor_paused():
+            await websocket.send(json.dumps({
+                'action': 'manual_open_result',
+                'ok': False,
+                'symbol': (symbol or '').upper(),
+                'side': (side or 'LONG').upper(),
+                'output': 'Motor pasif (dashboard ayarları)',
+            }))
+            return
+        import subprocess
+        sym = (symbol or '').upper()
+        sd = (side or 'LONG').upper()
+        lev = int(leverage or 4)
+        cmd = [
+            '/root/MINA_v2/venv/bin/python',
+            '/root/MINA_v2/scripts/manual_open.py',
+            '--symbol', sym,
+            '--side', sd,
+            '--leverage', str(lev),
+            '--source', 'haluk',
+        ]
+        if entry_price is not None:
+            try:
+                ep = float(entry_price)
+                if ep > 0:
+                    cmd.extend(['--entry-price', str(ep)])
+            except (TypeError, ValueError):
+                pass
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60, cwd='/root/MINA_v2')
+        out = (proc.stdout or '') + (proc.stderr or '')
+        ok = proc.returncode == 0
+        await websocket.send(json.dumps({
+            'action': 'manual_open_result',
+            'ok': ok,
+            'symbol': sym,
+            'side': sd,
+            'output': out.strip()[-500:],
+        }))
+    except Exception as e:
+        await websocket.send(json.dumps({'action': 'error', 'message': str(e)}))
+
 # ── WebSocket handler ────────────────────────────────────────────────────────
 CONNECTED = set()
 
@@ -269,6 +444,16 @@ async def handler(websocket):
                     await close_all(websocket)
                 elif msg.get('action') == 'close_position':
                     await close_position(websocket, msg.get('symbol'), msg.get('side'))
+                elif msg.get('action') == 'manual_open':
+                    await manual_open_position(
+                        websocket,
+                        msg.get('symbol'),
+                        msg.get('side'),
+                        msg.get('leverage', 4),
+                        msg.get('entryPrice'),
+                    )
+                elif msg.get('action') == 'update_settings':
+                    await update_dashboard_settings(websocket, msg.get('settings'))
             except Exception as e:
                 log.error(f"handler msg: {e}")
     except websockets.exceptions.ConnectionClosed:

@@ -419,6 +419,13 @@ class MinaPositionManager:
         side = position.get('side')
         entry_price = position.get('entry_price')
 
+        try:
+            from ghost_positions import is_merter_dca_position
+            if is_merter_dca_position(symbol, side, leverage):
+                return {'action': 'hold', 'reason': 'Merter DCA yönetiminde'}
+        except ImportError:
+            pass
+
         rules = self.leverage_rules.get(leverage)
         if rules is None:
             return {'action': 'hold', 'reason': f'Bilinmeyen kaldıraç: {leverage}x'}
@@ -1415,9 +1422,35 @@ class MinaPositionManager:
             return self.trade_ids[symbol]
         return None
 
-    def log_position_open(self, symbol: str, side: str, leverage: int,
-                         entry_price: float, qty: float, initial_margin: float) -> None:
-        """Pozisyon açıldığında journal'a kaydet."""
+    def log_position_open(
+        self,
+        symbol: str,
+        side: str,
+        leverage: int,
+        entry_price: float,
+        qty: float,
+        initial_margin: float,
+        signal_source: Optional[str] = None,
+    ) -> None:
+        """Pozisyon açıldığında journal'a kaydet + kaynak logu."""
+        from mina_signal_source import (
+            format_open_log,
+            normalize_source_code,
+            record_position_source,
+        )
+
+        src = normalize_source_code(signal_source)
+        msg = format_open_log(src, symbol, side)
+        print(msg)
+
+        try:
+            import logging
+            logging.getLogger("MİNA_v2").info(msg)
+        except Exception:
+            pass
+
+        record_position_source(symbol, side, src)
+
         if not self.journal:
             return
 
@@ -1429,6 +1462,7 @@ class MinaPositionManager:
                 entry_price=entry_price,
                 qty=qty,
                 initial_margin=initial_margin,
+                signal_source=src,
             )
             if trade_id > 0:
                 self.trade_ids[self._pos_key(symbol, side)] = trade_id
@@ -1484,6 +1518,12 @@ class MinaPositionManager:
             self.trade_ids.pop(key, None)
             self.trade_ids.pop(symbol, None)
             self._save_state()
+
+            try:
+                from mina_signal_source import clear_position_source
+                clear_position_source(symbol, side)
+            except Exception:
+                pass
 
             try:
                 from signal_bot.signal_slot_bridge import try_fill_freed_slot

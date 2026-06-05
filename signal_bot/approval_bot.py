@@ -38,7 +38,7 @@ load_dotenv(os.path.join(_ROOT, '.env'))
 import telebot
 from binance.enums import *
 from config import BinanceConfig, AccountManager
-from signal_bot.signal_parser import parse_haluk_pdf_path, enqueue_records
+from signal_bot.signal_parser import parse_haluk_pdf_path, enqueue_haluk_pdf_records
 
 TOKEN        = os.getenv('TELEGRAM_BOT_TOKEN')
 CHAT_ID      = int(os.getenv('TELEGRAM_CHAT_ID'))
@@ -132,6 +132,12 @@ def _parse_price(val) -> float | None:
 def open_position(client, account, symbol, side, limit_price=None, stop_d1_price=None):
     """Pozisyon aç. limit_price verilirse LİMİT GTC, verilmezse MARKET emri kullanılır.
     stop_d1_price verilirse stop_levels.json'a D1 tetik fiyatı kaydedilir."""
+    try:
+        from mina_dashboard_settings import is_motor_paused
+        if is_motor_paused():
+            return False, "Motor pasif (dashboard ayarları)"
+    except ImportError:
+        pass
     bal    = account.get_usdt_balance()
     margin = round((bal / 10) * 0.20, 2)
 
@@ -321,7 +327,7 @@ def process_new_pdf(pdf_path: str):
                      parse_mode='Markdown')
     try:
         records, pause = parse_haluk_pdf_path(pdf_path)
-        enqueue_records(records)
+        enqueue_haluk_pdf_records(pdf_path, records)
     except Exception as e:
         bot.send_message(CHAT_ID, f"❌ PDF parse hatası: {e}")
         return

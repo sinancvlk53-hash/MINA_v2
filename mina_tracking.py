@@ -20,6 +20,7 @@ STOP_LEVELS_FILE = "stop_levels.json"
 PENDING_ORDERS_FILE = "pending_orders.json"
 INITIAL_PRICE_FILE = "initial_entry_prices.json"
 DEFENSE_STOPS_FILE = "defense_stop_orders.json"
+POSITION_SOURCE_FILE = "position_sources.json"
 
 TRACKING_FILES = (
     DEFENSE_FILE,
@@ -30,6 +31,7 @@ TRACKING_FILES = (
     PENDING_ORDERS_FILE,
     INITIAL_PRICE_FILE,
     DEFENSE_STOPS_FILE,
+    POSITION_SOURCE_FILE,
 )
 
 

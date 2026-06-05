@@ -79,8 +79,23 @@ function RvolBadge({ rvol }) {
   )
 }
 
+function SourceBadge({ source, label }) {
+  if (!source) return null
+  const cls = source === 'HT' ? 'badge-src-ht' : source === 'MZ' ? 'badge-src-mz' : 'badge-src-manuel'
+  return (
+    <span className={`badge-pill badge-src ${cls}`} title={label || source}>
+      {source}
+    </span>
+  )
+}
+
 function MerterEmptySlot({ slot }) {
   if (!slot) return null
+  const filterBadge = slot.filterMode === 'unfiltered'
+    ? 'Süzgeçsiz'
+    : slot.filterMode === 'filtered'
+      ? 'Süzgeçli'
+      : null
   return (
     <article className="pos-card pos-card-merter-empty">
       <div className="pos-card-top">
@@ -89,6 +104,14 @@ function MerterEmptySlot({ slot }) {
         </div>
         <span className="badge-pill badge-merter-idle">BOŞ</span>
       </div>
+      {filterBadge && (
+        <span className={`badge-pill ${slot.filterMode === 'unfiltered' ? 'badge-filter-raw' : 'badge-filter-full'}`}>
+          {filterBadge}
+        </span>
+      )}
+      {slot.filterDesc && (
+        <p className="merter-empty-hint">{slot.filterDesc}</p>
+      )}
       <p className="merter-empty-hint">1x DCA · 10 parça · Sinyal bekleniyor</p>
       <div className="merter-parts-bar">
         <div className="merter-parts-fill" style={{ width: '0%' }} />
@@ -105,6 +128,11 @@ function MerterOccupiedMeta({ pos, slotMeta }) {
   return (
     <div className="merter-meta">
       <span className="badge-pill badge-merter-active">{slotMeta?.label ?? 'Merter'}</span>
+      {slotMeta?.filterMode && (
+        <span className={`badge-pill ${slotMeta.filterMode === 'unfiltered' ? 'badge-filter-raw' : 'badge-filter-full'}`}>
+          {slotMeta.filterMode === 'unfiltered' ? 'Süzgeçsiz' : 'Süzgeçli'}
+        </span>
+      )}
       {slotMeta?.breakevenMode && (
         <span className="badge-pill badge-breakeven">BE modu</span>
       )}
@@ -153,6 +181,7 @@ function PositionCards({
                 <span className="sym-pair">/USDT</span>
               </div>
               <div className="pos-card-badges">
+                <SourceBadge source={p.signalSource} label={p.signalSourceLabel} />
                 <span className={`badge-pill ${isLong ? 'badge-pill-long' : 'badge-pill-short'}`}>
                   {p.side}
                 </span>
@@ -224,6 +253,7 @@ function PositionTableDesktop({
         <thead>
           <tr>
             <th>Sembol</th>
+            <th>Kaynak</th>
             <th>Yön</th>
             <th>Kaldıraç</th>
             <th>RVOL</th>
@@ -252,6 +282,9 @@ function PositionTableDesktop({
                 <td className="sym-cell">
                   <span className="sym-name">{p.symbol.replace(/USDT$/, '')}</span>
                   <span className="sym-pair">/USDT</span>
+                </td>
+                <td>
+                  <SourceBadge source={p.signalSource} label={p.signalSourceLabel} />
                 </td>
                 <td>
                   <span className={`badge ${isLong ? 'badge-long' : 'badge-short'}`}>{p.side}</span>
@@ -298,7 +331,7 @@ function PositionSection({
   showTable,
 }) {
   const emptyMerter = isMerterSection && merterSlots
-    ? ['merter_ei', 'merter_rsi'].filter((k) => !merterSlots[k]?.occupied)
+    ? Object.keys(merterSlots).filter((k) => !merterSlots[k]?.occupied)
     : []
 
   return (
@@ -364,6 +397,7 @@ export default function PositionTable({
   slotSize = 0,
   mobileMode = false,
   onSelectPos,
+  selectedPos,
   chartSheetOpen = false,
   onChartSheetChange,
   showInlineChart = true,
@@ -414,7 +448,7 @@ export default function PositionTable({
     if (mobile) setSheetOpen(true)
   }
 
-  const chartPos = selected ?? allPositions[0]
+  const chartPos = (selectedPos ?? selected) || allPositions[0]
   const common = {
     mobile,
     slotSize,
@@ -452,8 +486,8 @@ export default function PositionTable({
           />
           <PositionSection
             title="Merter 1x DCA"
-            subtitle="EI + RSI yuvaları"
-            badge={`${merter.length}/2`}
+            subtitle="EI süzgeçli + süzgeçsiz + RSI"
+            badge={`${merter.length}/${Object.keys(merterSlots).length || 3}`}
             positions={merter}
             emptyText=""
             merterSlots={merterSlots}
@@ -483,8 +517,8 @@ export default function PositionTable({
         />
         <PositionSection
           title="Merter 1x DCA"
-          subtitle="EI Tarama + RSI Bot"
-          badge={`${merter.length}/2`}
+          subtitle="EI süzgeçli + süzgeçsiz + RSI"
+          badge={`${merter.length}/${Object.keys(merterSlots).length || 3}`}
           positions={merter}
           emptyText=""
           merterSlots={merterSlots}

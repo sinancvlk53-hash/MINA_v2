@@ -31,17 +31,19 @@ def main():
         print(f">>> PUT {rel}")
         sftp.put(local, remote)
 
-    test_cmd = (
-        f"cd {REMOTE} && "
-        f"systemctl stop mina-listener.service mina-ht-listener.service 2>/dev/null; "
-        f"pkill -9 -f signal_bot/listener.py 2>/dev/null; "
-        f"pkill -9 -f signal_bot/ht_listener.py 2>/dev/null; "
-        f"sleep 1; rm -f signal_bot/listener.lock; "
-        f"{REMOTE}/venv/bin/pip install -q pdfplumber 2>/dev/null; "
-        f"timeout 45 {REMOTE}/venv/bin/python -u signal_bot/listener.py 2>&1 || true"
+    restart_cmd = (
+        f"systemctl stop mina-listener.service 2>/dev/null || true; "
+        f"if [ -f {REMOTE}/signal_bot/listener.lock ]; then "
+        f"kill -9 $(cat {REMOTE}/signal_bot/listener.lock) 2>/dev/null || true; fi; "
+        f"pkill -9 -f '{REMOTE}/venv/bin/python signal_bot/listener.py' 2>/dev/null || true; "
+        f"sleep 2; rm -f {REMOTE}/signal_bot/listener.lock; "
+        f"systemctl reset-failed mina-listener.service 2>/dev/null || true; "
+        f"systemctl start mina-listener.service; sleep 5; "
+        f"systemctl is-active mina-listener.service; "
+        f"tail -4 {REMOTE}/signal_bot/signals_log.txt"
     )
-    print(">>> TEST (45s dinleme, ilk mesaj terminalde)")
-    _, out, err = c.exec_command(test_cmd, timeout=60)
+    print(">>> RESTART mina-listener.service")
+    _, out, err = c.exec_command(restart_cmd, timeout=60)
     print(out.read().decode("utf-8", errors="replace"))
     e = err.read().decode("utf-8", errors="replace")
     if e.strip():

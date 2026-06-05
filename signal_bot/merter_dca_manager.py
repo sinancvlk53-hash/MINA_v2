@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 import time
 from datetime import datetime, timezone, timedelta
@@ -45,7 +46,7 @@ DCA_STEP = 0.02
 TP1_PCT = 0.03
 TP2_PCT = 0.05
 TRAIL_PCT = 0.02
-MAX_HOLD_H = 48
+MAX_HOLD_H = 4  # varsayılan; dashboard_settings.merterTimeStopH ile override
 RSI_PERIOD = 14
 RSI_OVERSOLD = 20.0
 DOUBLE_CONFIRM_SEC = 900
@@ -53,11 +54,48 @@ MIN_24H_VOLUME_USD = 50_000_000
 PUMP_15M_PCT = 0.05
 PUMP_LOOKBACK_5M = 3  # 3 × 5m = 15 dakika
 
-YUVA_EI = "merter_ei"
-YUVA_RSI = "merter_rsi"
+from mina_signal_source import MZ, format_open_log, record_position_source
+from mina_slot_policy import (
+    EI_YUVAS,
+    LEGACY_YUVA_MAP,
+    MERTER_DCA_YUVAS,
+)
+
+YUVA_OTHER = "merter_other"
+YUVA_EI_FILTERED = "merter_ei_1"
+YUVA_EI_RAW = "merter_ei_2"
+RECONCILE_INTERVAL_SEC = 300
+
+_RE_ACILDI = re.compile(
+    r"AÇILDI\s+(merter_ei_1|merter_ei_2|merter_other)\s+(\w+)\s+.*trade_id=(\d+)",
+    re.I,
+)
 
 _manager: Optional["MerterDCAManager"] = None
 
+
+def _merter_max_hold_h() -> float:
+    try:
+        from mina_dashboard_settings import merter_time_stop_h
+        return merter_time_stop_h()
+    except Exception:
+        return MAX_HOLD_H
+
+
+def _breakeven_mult() -> float:
+    try:
+        from mina_dashboard_settings import breakeven_mult
+        return breakeven_mult()
+    except Exception:
+        return 1.0020
+
+
+def _motor_entries_allowed() -> bool:
+    try:
+        from mina_dashboard_settings import is_motor_paused
+        return not is_motor_paused()
+    except Exception:
+        return True
 
 def get_merter_dca_manager() -> "MerterDCAManager":
     global _manager
@@ -160,10 +198,20 @@ class MerterDCAManager:
         if os.path.isfile(self.state_file):
             try:
                 with open(self.state_file, encoding="utf-8") as f:
-                    return json.load(f)
+                    state = json.load(f)
+                    self._migrate_yuvas(state)
+                    return state
             except Exception:
                 pass
         return {"positions": {}, "pending_confirm": {}}
+
+    @staticmethod
+    def _migrate_yuvas(state: Dict[str, Any]) -> None:
+        positions = state.setdefault("positions", {})
+        for old, new in LEGACY_YUVA_MAP.items():
+            if old in positions and new not in positions:
+                positions[new] = positions.pop(old)
+                positions[new]["signal_source"] = new
 
     def _save_state(self) -> None:
         os.makedirs(os.path.dirname(self.state_file), exist_ok=True)
@@ -244,7 +292,7 @@ class MerterDCAManager:
         try:
             kl = self._client_get().futures_klines(symbol=symbol, interval="5m", limit=PUMP_LOOKBACK_5M + 2)
         except Exception as e:
-            _log_reject(YUVA_EI, symbol, f"pump kontrol klines: {e}")
+            _log_reject("merter_ei", symbol, f"pump kontrol klines: {e}")
             return False
         closed = kl[:-1]
         if len(closed) < PUMP_LOOKBACK_5M + 1:
@@ -283,38 +331,62 @@ class MerterDCAManager:
             }
         return None
 
-    def select_ei_symbol(self, text: str) -> Optional[Tuple[str, float]]:
+    def select_ei_symbol_raw(self, text: str) -> Optional[str]:
+        """EI taramasından ilk coin — filtre yok (merter_ei_2)."""
         symbols = self._extract_ei_long_symbols(text)
         if not symbols:
             return None
+        sym = symbols[0]
+        _log(f"EI süzgeçsiz seçildi {sym} (liste #1)")
+        return sym
+
+    def select_ei_symbol_filtered(self, text: str) -> Optional[Tuple[str, float]]:
+        """EI taraması — RVOL + hacim + pump + EMA20 + SFP (merter_ei_1)."""
+        from signal_bot.signal_parser import _MarketCache, _filter_ei_candidate, _get_binance_client
+
+        symbols = self._extract_ei_long_symbols(text)
+        if not symbols:
+            return None
+
+        client = _get_binance_client()
+        cache = _MarketCache() if client else None
         ranked: List[Tuple[str, float]] = []
+
         for sym in symbols:
             rvol = self.calculate_rvol(sym)
-            if rvol is None:
+            if rvol is None or rvol < RVOL_MIN:
+                if rvol is not None:
+                    _log_reject(YUVA_EI_FILTERED, sym, f"RVOL {rvol:.2f} < {RVOL_MIN}")
                 continue
-            if rvol >= RVOL_MIN:
-                if not self.passes_min_volume(sym, YUVA_EI):
-                    continue
-                ranked.append((sym, rvol))
-            else:
-                _log_reject(YUVA_EI, sym, f"RVOL {rvol:.2f} < {RVOL_MIN}")
-        if not ranked:
-            _log_reject(YUVA_EI, "—", "RVOL>=2.0 coin yok", {"candidates": len(symbols)})
-            return None
-        ranked.sort(key=lambda x: -x[1])
-        for sym, rvol in ranked:
+            if not self.passes_min_volume(sym, YUVA_EI_FILTERED):
+                continue
             if self.is_pumped_15m(sym):
                 _log_reject(
-                    YUVA_EI,
+                    YUVA_EI_FILTERED,
                     sym,
-                    f"pump koruması: 15dk +{PUMP_15M_PCT * 100:.0f}% yükseliş, atlanıyor",
+                    f"pump koruması: 15dk +{PUMP_15M_PCT * 100:.0f}%",
                     {"rvol": round(rvol, 2)},
                 )
                 continue
-            _log(f"EI seçildi {sym} RVOL={rvol:.2f}")
-            return sym, rvol
-        _log_reject(YUVA_EI, "—", "RVOL geçen coinler pump filtresinde elendi")
-        return None
+            if client and cache:
+                ok, reason, score, meta = _filter_ei_candidate(client, cache, sym, "LONG")
+                if not ok:
+                    _log_reject(YUVA_EI_FILTERED, sym, reason, meta or None)
+                    continue
+            ranked.append((sym, rvol))
+
+        if not ranked:
+            _log_reject(YUVA_EI_FILTERED, "—", "süzgeçli EI adayı yok", {"candidates": len(symbols)})
+            return None
+
+        ranked.sort(key=lambda x: -x[1])
+        sym, rvol = ranked[0]
+        _log(f"EI süzgeçli seçildi {sym} RVOL={rvol:.2f}")
+        return sym, rvol
+
+    def select_ei_symbol(self, text: str) -> Optional[Tuple[str, float]]:
+        """Geriye dönük alias — süzgeçli seçim."""
+        return self.select_ei_symbol_filtered(text)
 
     def check_rsi_signal(self, text: str) -> Optional[str]:
         entry = self._extract_rsi_entry(text)
@@ -323,18 +395,18 @@ class MerterDCAManager:
         sym = entry["symbol"]
         rsi_5 = entry.get("rsi_5m")
         if rsi_5 is None or rsi_5 >= RSI_OVERSOLD:
-            _log_reject(YUVA_RSI, sym, f"RSI(5dk) {rsi_5} >= {RSI_OVERSOLD}")
+            _log_reject(YUVA_OTHER, sym, f"RSI(5dk) {rsi_5} >= {RSI_OVERSOLD}")
             return None
         try:
             kl = self._client_get().futures_klines(symbol=sym, interval="5m", limit=50)
         except Exception as e:
-            _log_reject(YUVA_RSI, sym, f"klines: {e}")
+            _log_reject(YUVA_OTHER, sym, f"klines: {e}")
             return None
         closes = [float(k[4]) for k in kl[:-1]]
         if not _rsi_confirmation(closes):
-            _log_reject(YUVA_RSI, sym, "RSI teyit yok (1-2 mum +3 veya 20 kırılım)")
+            _log_reject(YUVA_OTHER, sym, "RSI teyit yok (1-2 mum +3 veya 20 kırılım)")
             return None
-        if not self.passes_min_volume(sym, YUVA_RSI):
+        if not self.passes_min_volume(sym, YUVA_OTHER):
             return None
         _log(f"RSI teyit OK {sym} rsi_5={rsi_5}")
         return sym
@@ -342,20 +414,27 @@ class MerterDCAManager:
     def _yuva_busy(self, yuva: str) -> bool:
         return bool(self.state.get("positions", {}).get(yuva))
 
+    def _free_ei_yuva(self) -> Optional[str]:
+        for y in EI_YUVAS:
+            if not self._yuva_busy(y):
+                return y
+        return None
+
     def _double_confirm_parts(self, symbol: str, source: str) -> int:
         pending = self.state.setdefault("pending_confirm", {})
-        other = YUVA_RSI if source == YUVA_EI else YUVA_EI
-        p = pending.get(other)
-        if p and p.get("symbol") == symbol:
-            ts = p.get("at", "")
-            try:
-                t0 = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-                if datetime.now(timezone.utc) - t0 <= timedelta(seconds=DOUBLE_CONFIRM_SEC):
-                    pending.pop(other, None)
-                    _log(f"ÇİFT TEYİT {symbol} — ilk giriş 2 parça")
-                    return 2
-            except Exception:
-                pass
+        others = [y for y in list(EI_YUVAS) + [YUVA_OTHER] if y != source]
+        for other in others:
+            p = pending.get(other)
+            if p and p.get("symbol") == symbol:
+                ts = p.get("at", "")
+                try:
+                    t0 = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+                    if datetime.now(timezone.utc) - t0 <= timedelta(seconds=DOUBLE_CONFIRM_SEC):
+                        pending.pop(other, None)
+                        _log(f"ÇİFT TEYİT {symbol} — ilk giriş 2 parça")
+                        return 2
+                except Exception:
+                    pass
         pending[source] = {"symbol": symbol, "at": _now_iso()}
         self._save_state()
         return 1
@@ -458,6 +537,9 @@ class MerterDCAManager:
         signal_source: str,
         initial_parts: int = 1,
     ) -> bool:
+        if not _motor_entries_allowed():
+            _log_reject(signal_source, symbol, "motor pasif (dashboard)")
+            return False
         if self._yuva_busy(signal_source):
             _log_reject(signal_source, symbol, "yuva dolu")
             return False
@@ -513,6 +595,9 @@ class MerterDCAManager:
         }
         self.state.get("pending_confirm", {}).pop(signal_source, None)
         self._save_state()
+        record_position_source(symbol, "LONG", MZ)
+        open_msg = format_open_log(MZ, symbol, "LONG")
+        _log(open_msg)
         _log(f"AÇILDI {signal_source} {symbol} parts={initial_parts}/{PARTS_PER_YUVA} trade_id={trade_id}")
         return True
 
@@ -523,23 +608,279 @@ class MerterDCAManager:
             return False
 
         if "Sinyal Taraması" in text or "Yeni AL Sinyalleri" in text:
-            picked = self.select_ei_symbol(text)
-            if not picked:
-                return True
-            sym, rvol = picked
-            parts = self._double_confirm_parts(sym, YUVA_EI)
-            self.open_dca_position(sym, YUVA_EI, initial_parts=parts)
+            handled = False
+
+            if not self._yuva_busy(YUVA_EI_RAW):
+                sym_raw = self.select_ei_symbol_raw(text)
+                if sym_raw:
+                    parts = self._double_confirm_parts(sym_raw, YUVA_EI_RAW)
+                    self.open_dca_position(sym_raw, YUVA_EI_RAW, initial_parts=parts)
+                    handled = True
+            else:
+                _log_reject(YUVA_EI_RAW, "—", "süzgeçsiz EI yuvası dolu")
+
+            if not self._yuva_busy(YUVA_EI_FILTERED):
+                picked = self.select_ei_symbol_filtered(text)
+                if picked:
+                    sym, _rvol = picked
+                    parts = self._double_confirm_parts(sym, YUVA_EI_FILTERED)
+                    self.open_dca_position(sym, YUVA_EI_FILTERED, initial_parts=parts)
+                    handled = True
+            else:
+                _log_reject(YUVA_EI_FILTERED, "—", "süzgeçli EI yuvası dolu")
+
+            if not handled:
+                _log_reject("merter_ei", "—", "EI yuvaları dolu veya aday yok")
             return True
 
         if "RSI Analizi" in text:
             sym = self.check_rsi_signal(text)
             if not sym:
                 return True
-            parts = self._double_confirm_parts(sym, YUVA_RSI)
-            self.open_dca_position(sym, YUVA_RSI, initial_parts=parts)
+            if self._yuva_busy(YUVA_OTHER):
+                _log_reject(YUVA_OTHER, sym, "Merter diğer yuvası dolu")
+                return True
+            parts = self._double_confirm_parts(sym, YUVA_OTHER)
+            self.open_dca_position(sym, YUVA_OTHER, initial_parts=parts)
             return True
 
         return False
+
+    def _parse_yuva_map_from_log(self) -> Dict[int, str]:
+        """trade_id → yuva (AÇILDI satırlarından)."""
+        out: Dict[int, str] = {}
+        if not os.path.isfile(LOG_FILE):
+            return out
+        try:
+            with open(LOG_FILE, encoding="utf-8", errors="replace") as f:
+                for line in f:
+                    m = _RE_ACILDI.search(line)
+                    if not m:
+                        continue
+                    yuva, _sym, tid = m.group(1), m.group(2), int(m.group(3))
+                    out[tid] = yuva
+        except OSError:
+            pass
+        return out
+
+    def _open_merter_trades_from_derr(self) -> List[Dict[str, Any]]:
+        journal = self._journal_get()
+        cur = journal.conn.cursor()
+        cur.execute(
+            """
+            SELECT id, symbol, side, leverage, open_time, open_price, open_qty,
+                   initial_margin, signal_source
+            FROM trades
+            WHERE status = 'open' AND leverage = 1 AND side = 'LONG'
+              AND (signal_source = 'MZ' OR signal_source LIKE 'merter%')
+            ORDER BY id
+            """
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+    def _binance_long_positions(self) -> Dict[str, Dict[str, Any]]:
+        out: Dict[str, Dict[str, Any]] = {}
+        for p in self._client_get().futures_position_information():
+            amt = float(p.get("positionAmt") or 0)
+            if amt <= 0:
+                continue
+            sym = p["symbol"]
+            if int(p.get("leverage") or 0) != LEVERAGE:
+                continue
+            out[sym] = {
+                "qty": amt,
+                "avg_price": float(p.get("entryPrice") or 0),
+                "mark": float(p.get("markPrice") or 0),
+                "margin": float(p.get("isolatedMargin") or 0),
+            }
+        return out
+
+    def _resolve_yuva_for_trade(
+        self,
+        trade: Dict[str, Any],
+        log_map: Dict[int, str],
+        existing: Dict[str, Any],
+    ) -> Optional[str]:
+        src = (trade.get("signal_source") or "").strip()
+        if src in MERTER_DCA_YUVAS:
+            return src
+        tid = int(trade["id"])
+        if tid in log_map:
+            return log_map[tid]
+        sym = trade["symbol"]
+        for yuva, pos in existing.items():
+            if not pos:
+                continue
+            if int(pos.get("trade_id") or 0) == tid:
+                return yuva
+        for yuva, pos in existing.items():
+            if pos and pos.get("symbol") == sym:
+                return yuva
+        return None
+
+    @staticmethod
+    def _qty_near(a: float, b: float, rel: float = 0.02) -> bool:
+        if a <= 0 and b <= 0:
+            return True
+        if a <= 0 or b <= 0:
+            return False
+        return abs(a - b) / max(a, b) <= rel
+
+    def _fetch_open_limit_ids(self, symbol: str) -> List[int]:
+        try:
+            orders = self._client_get().futures_get_open_orders(symbol=symbol)
+            return [
+                int(o["orderId"])
+                for o in orders
+                if o.get("side") == "BUY" and o.get("type") == "LIMIT"
+            ]
+        except Exception:
+            return []
+
+    def _build_position_from_derr(
+        self,
+        yuva: str,
+        trade: Dict[str, Any],
+        bpos: Dict[str, Any],
+        existing: Optional[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        sym = trade["symbol"]
+        qty = float(bpos["qty"])
+        avg = float(bpos["avg_price"])
+        mark = float(bpos.get("mark") or avg)
+        part_u = self.part_usdt()
+        total_cost = qty * avg
+        parts_filled = max(
+            1,
+            min(PARTS_PER_YUVA, int(round(total_cost / part_u)) if part_u > 0 else 1),
+        )
+        opened_raw = trade.get("open_time")
+        if hasattr(opened_raw, "isoformat"):
+            opened_at = opened_raw.strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+        else:
+            opened_at = str(opened_raw).replace(" ", "T")
+            if not opened_at.endswith("Z"):
+                opened_at += "Z"
+
+        entry_anchor = float(trade.get("open_price") or avg)
+        tp1 = avg * (1 + TP1_PCT)
+        tp2 = avg * (1 + TP2_PCT)
+
+        if existing and int(existing.get("trade_id") or 0) == int(trade["id"]):
+            tp1_done = bool(existing.get("tp1_done"))
+            trailing_active = bool(existing.get("trailing_active"))
+            trailing_peak = existing.get("trailing_peak")
+            breakeven_mode = bool(existing.get("breakeven_mode"))
+            breakeven_since = existing.get("breakeven_since")
+        else:
+            tp1_done = mark >= tp1
+            trailing_active = tp1_done and mark >= tp2
+            trailing_peak = mark if trailing_active else None
+            breakeven_mode = False
+            breakeven_since = None
+
+        if trailing_active and trailing_peak is not None:
+            trailing_peak = max(float(trailing_peak), mark)
+
+        limit_ids = self._fetch_open_limit_ids(sym)
+        if not limit_ids and existing:
+            limit_ids = list(existing.get("limit_order_ids") or [])
+
+        return {
+            "symbol": sym,
+            "signal_source": yuva,
+            "trade_id": int(trade["id"]),
+            "entry_anchor": entry_anchor,
+            "parts_filled": parts_filled,
+            "parts_total": PARTS_PER_YUVA,
+            "total_qty": qty,
+            "total_cost": total_cost,
+            "avg_price": avg,
+            "opened_at": opened_at,
+            "tp1_done": tp1_done,
+            "trailing_active": trailing_active,
+            "trailing_peak": trailing_peak,
+            "breakeven_mode": breakeven_mode,
+            "breakeven_since": breakeven_since,
+            "limit_order_ids": limit_ids,
+            "part_usdt": part_u,
+            "reconciled_at": _now_iso(),
+        }
+
+    def _position_needs_update(
+        self,
+        existing: Optional[Dict[str, Any]],
+        canonical: Dict[str, Any],
+    ) -> bool:
+        if not existing:
+            return True
+        for key in ("symbol", "trade_id", "signal_source"):
+            if existing.get(key) != canonical.get(key):
+                return True
+        if not self._qty_near(float(existing.get("total_qty") or 0), float(canonical["total_qty"])):
+            return True
+        if not self._qty_near(float(existing.get("avg_price") or 0), float(canonical["avg_price"]), 0.005):
+            return True
+        return False
+
+    def reconcile_state_from_derr(self) -> int:
+        """
+        DERR (açık 1x Merter işlemleri) + Binance gerçekliği ile state senkronu.
+        Fark varsa DERR baz alınır; kayıp yuva en geç 5 dk içinde geri gelir.
+        """
+        open_trades = self._open_merter_trades_from_derr()
+        if not open_trades:
+            stale = list((self.state.get("positions") or {}).keys())
+            if stale:
+                self.state["positions"] = {}
+                self._save_state()
+                for y in stale:
+                    _log(f"RECONCILE state temizlendi — DERR açık işlem yok (kaldırılan: {y})")
+                return len(stale)
+            return 0
+
+        log_map = self._parse_yuva_map_from_log()
+        existing_all = dict(self.state.get("positions") or {})
+        bpos_map = self._binance_long_positions()
+        rebuilt: Dict[str, Dict[str, Any]] = {}
+        updates = 0
+
+        for trade in open_trades:
+            sym = trade["symbol"]
+            yuva = self._resolve_yuva_for_trade(trade, log_map, existing_all)
+            if not yuva:
+                _log(f"RECONCILE atlandı trade_id={trade['id']} {sym} — yuva çözülemedi")
+                continue
+            if yuva in rebuilt:
+                _log(f"RECONCILE çakışma {yuva} trade_id={trade['id']} — atlandı")
+                continue
+            bpos = bpos_map.get(sym)
+            if not bpos or bpos["qty"] <= 0:
+                _log(f"RECONCILE atlandı {sym} trade_id={trade['id']} — Binance pozisyon yok")
+                continue
+
+            canonical = self._build_position_from_derr(
+                yuva, trade, bpos, existing_all.get(yuva),
+            )
+            rebuilt[yuva] = canonical
+            if self._position_needs_update(existing_all.get(yuva), canonical):
+                updates += 1
+                old = existing_all.get(yuva) or {}
+                _log(
+                    f"RECONCILE güncellendi {yuva} {sym} trade_id={trade['id']} "
+                    f"qty {old.get('total_qty')}→{canonical['total_qty']} "
+                    f"avg {old.get('avg_price')}→{canonical['avg_price']:.6f}"
+                )
+
+        removed = set(existing_all.keys()) - set(rebuilt.keys())
+        for y in removed:
+            _log(f"RECONCILE kaldırıldı {y} — DERR/Binance eşleşmesi yok")
+            updates += 1
+
+        if updates > 0 or set(existing_all.keys()) != set(rebuilt.keys()):
+            self.state["positions"] = rebuilt
+            self._save_state()
+        return updates
 
     def monitor_positions(self) -> None:
         """TP / trailing / 48s timeout — periyodik çağrı."""
@@ -595,23 +936,24 @@ class MerterDCAManager:
                     self._finalize_close(yuva, pos, mark, journal, "Trailing")
                 continue
 
-            if pos.get("breakeven_mode") and mark >= avg:
+            if pos.get("breakeven_mode") and mark >= avg * _breakeven_mult():
                 rem = float(pos.get("total_qty") or 0)
                 if rem > 0:
-                    self._close_qty(symbol, rem, "48h Breakeven")
-                    self._finalize_close(yuva, pos, mark, journal, "48h Breakeven")
+                    self._close_qty(symbol, rem, "Zaman stopu BE")
+                    self._finalize_close(yuva, pos, mark, journal, "Zaman stopu BE")
                 continue
 
             opened = pos.get("opened_at", "")
+            max_h = _merter_max_hold_h()
             try:
                 t0 = datetime.fromisoformat(opened.replace("Z", "+00:00"))
-                if datetime.now(timezone.utc) - t0 >= timedelta(hours=MAX_HOLD_H):
+                if datetime.now(timezone.utc) - t0 >= timedelta(hours=max_h):
                     if not pos.get("tp1_done") and not pos.get("breakeven_mode"):
                         pos["breakeven_mode"] = True
                         pos["breakeven_since"] = _now_iso()
                         _log(
-                            f"48s timeout → breakeven modu {symbol} "
-                            f"avg={avg:.6f} mark={mark:.6f} (maliyete gelince kapatılacak)"
+                            f"{max_h:.0f}h timeout → breakeven modu {symbol} "
+                            f"avg={avg:.6f} be={avg * _breakeven_mult():.6f} mark={mark:.6f}"
                         )
                         self._save_state()
             except Exception:
@@ -660,4 +1002,9 @@ class MerterDCAManager:
                 pass
         self.state.get("positions", {}).pop(yuva, None)
         self._save_state()
+        try:
+            from mina_signal_source import clear_position_source
+            clear_position_source(pos.get("symbol", ""), "LONG")
+        except Exception:
+            pass
         _log(f"TAM KAPANDI {yuva} {pos.get('symbol')} reason={reason}")

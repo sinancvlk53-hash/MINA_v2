@@ -5,17 +5,30 @@
 
 ---
 
-## KASA VE SLOT HESABI (4x Motor)
+## KASA VE SLOT HESABI (10 slot)
+
+| Bölüm | Slot | Açıklama |
+|-------|------|----------|
+| **EI botu** | **2** | Merter 1x DCA — EI tarama (`merter_ei_1`, `merter_ei_2`) |
+| **Merter diğer** | **1** | RSI bot + Merter standart sinyal yuvası (`merter_other`) |
+| **Haluk Hoca** | **7** | 4x motor pipeline (K2/K3 onaylı sinyaller) |
 
 - Kasa dinamiktir, sabit değildir
-- **10 slot** toplam:
-  - **8 slot** → 4x motor (sinyal köprüsü / ana motor)
-  - **2 slot** → Merter 1x DCA (ayrı bölüm, aşağıda)
 - 1 Slot = Kasa / 10
 - İlk giriş marjini = Slot / 5 (%20)
-- Kaldıraç = 4x (defans aktif)
-- Hacim = Marjin × 4
+- Kaldıraç = 4x (defans aktif, Haluk motor)
+- Merter 1x DCA: ayrı bölüm, stop yok
 - Sabit USDT değeri kod içinde **KESİNLİKLE YAZILMAZ**
+
+---
+
+## DERR — SİSTEM HAFIZASI
+
+**DERR sistemin hafızasıdır. Her işlem buraya yazılır. Burası olmadan sistem kördür. Hiçbir pozisyon DERR'e yazılmadan açılmamalı veya kapanmamalıdır.**
+
+- Manuel script, hedge test veya doğrudan Binance emirleri DERR dışı kalırsa motor pozisyonu “görmez”
+- `log_trade_open` / `log_trade_close` zorunlu giriş noktalarıdır
+- Hayalet pozisyon: `positionAmt=0` ama `isolatedMargin ≤ 0` → motor log + Telegram uyarısı
 
 ---
 
@@ -108,11 +121,11 @@ Slot dağılımı (tek yuva içinde):
 
 ## MERTER 1x DCA ANAYASASI
 
-### Slot yapısı
+### Slot yapısı (10 slot)
 
-- 10 slotun **2'si** Merter için ayrılır:
-  - **1 slot** → EI tarama botu (`merter_ei`)
-  - **1 slot** → RSI botu (`merter_rsi`)
+- **2 slot** → EI tarama botu (`merter_ei_1`, `merter_ei_2`)
+- **1 slot** → Merter diğer / RSI bot (`merter_other`)
+- **7 slot** → Haluk Hoca 4x motor (ayrı bölüm)
 - Her yuva kendi içinde **10 eşit parçaya** bölünür: `parça = slot_budget / 10`
 - Kaldıraç: **1x ISOLATED**, stop yok, likidasyon riski yok (1x)
 

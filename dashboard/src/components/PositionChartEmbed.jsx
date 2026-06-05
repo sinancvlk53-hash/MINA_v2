@@ -51,7 +51,7 @@ export default function PositionChartEmbed({ pos, slotSize = 0, mobile = false }
       theme: 'dark',
       style: '1',
       locale: 'tr',
-      toolbar_bg: '#0b0e11',
+      toolbar_bg: '#131722',
       enable_publishing: 'false',
       hide_top_toolbar: 'false',
       save_image: 'false',

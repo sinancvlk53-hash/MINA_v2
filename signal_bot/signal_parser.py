@@ -30,7 +30,10 @@ _binance_client: Any = None
 
 # ── Paylaşılan anayasa ───────────────────────────────────────────────────────
 LEVERAGE_5X_BASES = frozenset({"BTC", "ETH", "XAU", "XAG"})
-MACRO_FILTER_BASES = frozenset({"TOTAL", "OTHERS", "BRENT", "XCU", "DİĞER", "DIGER"})
+MACRO_FILTER_BASES = frozenset({
+    "TOTAL", "OTHERS", "BRENT", "XCU", "DİĞER", "DIGER",
+    "TOTAL2", "TOTAL3", "BTC.D", "USDT.D",
+})
 UPDATE_TRAP = frozenset({"UPDATE", "RETEST", "DURUM"})
 NEWS_ALARM = ("FLASHCRASH", "MAYIN TARLASI", "BALINA SATIŞI", "BALINA SATISI")
 
@@ -40,6 +43,7 @@ COIN_ALIASES = {
     "ETHEREUM": "ETH",
     "RIPPLE": "XRP",
     "DOGECOIN": "DOGE",
+    "GOOGLE": "GOOGLE",
 }
 
 PAS_RE = re.compile(
@@ -111,6 +115,7 @@ RE_DOLLAR_COIN = re.compile(r"\$([A-Za-z0-9]+)")
 CHAT_COIN_BASES = frozenset(COIN_ALIASES.values()) | frozenset({
     "BTC", "ETH", "SOL", "XRP", "BNB", "ADA", "DOGE", "AVAX", "DOT", "LINK",
     "MATIC", "POL", "NEAR", "INJ", "SUI", "APT", "ARB", "OP", "LTC", "BCH",
+    "GOOGLE",
 })
 
 # ── Haluk telegram regex ─────────────────────────────────────────────────────
@@ -124,6 +129,10 @@ RE_HALUK_STOP = re.compile(
 )
 RE_HALUK_SIDE = re.compile(r"\b(long|short|alım|alim|satış|satis)\b", re.I)
 RE_COIN_TICKER = re.compile(r"\b([A-Z]{2,12})USDT\b", re.I)
+RE_HALUK_SHORT_TICKER = re.compile(
+    r"\b(" + "|".join(sorted(CHAT_COIN_BASES, key=len, reverse=True)) + r")\b",
+    re.I,
+)
 
 
 def _now_iso() -> str:
@@ -185,10 +194,126 @@ def _update_trap(text: str) -> Optional[str]:
 
 def _macro_in_text(text: str) -> Optional[str]:
     upper = _norm_upper(text)
-    for m in ("TOTAL", "OTHERS", "BRENT", "XCU", "DIGER"):
-        if re.search(rf"\b{m}\b", upper):
-            return m
+    for pat, key in (
+        (r"\bTOTAL3\b", "TOTAL3"),
+        (r"\bTOTAL2\b", "TOTAL2"),
+        (r"\bBTC\.?\s*D\b", "BTC.D"),
+        (r"\bUSDT\.?\s*D\b", "USDT.D"),
+        (r"\bOTHERS\b", "OTHERS"),
+        (r"\bDIGER\b", "DIGER"),
+        (r"\bTOTAL\b", "TOTAL"),
+        (r"\bBRENT\b", "BRENT"),
+        (r"\bXCU\b", "XCU"),
+    ):
+        if re.search(pat, upper):
+            return key
     return None
+
+
+def extract_haluk_symbol(text: str) -> str:
+    """BCH, ETH, BTCUSDT, Google vb. → standart sembol."""
+    if re.search(r"\bgoogle\b", text, re.I):
+        return "GOOGLEUSDT"
+    tm = RE_COIN_TICKER.search(text)
+    if tm:
+        return tm.group(1).upper() + "USDT"
+    m = RE_HALUK_SHORT_TICKER.search(text)
+    if m:
+        base = m.group(1).upper()
+        if base in COIN_ALIASES:
+            base = COIN_ALIASES[base]
+        return f"{base}USDT"
+    macro = _macro_in_text(text)
+    if macro:
+        return "OTHERS" if macro in ("DIGER", "DİĞER") else macro
+    return "UNKNOWN"
+
+
+RE_GOOGLE_SHORT = re.compile(
+    r"short[^.\n]{0,120}?([\d.,]+)\s*stop",
+    re.I | re.S,
+)
+RE_GOOGLE_LONG = re.compile(
+    r"long[^.\n]{0,120}?([\d.,]+)\s*destek",
+    re.I | re.S,
+)
+RE_MAX_RISK_PCT = re.compile(
+    r"(?:max\s*risk|kasa).*?([\d.,]+)\s*%",
+    re.I,
+)
+
+
+def parse_haluk_google(text: str) -> List[Dict[str, Any]]:
+    """Google çift pozisyon (Short stop + Long destek) mesajları."""
+    if not re.search(r"\bgoogle\b", text, re.I):
+        return []
+
+    max_risk = None
+    rm = RE_MAX_RISK_PCT.search(text)
+    if rm:
+        max_risk = _parse_num(rm.group(1))
+
+    short_stop = None
+    sm = RE_GOOGLE_SHORT.search(text)
+    if sm:
+        short_stop = _parse_num(sm.group(1))
+    if short_stop is None:
+        sm2 = re.search(r"short[^.\n]{0,80}?stop[^0-9]{0,10}([\d.,]+)", text, re.I | re.S)
+        if sm2:
+            short_stop = _parse_num(sm2.group(1))
+
+    long_entry = None
+    lm = RE_GOOGLE_LONG.search(text)
+    if lm:
+        long_entry = _parse_num(lm.group(1))
+    if long_entry is None:
+        lm2 = re.search(r"long[^.\n]{0,80}?destek[^0-9]{0,20}([\d.,]+)", text, re.I | re.S)
+        if lm2:
+            long_entry = _parse_num(lm2.group(1))
+
+    records: List[Dict[str, Any]] = []
+    extra = {"max_risk_pct": max_risk} if max_risk is not None else {}
+
+    if short_stop is not None:
+        rec = make_record(
+            source="haluk_telegram",
+            symbol="GOOGLEUSDT",
+            direction="SHORT",
+            entry_price=short_stop,
+            stop_price=short_stop,
+            status="approved",
+            raw_text=text,
+        )
+        rec.update(extra)
+        rec["note"] = "Google SHORT — stop seviyesi"
+        records.append(rec)
+
+    if long_entry is not None:
+        rec = make_record(
+            source="haluk_telegram",
+            symbol="GOOGLEUSDT",
+            direction="LONG",
+            entry_price=long_entry,
+            status="approved",
+            raw_text=text,
+        )
+        rec.update(extra)
+        rec["note"] = "Google LONG — destek bölgesi"
+        records.append(rec)
+
+    if records:
+        return records
+
+    if re.search(r"bekleyen|pozumuz|pozisyon", text, re.I):
+        return [make_record(
+            source="haluk_telegram",
+            symbol="GOOGLEUSDT",
+            direction=None,
+            status="rejected",
+            reject_reason="Google pozisyon — fiyat seviyesi parse edilemedi",
+            raw_text=text,
+        )]
+    return []
 
 
 def make_record(
@@ -837,6 +962,39 @@ def parse_merter(text: str) -> List[Dict[str, Any]]:
     return []
 
 
+def _upsert_telegram_macro(text: str, source: str = "haluk_telegram") -> None:
+    """Telegram makro/özet mesajını macro_levels.json'a yaz."""
+    try:
+        from signal_bot.haluk_pdf_parser import infer_macro_direction, parse_macro_sr_levels
+        from signal_bot.macro_levels_store import detect_panel_coins_in_text, merge_macro_levels, panel_key_for
+    except ImportError:
+        return
+
+    coins = detect_panel_coins_in_text(text)
+    if not coins:
+        key = panel_key_for(extract_haluk_symbol(text))
+        if key:
+            coins = [key]
+
+    if not coins:
+        return
+
+    supports, resistances = parse_macro_sr_levels(text)
+    snippet = text.strip()[:400]
+    direction = infer_macro_direction(text)
+    rows = [
+        {
+            "coin": c,
+            "supports": supports,
+            "resistances": resistances,
+            "direction": direction,
+            "text": snippet,
+        }
+        for c in coins
+    ]
+    merge_macro_levels(rows, source)
+
+
 # ── KAYNAK 2: Haluk Telegram ─────────────────────────────────────────────────
 
 def parse_haluk_telegram(text: str) -> Tuple[List[Dict[str, Any]], bool]:
@@ -847,6 +1005,10 @@ def parse_haluk_telegram(text: str) -> Tuple[List[Dict[str, Any]], bool]:
     text = text.strip()
     if not text:
         return [], False
+
+    google_recs = parse_haluk_google(text)
+    if google_recs:
+        return google_recs, False
 
     alarm = check_news_alarm(text)
     if alarm:
@@ -863,22 +1025,18 @@ def parse_haluk_telegram(text: str) -> Tuple[List[Dict[str, Any]], bool]:
     macro = _macro_in_text(text)
     if macro and not RE_HALUK_ENTRY.search(text) and not RE_HALUK_STOP.search(text):
         sym = "OTHERS" if macro in ("DIGER", "DİĞER") else macro
+        _upsert_telegram_macro(text)
         return [make_record(
             source="haluk_telegram",
             symbol=sym,
             direction=None,
-            status="rejected",
-            reject_reason="makro filtre (F1) — işlem açılmaz",
+            status="macro",
+            reject_reason=None,
             raw_text=text,
         )], False
 
     trap = _update_trap(text)
-    symbol = "UNKNOWN"
-    tm = RE_COIN_TICKER.search(text)
-    if tm:
-        symbol = tm.group(1).upper() + "USDT"
-    elif macro:
-        symbol = normalize_symbol(macro)
+    symbol = extract_haluk_symbol(text)
 
     if trap:
         return [make_record(
@@ -897,18 +1055,16 @@ def parse_haluk_telegram(text: str) -> Tuple[List[Dict[str, Any]], bool]:
         entry = _mid(entry, _parse_num(entry_m.group(2)))
     stop = _parse_num(stop_m.group(1)) if stop_m else None
 
-    has_chart = bool(entry and stop) or bool(
-        re.search(r"grafik|kutu|giriş\s*kutusu", text, re.I)
-    )
+    has_chart = bool(re.search(r"grafik|kutu|giriş\s*kutusu|giris\s*kutusu|entry\s*box|chart", text, re.I))
     pas = bool(PAS_RE.search(text))
 
-    if pas and not has_chart:
+    if pas and not (has_chart and entry):
         return [make_record(
             source="haluk_telegram",
             symbol=symbol,
             direction=None,
             status="rejected",
-            reject_reason="Pas — grafik/giriş/stop eksik",
+            reject_reason="Pas — grafik ve giriş bölgesi eksik",
             raw_text=text,
         )], False
 
@@ -917,7 +1073,21 @@ def parse_haluk_telegram(text: str) -> Tuple[List[Dict[str, Any]], bool]:
     if sm and sm.group(1).lower() in ("short", "satış", "satis"):
         direction = "SHORT"
 
-    if not entry and not stop:
+    if not (has_chart and entry):
+        pos_mgmt = re.search(
+            r"karda|kar\s*al|stop\s*at|tp['']?yi|pozisyon|pozumuz|bekleyen",
+            text,
+            re.I,
+        )
+        if pos_mgmt and symbol != "UNKNOWN":
+            return [make_record(
+                source="haluk_telegram",
+                symbol=symbol,
+                direction=None,
+                status="rejected",
+                reject_reason="pozisyon yönetimi — yeni giriş yok",
+                raw_text=text,
+            )], False
         return [], False
 
     return [make_record(
@@ -926,8 +1096,8 @@ def parse_haluk_telegram(text: str) -> Tuple[List[Dict[str, Any]], bool]:
         direction=direction,
         entry_price=entry,
         stop_price=stop,
-        status="approved" if (has_chart or (entry and stop)) else "rejected",
-        reject_reason=None if (has_chart or (entry and stop)) else "yetersiz veri",
+        status="approved",
+        reject_reason=None,
         raw_text=text,
     )], False
 
@@ -952,14 +1122,20 @@ def parse_haluk_pdf_path(pdf_path: str) -> Tuple[List[Dict[str, Any]], bool]:
         return records, True
 
     for m in result.macro_filters:
-        records.append(make_record(
+        coin = m["coin"] if str(m["coin"]).endswith("USDT") else f"{m['coin']}USDT"
+        rec = make_record(
             source="haluk_pdf",
-            symbol=m["coin"] if str(m["coin"]).endswith("USDT") else f"{m['coin']}USDT",
+            symbol=coin,
             direction=None,
-            status="rejected",
-            reject_reason="makro filtre (F1) — işlem açılmaz",
+            status="macro",
+            reject_reason=None,
             raw_text=m.get("text", "")[:200],
-        ))
+        )
+        rec["macro_role"] = "F1"
+        rec["supports"] = m.get("supports") or []
+        rec["resistances"] = m.get("resistances") or []
+        rec["macro_direction"] = m.get("direction")
+        records.append(rec)
 
     for r in result.rejected:
         sym = r.get("coin", "UNKNOWN")
@@ -1009,6 +1185,152 @@ def save_queue(data: Dict[str, Any]) -> str:
     with open(RAW_QUEUE_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     return RAW_QUEUE_FILE
+
+
+HALUK_PDF_SOURCES = frozenset({"haluk_pdf"})
+
+
+def pdf_timestamp_from_path(pdf_path: str) -> str:
+    """PDF dosya adından veya mtime'dan sıralanabilir UTC timestamp."""
+    base = os.path.basename(pdf_path)
+    m = re.match(r"tg_(\d{8})_(\d{6})", base)
+    if m:
+        d, t = m.group(1), m.group(2)
+        return f"{d[:4]}-{d[4:6]}-{d[6:8]}T{t[:2]}:{t[2:4]}:{t[4:6]}Z"
+    try:
+        mtime = os.path.getmtime(pdf_path)
+        return datetime.fromtimestamp(mtime, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    except OSError:
+        return _now_iso()
+
+
+def _cancel_superseded_haluk_limits(superseded: List[Dict[str, Any]]) -> None:
+    """Eski PDF'den bekleyen limit emirlerini iptal et."""
+    to_cancel: List[Tuple[str, int]] = []
+    for entry in superseded:
+        if entry.get("queue_state") != "pending_limit":
+            continue
+        sym = entry.get("symbol")
+        oid = entry.get("pending_order_id")
+        if sym and oid:
+            to_cancel.append((sym, int(oid)))
+
+    if not to_cancel:
+        return
+
+    try:
+        client = _get_binance_client()
+    except Exception:
+        client = None
+    if client is None:
+        print(f"[HALUK PDF] {len(to_cancel)} eski limit emri iptal edilemedi (client yok)")
+        return
+
+    import mina_tracking as mt
+
+    pending = mt.load_json(mt.PENDING_ORDERS_FILE)
+    for sym, oid in to_cancel:
+        try:
+            client.futures_cancel_order(symbol=sym, orderId=oid)
+            print(f"[HALUK PDF] Eski limit iptal: {sym} order={oid}")
+        except Exception as e:
+            print(f"[HALUK PDF] Limit iptal hatası {sym} {oid}: {e}")
+        for pk, info in list(pending.items()):
+            if info.get("order_id") == oid and info.get("symbol") == sym:
+                pending.pop(pk, None)
+    mt.save_json(mt.PENDING_ORDERS_FILE, pending)
+
+
+def supersede_stale_haluk_pdf_entries(
+    data: Dict[str, Any],
+    new_pdf_ts: str,
+    pdf_path: str,
+) -> List[Dict[str, Any]]:
+    """
+    Yeni PDF geldiğinde önceki haluk_pdf kayıtlarını geçersiz say.
+    consumed (işleme dönmüş) kayıtlara dokunulmaz.
+    """
+    superseded: List[Dict[str, Any]] = []
+    old_ts = data.get("haluk_pdf_timestamp")
+
+    for entry in data.get("entries") or []:
+        if entry.get("source") not in HALUK_PDF_SOURCES:
+            continue
+        if entry.get("queue_state") == "consumed":
+            continue
+        if entry.get("status") == "superseded":
+            continue
+
+        entry["status"] = "superseded"
+        entry["queue_state"] = "cancelled"
+        entry["superseded_at"] = _now_iso()
+        entry["superseded_by_pdf"] = new_pdf_ts
+        entry["superseded_reason"] = "yeni_pdf"
+        if old_ts:
+            entry["replaced_pdf_timestamp"] = old_ts
+        superseded.append(entry)
+
+    if superseded:
+        print(
+            f"[HALUK PDF] {len(superseded)} eski PDF kaydı geçersiz "
+            f"(yeni={new_pdf_ts}, eski={old_ts or '—'})"
+        )
+        _cancel_superseded_haluk_limits(superseded)
+
+    data["haluk_pdf_timestamp"] = new_pdf_ts
+    data["haluk_pdf_path"] = pdf_path
+    data["haluk_pdf_received_at"] = _now_iso()
+    return superseded
+
+
+def enqueue_haluk_pdf_records(pdf_path: str, records: List[Dict[str, Any]]) -> str:
+    """Haluk PDF kayıtları — en güncel PDF kuralı (eski PDF sinyalleri iptal)."""
+    if not records:
+        return RAW_QUEUE_FILE
+
+    pdf_ts = pdf_timestamp_from_path(pdf_path)
+    data = load_queue()
+    if "entries" not in data:
+        data["entries"] = []
+
+    supersede_stale_haluk_pdf_entries(data, pdf_ts, pdf_path)
+
+    for rec in records:
+        if rec.get("source") in HALUK_PDF_SOURCES or rec.get("source") == "haluk_pdf":
+            rec["pdf_timestamp"] = pdf_ts
+            rec["pdf_path"] = os.path.basename(pdf_path)
+
+    data["entries"].extend(records)
+    path = save_queue(data)
+
+    approved = [
+        r for r in records
+        if r.get("status") == "approved" and r.get("symbol") != "SYSTEM"
+    ]
+    if approved:
+        legacy = {
+            "signals": [
+                {
+                    "coin": r["symbol"],
+                    "side": r["direction"],
+                    "entry": str(r.get("entry_price") or "—"),
+                    "stop": str(r.get("stop_price") or "—"),
+                    "leverage": r.get("leverage"),
+                    "leverage_label": f"{r.get('leverage')}x",
+                    "d1_price": r.get("stop_price"),
+                    "source": r.get("source"),
+                    "pdf_timestamp": pdf_ts,
+                }
+                for r in approved
+            ],
+            "source": f"haluk_pdf:{os.path.basename(pdf_path)}",
+            "pdf_timestamp": pdf_ts,
+        }
+        ht_path = os.path.join(SIGNAL_BOT_DIR, "ht_signals_queue.json")
+        with open(ht_path, "w", encoding="utf-8") as f:
+            json.dump(legacy, f, ensure_ascii=False, indent=2)
+
+    return path
 
 
 def enqueue_records(records: List[Dict[str, Any]], append: bool = True) -> str:
@@ -1068,7 +1390,7 @@ def parse_and_enqueue(text: str, source: str) -> List[Dict[str, Any]]:
 def parse_pdf_and_enqueue(pdf_path: str) -> List[Dict[str, Any]]:
     records, _ = parse_haluk_pdf_path(pdf_path)
     if records:
-        enqueue_records(records)
+        enqueue_haluk_pdf_records(pdf_path, records)
     return records
 
 

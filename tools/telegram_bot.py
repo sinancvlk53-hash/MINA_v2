@@ -4,6 +4,7 @@ MİNA v2 - Telegram Bot
 """
 
 import os
+import sys
 import threading
 from dotenv import load_dotenv
 import telebot
@@ -15,6 +16,16 @@ bot = telebot.TeleBot(TOKEN)
 
 def send_notification(message):
     """Telegram'a bildirim gönder - non-blocking"""
+    try:
+        _root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if _root not in sys.path:
+            sys.path.insert(0, _root)
+        from mina_dashboard_settings import load_settings
+        if not load_settings().get("telegramNotify", True):
+            return False
+    except Exception:
+        pass
+
     def _send():
         try:
             chat_id = os.getenv('TELEGRAM_CHAT_ID')

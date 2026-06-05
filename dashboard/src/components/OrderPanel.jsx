@@ -1,17 +1,27 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useRef } from 'react'
 import { POPULAR_SYMBOLS } from '../utils/trading.js'
 
 const LEVERS = [1, 2, 3, 4, 5, 10]
 const ORDER_TYPES = ['Market', 'Limit', 'Stop']
 
-export default function OrderPanel({ data, status }) {
+export default function OrderPanel({ data, status, sendMessage }) {
   const [query, setQuery]       = useState('')
   const [symbol, setSymbol]     = useState('BTCUSDT')
   const [side, setSide]         = useState('LONG')
   const [leverage, setLeverage] = useState(4)
   const [orderType, setOrderType] = useState('Market')
   const [amount, setAmount]     = useState('')
+  const [limitPrice, setLimitPrice] = useState('')
   const [showList, setShowList] = useState(false)
+  const searchRef = useRef(null)
+
+  function focusCoinSearch() {
+    setShowList(true)
+    requestAnimationFrame(() => {
+      searchRef.current?.focus()
+      searchRef.current?.select()
+    })
+  }
 
   const balance  = data?.balance ?? 0
   const slot     = balance / 10
@@ -19,8 +29,8 @@ export default function OrderPanel({ data, status }) {
   const slotSummary = data?.slotSummary ?? {}
   const motorUsed = slotSummary.motorUsed ?? data?.motorCount ?? 0
   const merterUsed = slotSummary.merterUsed ?? data?.merterCount ?? 0
-  const motorMax = slotSummary.motorMax ?? 8
-  const merterMax = slotSummary.merterMax ?? 2
+  const motorMax = slotSummary.motorMax ?? 7
+  const merterMax = slotSummary.merterMax ?? 3
   const posCount = data?.positionCount ?? 0
 
   const symbols = useMemo(() => {
@@ -52,6 +62,7 @@ export default function OrderPanel({ data, status }) {
         <label className="field-label">Coin</label>
         <div className="search-wrap">
           <input
+            ref={searchRef}
             className="field-input"
             placeholder="BTC, ETH..."
             value={query}
@@ -116,6 +127,25 @@ export default function OrderPanel({ data, status }) {
           ))}
         </div>
 
+        {/* Limit fiyat (Limit seçiliyse) */}
+        {orderType === 'Limit' && (
+          <>
+            <label className="field-label">Limit fiyat (USDT)</label>
+            <input
+              className="field-input"
+              type="number"
+              min="0"
+              step="any"
+              placeholder="Giriş seviyesi"
+              value={limitPrice}
+              onChange={(e) => setLimitPrice(e.target.value)}
+            />
+            <div className="field-hint">
+              LONG: fiyat mark altındaysa limit bekler · üstündeyse market
+            </div>
+          </>
+        )}
+
         {/* Miktar */}
         <label className="field-label">Miktar (coin)</label>
         <input
@@ -127,6 +157,29 @@ export default function OrderPanel({ data, status }) {
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         />
+
+        <button
+          type="button"
+          className="btn btn-primary"
+          style={{ width: '100%', marginTop: 8 }}
+          disabled={status !== 'connected'}
+          onClick={() => {
+            focusCoinSearch()
+            if (!sendMessage) return
+            sendMessage({
+              action: 'manual_open',
+              symbol,
+              side,
+              leverage,
+              entryPrice: orderType === 'Limit' && limitPrice ? parseFloat(limitPrice) : undefined,
+            })
+          }}
+        >
+          Manuel Aç (anayasa marjini)
+        </button>
+        <div className="field-hint" style={{ marginTop: 4 }}>
+          Slot limiti + DERR kaydı zorunlu · `scripts/manual_open.py` ile aynı
+        </div>
 
         <div className="slot-budget">
           <div className="slot-budget-row">
@@ -143,10 +196,10 @@ export default function OrderPanel({ data, status }) {
           </div>
         </div>
 
-        {/* Slot görsel — 8 motor + 2 Merter */}
+        {/* Slot: 7 Haluk motor + 3 Merter DCA (2 EI + 1 diğer) */}
         <div className="slot-bar-section">
           <div className="slot-bar-label-row">
-            <span className="slot-bar-label">4x Motor</span>
+            <span className="slot-bar-label">Haluk 4x Motor</span>
             <span className="field-hint">{motorUsed}/{motorMax}</span>
           </div>
           <div className="slot-bar">
@@ -157,8 +210,8 @@ export default function OrderPanel({ data, status }) {
         </div>
         <div className="slot-bar-section">
           <div className="slot-bar-label-row">
-            <span className="slot-bar-label slot-bar-label-merter">Merter 1x</span>
-            <span className="field-hint">{merterUsed}/{merterMax}</span>
+            <span className="slot-bar-label slot-bar-label-merter">Merter 1x DCA</span>
+            <span className="field-hint">{merterUsed}/{merterMax} (EI×2 + diğer×1)</span>
           </div>
           <div className="slot-bar">
             {Array.from({ length: merterMax }, (_, i) => (
