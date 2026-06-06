@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+
+import os
+import sys
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+from mina_ssh import require_ssh_pass, SSH_HOST, SSH_USER
 """Anlık pozisyon snapshot + log özeti
 Tracking dosyaları (initial_margins, defense_levels, tp_levels) ve
 log her zaman SUNUCUDAN (178.105.150.40) canlı okunur — stale local data yok.
@@ -10,9 +17,9 @@ from config import BinanceConfig
 from datetime import datetime
 
 # ── Sunucu bağlantısı ──────────────────────────────────────────────────
-SERVER_HOST = '178.105.150.40'
-SERVER_USER = 'root'
-SERVER_PASS = 'REDACTED'
+SERVER_HOST = SSH_HOST
+SERVER_USER = SSH_USER
+SERVER_PASS = require_ssh_pass()
 REMOTE_ROOT = '/root/MINA_v2'
 
 ALERT_ROE   = -70.0

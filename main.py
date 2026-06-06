@@ -62,6 +62,8 @@ def run() -> None:
     print("\n>>> BOOTSTRAP (Binance gerçeklik senkronu)")
     report = mina.sync_reality_from_binance(verbose=True)
     print(report)
+    boot_risk = mina.check_daily_risk_limit()
+    print(f">>> Günlük risk: PnL={boot_risk.get('today_pnl')} limit={boot_risk.get('limit_usdt')} level={boot_risk.get('level')}")
     mt.dump_all_tracking()
 
     from ghost_positions import detect_ghost_positions, notify_ghost_positions
@@ -79,6 +81,17 @@ def run() -> None:
     while True:
         try:
             loop_n += 1
+            risk = mina.check_daily_risk_limit()
+            if risk.get("level") == "kill":
+                print(
+                    f"  🚨 Kill-switch aktif — bugün PnL {risk.get('today_pnl')} USDT "
+                    f"(limit {risk.get('limit_usdt')}) — yeni giriş yok"
+                )
+            elif risk.get("level") == "warn":
+                print(
+                    f"  ⚠️  Günlük zarar uyarısı — bugün PnL {risk.get('today_pnl')} USDT "
+                    f"(yarı limit {risk.get('half_usdt')})"
+                )
             cancel_stale_pending_limits(client)
             filled = process_pending_limit_fills(mina)
             if filled:

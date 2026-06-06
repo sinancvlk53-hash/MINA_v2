@@ -118,6 +118,12 @@ def check_motor_can_open(
         motor_syms = motor_active_symbols(data_root)
         if sym in open_syms and sym not in motor_syms:
             return f"{sym} borsada açık (Merter?) — motor açılamaz"
+    try:
+        from mina_dashboard_settings import is_new_entries_blocked
+        if is_new_entries_blocked():
+            return "Günlük zarar limiti aşıldı — yeni pozisyon açılamaz"
+    except ImportError:
+        pass
     return None
 
 
@@ -135,4 +141,10 @@ def check_merter_can_open(
         merter_syms = merter_active_symbols(data_root)
         if sym in open_syms and sym not in merter_syms:
             return f"{sym} borsada açık (motor?) — Merter açılamaz"
+    try:
+        from mina_dashboard_settings import is_new_entries_blocked
+        if is_new_entries_blocked():
+            return "Günlük zarar limiti aşıldı — yeni pozisyon açılamaz"
+    except ImportError:
+        pass
     return None

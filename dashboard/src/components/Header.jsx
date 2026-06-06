@@ -22,8 +22,15 @@ export default function Header({ data, status, onPanic }) {
     : '—'
 
   const winStr = winRate != null ? `${Number(winRate).toFixed(1)}%` : '—'
+  const riskKill = data?.riskStatus?.level === 'kill' || data?.riskStatus?.newEntriesBlocked
 
   return (
+    <>
+      {riskKill && (
+        <div className="risk-alarm-banner" role="alert">
+          KRİTİK: Günlük zarar limiti aşıldı — yeni pozisyon açılmıyor. Mevcut pozisyonlar yönetiliyor.
+        </div>
+      )}
     <header className="header">
       <div className="header-left">
         <div className="header-logo">
@@ -67,5 +74,6 @@ export default function Header({ data, status, onPanic }) {
         <PanicButton onPanic={onPanic} disabled={!wsConnected} compact />
       </div>
     </header>
+    </>
   )
 }

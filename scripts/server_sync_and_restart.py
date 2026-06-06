@@ -1,11 +1,18 @@
 # -*- coding: utf-8 -*-
+
+import os
+import sys
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+from mina_ssh import require_ssh_pass, SSH_HOST, SSH_USER
 """Sunucuda sync_reality_from_binance + JSON dump + motor restart."""
 import paramiko
 import sys
 
-HOST = "178.105.150.40"
-USER = "root"
-PASS = "REDACTED"
+HOST = SSH_HOST
+USER = SSH_USER
+PASS = require_ssh_pass()
 ROOT = "/root/MINA_v2"
 VPY = f"{ROOT}/venv/bin/python"
 

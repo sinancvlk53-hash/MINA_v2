@@ -15,9 +15,13 @@ DEFAULTS: Dict[str, Any] = {
     "merterTimeStopH": 4,
     "halukTimeStopH": 8,
     "breakevenMult": 1.0020,
+    "dailyLossLimitPct": 20,
     "telegramNotify": True,
     "motorActive": True,
 }
+
+DAILY_LOSS_KILL_FILE = os.path.join(ROOT, "daily_loss_kill.flag")
+DAILY_RISK_STATE_FILE = os.path.join(ROOT, "daily_risk_state.json")
 
 
 def load_settings() -> Dict[str, Any]:
@@ -79,3 +83,55 @@ def haluk_time_stop_h() -> float:
 
 def breakeven_mult() -> float:
     return float(load_settings().get("breakevenMult") or DEFAULTS["breakevenMult"])
+
+
+def daily_loss_limit_pct() -> float:
+    raw = load_settings().get("dailyLossLimitPct", DEFAULTS["dailyLossLimitPct"])
+    try:
+        pct = float(raw)
+    except (TypeError, ValueError):
+        pct = float(DEFAULTS["dailyLossLimitPct"])
+    return max(1.0, min(pct, 50.0))
+
+
+def is_daily_loss_kill_active() -> bool:
+    return os.path.isfile(DAILY_LOSS_KILL_FILE)
+
+
+def set_daily_loss_kill(active: bool) -> None:
+    if active:
+        try:
+            with open(DAILY_LOSS_KILL_FILE, "w", encoding="utf-8") as f:
+                f.write("kill\n")
+        except OSError:
+            pass
+    else:
+        try:
+            if os.path.isfile(DAILY_LOSS_KILL_FILE):
+                os.remove(DAILY_LOSS_KILL_FILE)
+        except OSError:
+            pass
+
+
+def load_daily_risk_state() -> Dict[str, Any]:
+    if os.path.isfile(DAILY_RISK_STATE_FILE):
+        try:
+            with open(DAILY_RISK_STATE_FILE, encoding="utf-8") as f:
+                raw = json.load(f)
+            if isinstance(raw, dict):
+                return raw
+        except (OSError, json.JSONDecodeError):
+            pass
+    return {}
+
+
+def save_daily_risk_state(state: Dict[str, Any]) -> None:
+    os.makedirs(os.path.dirname(DAILY_RISK_STATE_FILE) or ROOT, exist_ok=True)
+    with open(DAILY_RISK_STATE_FILE, "w", encoding="utf-8") as f:
+        json.dump(state, f, ensure_ascii=False, indent=2)
+        f.write("\n")
+
+
+def is_new_entries_blocked() -> bool:
+    """Tam günlük zarar limiti — yeni pozisyon açma engeli."""
+    return is_daily_loss_kill_active()

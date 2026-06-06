@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
+
+import os
+import sys
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+from mina_ssh import require_ssh_pass, SSH_HOST, SSH_USER
 import os, sys, paramiko
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 c = paramiko.SSHClient()
 c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-c.connect('178.105.150.40', username='root', password=os.environ.get('MINA_SSH_PASS','REDACTED'), timeout=25)
+c.connect(SSH_HOST, username=SSH_USER, password=require_ssh_pass(), timeout=25)
 
 queries = [
     ("D1/D2 execution stdout bugun", r"journalctl -u mina-engine.service --since '2026-06-03 00:00:00' --no-pager | grep -E 'BCHUSDT|BNBUSDT' | grep -iE 'D1 gerçekleştirildi|D2 gerçekleştirildi|Journal.*D[123]|ağırlıklı|ekleme hatası|defense'"),

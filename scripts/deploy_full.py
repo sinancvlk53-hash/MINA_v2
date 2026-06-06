@@ -7,10 +7,15 @@ import io
 import os
 import sys
 
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+from mina_ssh import require_ssh_pass, SSH_HOST, SSH_USER
+
 import paramiko
 
-HOST, USER = "178.105.150.40", "root"
-PASS = os.environ.get("MINA_SSH_PASS", "REDACTED")
+HOST, USER = SSH_HOST, SSH_USER
+PASS = require_ssh_pass()
 REMOTE = "/root/MINA_v2"
 LOCAL = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -24,6 +29,9 @@ FILES = [
     "mina_entry_orders.py",
     "mina_trading_journal.py",
     "mina_coin_lock.py",
+    "mina_ssh.py",
+    "mina_binance_retry.py",
+    "backend/config.py",
     "scripts/reconcile_atom_derr.py",
     "backend/ghost_positions.py",
     "backend/position_manager.py",
@@ -32,6 +40,7 @@ FILES = [
     "signal_bot/haluk_pdf_parser.py",
     "signal_bot/haluk_pdf_visual.py",
     "signal_bot/macro_levels_store.py",
+    "signal_bot/macro_prices.py",
     "signal_bot/signal_slot_bridge.py",
     "signal_bot/merter_dca_manager.py",
     "signal_bot/merter_dca_runner.py",

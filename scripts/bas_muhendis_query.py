@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
+import os
+import sys
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+from mina_ssh import require_ssh_pass, SSH_HOST, SSH_USER
 """Baş Mühendis soru seti — sunucu veri toplama."""
 import json
 import os
@@ -9,8 +16,8 @@ from datetime import datetime, timezone
 import paramiko
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-HOST, USER = "178.105.150.40", "root"
-PASS = os.environ.get("MINA_SSH_PASS", "REDACTED")
+HOST, USER = SSH_HOST, SSH_USER
+PASS = require_ssh_pass()
 ROOT = "/root/MINA_v2"
 
 REMOTE = r'''#!/usr/bin/env python3

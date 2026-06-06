@@ -549,6 +549,24 @@ class TradingJournal:
             print(f"❌ get_trade_history hatası: {e}")
             return []
 
+    def get_today_realized_pnl(self) -> float:
+        """Bugün kapanan işlemlerin toplam realize PnL (USDT)."""
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                """
+                SELECT COALESCE(SUM(pnl_usdt), 0)
+                FROM trades
+                WHERE status = 'closed'
+                  AND date(close_time) = date('now', 'localtime')
+                """
+            )
+            row = cursor.fetchone()
+            return float(row[0] if row else 0.0)
+        except Exception as e:
+            print(f"❌ get_today_realized_pnl hatası: {e}")
+            return 0.0
+
     def close(self) -> None:
         """Veritabanı bağlantısını kapat."""
         if self.conn:

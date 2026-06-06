@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+
+import os
+import sys
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+from mina_ssh import require_ssh_pass, SSH_HOST, SSH_USER
 import os, sys, time, paramiko
 sys.stdout.reconfigure(encoding="utf-8")
 LOCAL = os.path.join(os.path.dirname(__file__), "query_derr_remote.py")
@@ -8,7 +15,7 @@ for i in range(8):
     try:
         c = paramiko.SSHClient()
         c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        c.connect("178.105.150.40", "root", password=os.environ.get("MINA_SSH_PASS", "REDACTED"), timeout=25)
+        c.connect(SSH_HOST, SSH_USER, password=require_ssh_pass(), timeout=25)
         break
     except Exception as ex:
         if i == 7:

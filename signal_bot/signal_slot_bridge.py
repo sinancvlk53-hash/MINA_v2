@@ -303,8 +303,11 @@ def open_signal_position(
 ) -> Optional[Dict[str, Any]]:
     """Seçilen sinyal için MARKET veya LIMIT giriş + tracking seed."""
     try:
-        from mina_dashboard_settings import is_motor_paused
+        from mina_dashboard_settings import is_motor_paused, is_new_entries_blocked
         if is_motor_paused():
+            return None
+        if is_new_entries_blocked():
+            print("[SLOT_BRIDGE] Reddedildi: günlük zarar kill-switch aktif")
             return None
     except ImportError:
         pass

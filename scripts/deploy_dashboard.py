@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
+
+import os
+import sys
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+from mina_ssh import require_ssh_pass, SSH_HOST, SSH_USER
 """Deploy dashboard dist/ + WS backend to production server."""
 import os
 import paramiko
 
-HOST, USER, PASS = "178.105.150.40", "root", "REDACTED"
+HOST, USER = SSH_HOST, SSH_USER
+PASS = require_ssh_pass()
 ROOT = "/root/MINA_v2"
 REMOTE_DIST = f"{ROOT}/dashboard/dist"
 LOCAL_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

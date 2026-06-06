@@ -26,10 +26,14 @@ class BinanceConfig:
         if not self.api_key or not self.api_secret:
             raise ValueError("BINANCE_API_KEY veya BINANCE_SECRET_KEY .env dosyasında bulunamadı!")
 
-        self.client = Client(self.api_key, self.api_secret, testnet=self.testnet)
-    
+        from mina_binance_retry import wrap_binance_client
+
+        self.client = wrap_binance_client(
+            Client(self.api_key, self.api_secret, testnet=self.testnet)
+        )
+
     def get_client(self):
-        """Binance client'ı döndür"""
+        """Binance client'ı döndür (retry wrapper)"""
         return self.client
 
 

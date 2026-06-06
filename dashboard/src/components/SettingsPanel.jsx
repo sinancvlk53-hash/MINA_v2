@@ -4,6 +4,7 @@ const DEFAULTS = {
   merterTimeStopH: 4,
   halukTimeStopH: 8,
   breakevenMult: 1.0020,
+  dailyLossLimitPct: 20,
   telegramNotify: true,
   motorActive: true,
 }
@@ -16,7 +17,7 @@ export default function SettingsPanel({ data, sendMessage, status }) {
 
   useEffect(() => {
     setForm((prev) => ({ ...DEFAULTS, ...prev, ...server }))
-  }, [server.merterTimeStopH, server.halukTimeStopH, server.breakevenMult, server.telegramNotify, server.motorActive])
+  }, [server.merterTimeStopH, server.halukTimeStopH, server.breakevenMult, server.dailyLossLimitPct, server.telegramNotify, server.motorActive])
 
   function patch(partial) {
     const next = { ...form, ...partial }
@@ -66,6 +67,23 @@ export default function SettingsPanel({ data, sendMessage, status }) {
             <li><span>Haluk 4x motor</span><strong>{haluk} slot</strong></li>
             <li className="settings-slot-total"><span>Toplam</span><strong>{slotSummary.slotTotal ?? 10} slot</strong></li>
           </ul>
+        </section>
+
+        <section className="settings-section">
+          <h3 className="settings-section-title">Risk limiti</h3>
+          <label className="field-label">Günlük zarar limiti (%)</label>
+          <input
+            className="field-input"
+            type="number"
+            min="5"
+            max="50"
+            step="1"
+            value={form.dailyLossLimitPct}
+            onChange={(e) => patch({ dailyLossLimitPct: Number(e.target.value) || 20 })}
+          />
+          <div className="field-hint">
+            Vadeli bakiyenin yüzdesi — örn. %20 ve 5000 USDT → -1000 USDT limit
+          </div>
         </section>
 
         <section className="settings-section">

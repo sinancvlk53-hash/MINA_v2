@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
+import os
+import sys
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+from mina_ssh import require_ssh_pass, SSH_HOST, SSH_USER
 """Lokal ve sunucu .env dosyalarına Telegram satırlarını ekle."""
 import os
 import sys
@@ -52,7 +59,7 @@ def main():
 
     print("\n=== SUNUCU ===")
     host, user = "178.105.150.40", "root"
-    pw = os.environ.get("MINA_SSH_PASS", "REDACTED")
+    pw = require_ssh_pass()
     remote = "/root/MINA_v2/.env"
     c = paramiko.SSHClient()
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())

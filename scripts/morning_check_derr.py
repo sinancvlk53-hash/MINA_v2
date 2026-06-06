@@ -1,17 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
+import os
+import sys
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+from mina_ssh import require_ssh_pass, SSH_HOST, SSH_USER
 """DERR journal — sunucuda dün gece kapanan işlemler."""
 import os
 import sys
 
 import paramiko
 
-HOST = "178.105.150.40"
-USER = "root"
+HOST = SSH_HOST
+USER = SSH_USER
 REMOTE = "/root/MINA_v2"
 
 # Şifre ortam değişkeninden veya deploy script ile aynı (repo içi)
-PASS = os.environ.get("MINA_SSH_PASS", "REDACTED")
+PASS = require_ssh_pass()
 
 QUERY = r'''
 cd /root/MINA_v2 && /root/MINA_v2/venv/bin/python - <<'PY'

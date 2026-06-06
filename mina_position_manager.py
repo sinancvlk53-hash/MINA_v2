@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import json
 import os
+import time
+from datetime import date
 from decimal import Decimal, ROUND_DOWN
 from typing import Any, Dict, List, Optional
 
@@ -34,6 +36,8 @@ from binance.enums import (
 ORDER_TYPE_STOP_MARKET = FUTURE_ORDER_TYPE_STOP_MARKET
 ORDER_TYPE_TRAILING_STOP_MARKET = FUTURE_ORDER_TYPE_TRAILING_STOP_MARKET
 ORDER_TYPE_TAKE_PROFIT_MARKET = "TAKE_PROFIT_MARKET"
+
+D2_TIME_STOP_H = 8  # D2 sonrası TP/breakeven gelmezse tam kapama (saat)
 
 try:
     from mina_trading_journal import TradingJournal
@@ -61,6 +65,7 @@ class MinaPositionManager:
         self.trade_ids: Dict[str, int] = {}  # {pos_key: trade_id}
         self._lot_step_cache: Dict[str, float] = {}
         self._exchange_info_loaded: bool = False
+        self._last_risk_level: str = "ok"
 
         self.leverage_rules = {
             1: {'stop_loss_pct': 3.0, 'tp_type': 'standard', 'has_defense': False},
@@ -209,6 +214,8 @@ class MinaPositionManager:
                 state['weighted_avg_price'] = float(journal_row['weighted_avg_price'])
             if preserved_defense >= 2:
                 state['tp_disabled'] = True
+            if preserved_defense >= 2 and state.get('d2_triggered_at') is None:
+                state['d2_triggered_at'] = time.time()
             self._save_state()
 
             if self.journal:
@@ -404,6 +411,7 @@ class MinaPositionManager:
             'd3_order_id': None,
             'tp_disabled': False,
             'weighted_avg_price': entry_price,
+            'd2_triggered_at': None,
         }
         self._save_state()
 
@@ -411,6 +419,205 @@ class MinaPositionManager:
         if symbol in self.position_states:
             del self.position_states[symbol]
             self._save_state()
+
+    # ---------------------------------------------------------------------
+    # Günlük zarar limiti / kill-switch
+    # ---------------------------------------------------------------------
+
+    def _get_futures_usdt_balance(self) -> float:
+        try:
+            for asset in self.client.futures_account_balance():
+                if asset.get("asset") == "USDT":
+                    return float(asset.get("balance", 0))
+        except Exception as e:
+            print(f"   ⚠️  Bakiye okunamadı (risk limiti): {e}")
+        return 0.0
+
+    def _send_risk_telegram(self, message: str) -> None:
+        try:
+            from telegram_bot import send_notification
+            send_notification(message)
+        except Exception as e:
+            print(f"   ⚠️  Risk Telegram hatası: {e}")
+
+    def check_daily_risk_limit(self) -> Dict[str, Any]:
+        """DERR bugünkü realize PnL vs dinamik günlük zarar limiti."""
+        from mina_dashboard_settings import (
+            daily_loss_limit_pct,
+            load_daily_risk_state,
+            save_daily_risk_state,
+            set_daily_loss_kill,
+            is_daily_loss_kill_active,
+        )
+
+        today = date.today().isoformat()
+        state = load_daily_risk_state()
+        if state.get("date") != today:
+            state = {"date": today, "half_alert_sent": False, "kill_alert_sent": False}
+            set_daily_loss_kill(False)
+
+        balance = self._get_futures_usdt_balance()
+        limit_pct = daily_loss_limit_pct()
+        limit_usdt = -(balance * limit_pct / 100.0)
+        half_usdt = limit_usdt / 2.0
+
+        today_pnl = 0.0
+        if self.journal is not None:
+            today_pnl = self.journal.get_today_realized_pnl()
+
+        level = "ok"
+        if today_pnl <= limit_usdt:
+            level = "kill"
+        elif today_pnl <= half_usdt:
+            level = "warn"
+
+        if level == "warn" and not state.get("half_alert_sent"):
+            self._send_risk_telegram(
+                "⚠️ Uyarı: Günlük zarar %10'a ulaştı, devam mı?\n"
+                f"Bugünkü PnL: {today_pnl:+.2f} USDT | Yarı limit: {half_usdt:.2f} USDT"
+            )
+            state["half_alert_sent"] = True
+            print(f"   ⚠️  Günlük zarar yarı limit: {today_pnl:.2f} / {half_usdt:.2f} USDT")
+
+        if level == "kill":
+            set_daily_loss_kill(True)
+            if not state.get("kill_alert_sent"):
+                self._send_risk_telegram(
+                    "🚨 KRİTİK: Günlük zarar limiti aşıldı, sistem duraklatıldı!\n"
+                    f"Bugünkü PnL: {today_pnl:+.2f} USDT | Limit: {limit_usdt:.2f} USDT"
+                )
+                state["kill_alert_sent"] = True
+                print(
+                    f"   🚨 Günlük zarar kill-switch: {today_pnl:.2f} <= {limit_usdt:.2f} USDT"
+                )
+        elif is_daily_loss_kill_active() and today_pnl > limit_usdt:
+            set_daily_loss_kill(False)
+
+        state.update(
+            {
+                "date": today,
+                "today_pnl": round(today_pnl, 2),
+                "balance": round(balance, 2),
+                "limit_pct": limit_pct,
+                "limit_usdt": round(limit_usdt, 2),
+                "half_usdt": round(half_usdt, 2),
+                "level": level,
+                "new_entries_blocked": level == "kill",
+            }
+        )
+        save_daily_risk_state(state)
+        self._last_risk_level = level
+        return state
+
+    def is_new_entry_allowed(self) -> bool:
+        return self._last_risk_level != "kill"
+
+    # ---------------------------------------------------------------------
+    # D2/D3 emir doğrulama (testnet -4120 → LIMIT fallback)
+    # ---------------------------------------------------------------------
+
+    @staticmethod
+    def _order_error_code(exc: BaseException) -> Optional[int]:
+        code = getattr(exc, "code", None)
+        if code is not None:
+            try:
+                return int(code)
+            except (TypeError, ValueError):
+                pass
+        msg = str(exc)
+        if "-4120" in msg or "4120" in msg:
+            return -4120
+        return None
+
+    def _notify_defense_order_failure(self, label: str, symbol: str, side: str, error: str) -> None:
+        print(f"   ❌ {label} emri başarısız: {symbol} {side} — {error}")
+        self._send_risk_telegram(
+            f"⚠️ *{label} emri başarısız*\n{symbol} {side}\n`{error}`"
+        )
+
+    def _verify_exchange_order(self, symbol: str, order_id: Optional[int]) -> bool:
+        if not order_id:
+            return False
+        try:
+            order = self.client.futures_get_order(symbol=symbol, orderId=int(order_id))
+            status = str(order.get("status", "")).upper()
+            return status in ("NEW", "PARTIALLY_FILLED", "FILLED")
+        except Exception as e:
+            print(f"   ⚠️  Emir doğrulama hatası {symbol} #{order_id}: {e}")
+            return False
+
+    def _verify_market_add(self, symbol: str, side: str, order: Dict) -> bool:
+        order_id = order.get("orderId")
+        if order_id and self._verify_exchange_order(symbol, order_id):
+            return True
+        status = str(order.get("status", "")).upper()
+        if status == "FILLED":
+            return True
+        try:
+            for p in self.client.futures_position_information(symbol=symbol):
+                amt = float(p.get("positionAmt", 0))
+                if p.get("positionSide") == side and amt != 0:
+                    return True
+        except Exception:
+            pass
+        return False
+
+    def _place_breakeven_escape_order(
+        self,
+        symbol: str,
+        side: str,
+        breakeven_price: float,
+        quantity: float,
+        label: str,
+    ) -> Optional[Dict]:
+        """D2/D3 kaçış emri — mainnet TAKE_PROFIT_MARKET, testnet -4120 → LIMIT GTC."""
+        escape_side = SIDE_SELL if side == "LONG" else SIDE_BUY
+        qty = self._round_quantity(quantity, symbol)
+        stop_px = self._round_price(breakeven_price)
+        order: Optional[Dict] = None
+        order_type = ORDER_TYPE_TAKE_PROFIT_MARKET
+
+        try:
+            order = self.client.futures_create_order(
+                symbol=symbol,
+                side=escape_side,
+                type=ORDER_TYPE_TAKE_PROFIT_MARKET,
+                stopPrice=stop_px,
+                quantity=qty,
+                positionSide=side,
+                workingType="MARK_PRICE",
+            )
+        except Exception as e1:
+            if self._order_error_code(e1) != -4120:
+                self._notify_defense_order_failure(label, symbol, side, str(e1))
+                return None
+            print(f"   ⚠️  {label}: TAKE_PROFIT_MARKET -4120 → LIMIT GTC fallback ({symbol})")
+            try:
+                order = self.client.futures_create_order(
+                    symbol=symbol,
+                    side=escape_side,
+                    type="LIMIT",
+                    price=stop_px,
+                    quantity=qty,
+                    timeInForce="GTC",
+                    positionSide=side,
+                )
+                order_type = "LIMIT"
+            except Exception as e2:
+                self._notify_defense_order_failure(label, symbol, side, str(e2))
+                return None
+
+        order_id = order.get("orderId") if order else None
+        if not self._verify_exchange_order(symbol, order_id):
+            self._notify_defense_order_failure(
+                label, symbol, side, f"Emir borsada doğrulanamadı orderId={order_id}"
+            )
+            return None
+
+        print(f"   ✅ {label} kaçış emri doğrulandı: {order_type} orderId={order_id} @{stop_px}")
+        if order is not None:
+            order["_mina_order_type"] = order_type
+        return order
 
     # ---------------------------------------------------------------------
     # Public decision API
@@ -440,6 +647,20 @@ class MinaPositionManager:
             state = self.position_states[symbol]
 
         if rules['has_defense']:
+            key = self._pos_key(symbol, side)
+            file_defense = int(mt.load_json(mt.DEFENSE_FILE).get(key, 0))
+            journal_defense = self._defense_level_from_journal(symbol, side)
+            defense_stage = max(
+                int(state.get('defense_stage', 0)),
+                file_defense,
+                journal_defense,
+            )
+            if defense_stage >= 2 and self._should_d2_time_stop(state):
+                return {
+                    'action': 'd2_time_stop',
+                    'reason': f'D2 {D2_TIME_STOP_H}h zaman stopu — TP/breakeven gelmedi',
+                }
+
             defense_level = self.check_spot_defense_trigger(position, current_price)
             if defense_level > 0:
                 return {
@@ -475,6 +696,8 @@ class MinaPositionManager:
 
         if action_type == 'defense':
             return self.execute_defense_action(position, action['defense_level'], current_price)
+        if action_type == 'd2_time_stop':
+            return self.execute_d2_time_stop(position, current_price)
         if action_type == 'stop_loss':
             return self.execute_stop_loss(position)
         if action_type == 'take_profit':
@@ -718,15 +941,18 @@ class MinaPositionManager:
 
         order_side = SIDE_BUY if side == 'LONG' else SIDE_SELL
         try:
-            self.client.futures_create_order(
+            add_order = self.client.futures_create_order(
                 symbol=symbol,
                 side=order_side,
                 type=ORDER_TYPE_MARKET,
                 quantity=add_qty,
                 positionSide=side
             )
+            if not self._verify_market_add(symbol, side, add_order):
+                self._notify_defense_order_failure("D2 ekleme", symbol, side, "Market emri doğrulanamadı")
+                return False
         except Exception as e:
-            print(f"   ❌ D2 ekleme hatası: {e}")
+            self._notify_defense_order_failure("D2 ekleme", symbol, side, str(e))
             return False
 
         total_qty = amount + add_qty
@@ -735,20 +961,19 @@ class MinaPositionManager:
         state['tp_disabled'] = True
 
         breakeven_price = self._round_price(weighted_avg * 1.0035)
-        escape_side = SIDE_SELL if side == 'LONG' else SIDE_BUY
+
+        order = self._place_breakeven_escape_order(
+            symbol, side, breakeven_price, total_qty, "D2"
+        )
+        if not order:
+            return False
 
         try:
-            order = self.client.futures_create_order(
-                symbol=symbol,
-                side=escape_side,
-                type=ORDER_TYPE_TAKE_PROFIT_MARKET,
-                stopPrice=breakeven_price,
-                quantity=self._round_quantity(total_qty, symbol),
-                positionSide=side
-            )
             state['d2_order_active'] = True
             state['d2_order_id'] = order.get('orderId')
+            state['d2_order_type'] = order.get('_mina_order_type', ORDER_TYPE_TAKE_PROFIT_MARKET)
             state['defense_stage'] = 2
+            state['d2_triggered_at'] = time.time()
             self._save_state()
             
             # Journal'a D2 tetiklenmesini kaydet
@@ -768,7 +993,84 @@ class MinaPositionManager:
             print(f"   🛡️  D2 yürütüldü: başa baş escape fiyatı {breakeven_price}")
             return True
         except Exception as e:
-            print(f"   ❌ D2 kaçış emri hatası: {e}")
+            self._notify_defense_order_failure("D2", symbol, side, str(e))
+            return False
+
+    def _should_d2_time_stop(self, state: Dict) -> bool:
+        """D2 tetiklendikten D2_TIME_STOP_H saat sonra TP/breakeven yoksa kapat."""
+        ts = state.get('d2_triggered_at')
+        if ts is None:
+            return False
+        try:
+            elapsed = time.time() - float(ts)
+        except (TypeError, ValueError):
+            return False
+        if elapsed < D2_TIME_STOP_H * 3600:
+            return False
+        if state.get('tp2_done'):
+            return False
+        if int(state.get('defense_stage', 0)) < 2 and not state.get('tp_disabled'):
+            return False
+        return True
+
+    def execute_d2_time_stop(self, position: Dict, current_price: float) -> bool:
+        """D2 zaman stopu — ortalama maliyet referanslı market tam kapama."""
+        symbol = position.get('symbol')
+        side = position.get('side')
+        amount = float(position.get('amount', 0.0))
+        state = self.position_states.get(symbol, {})
+
+        if amount <= 0:
+            return False
+
+        self._cancel_d2_order(symbol, state)
+
+        weighted_avg = float(state.get('weighted_avg_price') or position.get('entry_price', 0))
+        order_side = SIDE_SELL if side == 'LONG' else SIDE_BUY
+        close_price = current_price
+        try:
+            ticker = self.client.futures_mark_price(symbol=symbol)
+            close_price = float(ticker['markPrice'])
+        except Exception:
+            pass
+
+        try:
+            self.client.futures_create_order(
+                symbol=symbol,
+                side=order_side,
+                type=ORDER_TYPE_MARKET,
+                quantity=self._round_quantity(amount, symbol),
+                positionSide=side,
+            )
+            pnl_usdt = (
+                (close_price - weighted_avg) * amount
+                if side == 'LONG'
+                else (weighted_avg - close_price) * amount
+            )
+            pnl_percent = (pnl_usdt / (weighted_avg * amount)) * 100 if weighted_avg > 0 else 0
+            roe_percent = (
+                (pnl_usdt / state.get('initial_margin', 1)) * 100
+                if state.get('initial_margin', 0) > 0
+                else 0
+            )
+            self.log_position_close(
+                symbol=symbol,
+                side=side,
+                close_price=close_price,
+                qty=amount,
+                close_reason='D2 Time Stop',
+                pnl_usdt=pnl_usdt,
+                pnl_percent=pnl_percent,
+                roe_percent=roe_percent,
+            )
+            print(
+                f"   ⏱️  D2 zaman stopu: {symbol} market kapama "
+                f"avg={weighted_avg:.6f} mark={close_price:.6f}"
+            )
+            self.reset_position_state(symbol)
+            return True
+        except Exception as e:
+            print(f"   ❌ D2 zaman stopu hatası: {e}")
             return False
 
     def _execute_d3(self, position: Dict, current_price: float) -> bool:
@@ -795,15 +1097,18 @@ class MinaPositionManager:
 
         order_side = SIDE_BUY if side == 'LONG' else SIDE_SELL
         try:
-            self.client.futures_create_order(
+            add_order = self.client.futures_create_order(
                 symbol=symbol,
                 side=order_side,
                 type=ORDER_TYPE_MARKET,
                 quantity=add_qty,
                 positionSide=side
             )
+            if not self._verify_market_add(symbol, side, add_order):
+                self._notify_defense_order_failure("D3 ekleme", symbol, side, "Market emri doğrulanamadı")
+                return False
         except Exception as e:
-            print(f"   ❌ D3 ekleme hatası: {e}")
+            self._notify_defense_order_failure("D3 ekleme", symbol, side, str(e))
             return False
 
         total_qty = amount + add_qty
@@ -815,17 +1120,15 @@ class MinaPositionManager:
         self._cancel_d2_order(symbol, state)
 
         breakeven_price = self._round_price(weighted_avg * 1.0035)
-        escape_side = SIDE_SELL if side == 'LONG' else SIDE_BUY
+        order = self._place_breakeven_escape_order(
+            symbol, side, breakeven_price, total_qty, "D3"
+        )
+        if not order:
+            return False
+
         try:
-            order = self.client.futures_create_order(
-                symbol=symbol,
-                side=escape_side,
-                type=ORDER_TYPE_TAKE_PROFIT_MARKET,
-                stopPrice=breakeven_price,
-                quantity=self._round_quantity(total_qty, symbol),
-                positionSide=side
-            )
             state['d3_order_id'] = order.get('orderId')
+            state['d3_order_type'] = order.get('_mina_order_type', ORDER_TYPE_TAKE_PROFIT_MARKET)
             self._save_state()
             
             # Journal'a D3 tetiklenmesini kaydet
@@ -845,7 +1148,7 @@ class MinaPositionManager:
             print(f"   🛡️  D3 tamamlandı: yeni TP kaçış emri {breakeven_price} fiyatına gönderildi")
             return True
         except Exception as e:
-            print(f"   ❌ D3 kaçış emri hatası: {e}")
+            self._notify_defense_order_failure("D3", symbol, side, str(e))
             return False
 
     def execute_hard_stop(self, position: Dict) -> bool:

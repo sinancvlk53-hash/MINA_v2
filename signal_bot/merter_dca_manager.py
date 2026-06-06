@@ -65,6 +65,8 @@ YUVA_OTHER = "merter_other"
 YUVA_EI_FILTERED = "merter_ei_1"
 YUVA_EI_RAW = "merter_ei_2"
 RECONCILE_INTERVAL_SEC = 300
+_EXCHANGE_INFO_CACHE: Dict[str, Any] = {"ts": 0.0, "data": None}
+_EXCHANGE_INFO_TTL = 600  # 10 dk
 
 _RE_ACILDI = re.compile(
     r"AÇILDI\s+(merter_ei_1|merter_ei_2|merter_other)\s+(\w+)\s+.*trade_id=(\d+)",
@@ -92,8 +94,10 @@ def _breakeven_mult() -> float:
 
 def _motor_entries_allowed() -> bool:
     try:
-        from mina_dashboard_settings import is_motor_paused
-        return not is_motor_paused()
+        from mina_dashboard_settings import is_motor_paused, is_new_entries_blocked
+        if is_motor_paused() or is_new_entries_blocked():
+            return False
+        return True
     except Exception:
         return True
 
@@ -439,9 +443,19 @@ class MerterDCAManager:
         self._save_state()
         return 1
 
+    def _cached_exchange_info(self) -> Dict[str, Any]:
+        now = time.time()
+        cached = _EXCHANGE_INFO_CACHE.get("data")
+        if cached and now - float(_EXCHANGE_INFO_CACHE.get("ts") or 0) < _EXCHANGE_INFO_TTL:
+            return cached
+        info = self._client_get().futures_exchange_info()
+        _EXCHANGE_INFO_CACHE["ts"] = now
+        _EXCHANGE_INFO_CACHE["data"] = info
+        return info
+
     def _round_qty(self, symbol: str, qty: float) -> float:
         if symbol not in self._step_cache:
-            info = self._client_get().futures_exchange_info()
+            info = self._cached_exchange_info()
             step = 0.001
             for s in info["symbols"]:
                 if s["symbol"] == symbol:
@@ -457,7 +471,7 @@ class MerterDCAManager:
         return float(q.quantize(Decimal("0.0001"), rounding=ROUND_DOWN))
 
     def _round_price(self, symbol: str, price: float) -> float:
-        info = self._client_get().futures_exchange_info()
+        info = self._cached_exchange_info()
         tick = 0.01
         for s in info["symbols"]:
             if s["symbol"] == symbol:

@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
+
+import os
+import sys
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+from mina_ssh import require_ssh_pass, SSH_HOST, SSH_USER
 import os, sys, json, paramiko
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 c = paramiko.SSHClient()
 c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-c.connect('178.105.150.40', username='root', password=os.environ.get('MINA_SSH_PASS','REDACTED'), timeout=25)
+c.connect(SSH_HOST, username=SSH_USER, password=require_ssh_pass(), timeout=25)
 cmds = [
     ('defense_levels.json BCH', 'cat /root/MINA_v2/defense_levels.json 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(json.dumps({k:v for k,v in d.items() if \"BCH\" in k}, indent=2))"'),
     ('initial_entry BCH', 'cat /root/MINA_v2/initial_entry_prices.json 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(json.dumps({k:v for k,v in d.items() if \"BCH\" in k}, indent=2))"'),

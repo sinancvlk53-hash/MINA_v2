@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+
+import os
+import sys
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+from mina_ssh import require_ssh_pass, SSH_HOST, SSH_USER
 """Sunucuya dosya kopyala + bootstrap + systemd ExecStart güncelle."""
 
 from __future__ import annotations
@@ -9,9 +16,9 @@ import sys
 
 import paramiko
 
-HOST = "178.105.150.40"
-USER = "root"
-PASS = "REDACTED"
+HOST = SSH_HOST
+USER = SSH_USER
+PASS = require_ssh_pass()
 REMOTE = "/root/MINA_v2"
 
 LOCAL_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

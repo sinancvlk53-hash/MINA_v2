@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
+import os
+import sys
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+from mina_ssh import require_ssh_pass, SSH_HOST, SSH_USER
 """pdf_listener.service durdur + devre dışı; MINA aktif servisleri listele."""
 import os
 import sys
 
 import paramiko
 
-HOST, USER = "178.105.150.40", "root"
-PASS = os.environ.get("MINA_SSH_PASS", "REDACTED")
+HOST, USER = SSH_HOST, SSH_USER
+PASS = require_ssh_pass()
 
 UNITS = [
     "mina-listener",

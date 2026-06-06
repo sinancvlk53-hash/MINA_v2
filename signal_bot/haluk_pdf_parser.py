@@ -10,14 +10,21 @@ GÖREV 4: raw_signal_queue.json (Katman 2 giyotin beslemesi)
 
 from __future__ import annotations
 
-import json
+import sys
 import os
+
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _ROOT)
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(_ROOT, ".env"))
+
+import json
 import re
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
-_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SIGNAL_BOT_DIR = os.path.dirname(os.path.abspath(__file__))
 RAW_QUEUE_FILE = os.path.join(SIGNAL_BOT_DIR, "raw_signal_queue.json")
 
@@ -477,11 +484,25 @@ def parse_haluk_document(
 def parse_haluk_pdf(pdf_path: str) -> ParseResult:
     """PDF dosyasından tam parse pipeline."""
     text, tables = extract_pdf_content(pdf_path)
-    return parse_haluk_document(
-        text,
-        tables,
-        source_label=f"HALUK_PDF:{os.path.basename(pdf_path)}",
-    )
+    source_label = f"HALUK_PDF:{os.path.basename(pdf_path)}"
+    result = parse_haluk_document(text, tables, source_label=source_label)
+
+    # Görsel makro SR — metin parser'a dokunmadan destek/direnç ekle
+    if os.getenv("HALUK_VISUAL_MACRO", "1").strip().lower() not in ("0", "false", "no"):
+        try:
+            from signal_bot.haluk_pdf_visual import merge_visual_macro_levels
+
+            visual_source = f"HALUK_PDF_VISUAL:{os.path.basename(pdf_path)}"
+            levels = merge_visual_macro_levels(pdf_path, source=visual_source)
+            if levels:
+                print(
+                    f"[HALUK PDF] Görsel makro SR: "
+                    + ", ".join(f"{lv['coin']}" for lv in levels)
+                )
+        except Exception as exc:
+            print(f"[HALUK PDF] Görsel makro analiz atlandı: {exc}")
+
+    return result
 
 
 def parse_haluk_text_file(path: str) -> ParseResult:

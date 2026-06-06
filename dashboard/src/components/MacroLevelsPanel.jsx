@@ -2,7 +2,7 @@ import React from 'react'
 import { fmt } from '../utils/trading.js'
 
 const PANEL_ORDER = [
-  'TOTAL', 'OTHERS', 'BTC.D', 'USDT.D', 'ETHUSDT', 'XAUUSDT', 'XAGUSDT', 'BRENT', 'TOTAL2', 'TOTAL3',
+  'TOTAL', 'OTHERS', 'BTC.D', 'USDT.D', 'BTCUSDT', 'ETHUSDT', 'XAUUSDT', 'XAGUSDT', 'BRENT', 'TOTAL2', 'TOTAL3',
 ]
 
 const PANEL_LABELS = {
@@ -10,6 +10,7 @@ const PANEL_LABELS = {
   OTHERS: 'OTHERS',
   'BTC.D': 'BTC.D',
   'USDT.D': 'USDT.D',
+  BTCUSDT: 'BTC',
   ETHUSDT: 'ETH',
   XAUUSDT: 'XAU',
   XAGUSDT: 'XAG',
@@ -17,6 +18,9 @@ const PANEL_LABELS = {
   TOTAL2: 'TOTAL2',
   TOTAL3: 'TOTAL3',
 }
+
+const TRILLION_COINS = new Set(['TOTAL', 'TOTAL2', 'TOTAL3'])
+const PCT_COINS = new Set(['BTC.D', 'USDT.D'])
 
 function normalizeItem(raw, coin) {
   return {
@@ -26,10 +30,39 @@ function normalizeItem(raw, coin) {
     snippet: (raw?.snippet || raw?.text || '').trim(),
     direction: raw?.direction ?? null,
     source: raw?.source ?? null,
+    markPrice: raw?.markPrice ?? null,
+    markDisplay: raw?.markDisplay ?? null,
   }
 }
 
-function LevelList({ title, values, cls }) {
+function formatLevel(coin, v) {
+  if (TRILLION_COINS.has(coin)) return `${fmt(v, 3)}T`
+  if (PCT_COINS.has(coin)) return `${fmt(v, 2)}%`
+  if (coin === 'OTHERS') return `${fmt(v, 2)}B`
+  if (coin === 'BTCUSDT' || coin === 'ETHUSDT') return `$${fmt(v, v >= 1000 ? 0 : 2)}`
+  return fmt(v, v >= 1000 ? 0 : 2)
+}
+
+function proximityZone(price, supports, resistances) {
+  if (price == null || Number.isNaN(Number(price))) {
+    return { zone: 'ok', message: null }
+  }
+  const p = Number(price)
+  const near = (level) => {
+    const lv = Number(level)
+    if (!lv || Number.isNaN(lv)) return false
+    return Math.abs(p - lv) / lv <= 0.03
+  }
+  if ((resistances || []).some(near)) {
+    return { zone: 'resist', message: 'Direnç bölgesinde' }
+  }
+  if ((supports || []).some(near)) {
+    return { zone: 'support', message: 'Destek bölgesine yaklaşıyor' }
+  }
+  return { zone: 'ok', message: null }
+}
+
+function LevelList({ title, values, cls, coin }) {
   if (!values?.length) {
     return (
       <div className="macro-level-group">
@@ -44,7 +77,7 @@ function LevelList({ title, values, cls }) {
       <div className="macro-level-tags">
         {values.map((v) => (
           <span key={`${title}-${v}`} className={`macro-level-tag ${cls}`}>
-            {fmt(v, v >= 1000 ? 0 : 2)}
+            {formatLevel(coin, v)}
           </span>
         ))}
       </div>
@@ -56,9 +89,11 @@ function MacroCard({ item }) {
   const label = PANEL_LABELS[item.coin] || item.coin.replace(/USDT$/, '')
   const dir = item.direction === 'UP' ? '↑ Yukarı' : item.direction === 'DOWN' ? '↓ Aşağı' : null
   const hasData = item.snippet || item.supports?.length || item.resistances?.length
+  const { zone, message } = proximityZone(item.markPrice, item.supports, item.resistances)
+  const zoneClass = zone === 'resist' ? 'macro-card-zone-resist' : zone === 'support' ? 'macro-card-zone-support' : 'macro-card-zone-ok'
 
   return (
-    <div className={`macro-card ${hasData ? 'macro-card-filled' : 'macro-card-empty'}`}>
+    <div className={`macro-card ${hasData ? 'macro-card-filled' : 'macro-card-empty'} ${zoneClass}`}>
       <div className="macro-card-head">
         <strong>{label}</strong>
         <div className="macro-card-meta">
@@ -70,13 +105,19 @@ function MacroCard({ item }) {
           )}
         </div>
       </div>
+      {item.markDisplay ? (
+        <div className="macro-live-price">Şu an: {item.markDisplay}</div>
+      ) : item.markPrice != null ? (
+        <div className="macro-live-price">Şu an: {formatLevel(item.coin, item.markPrice)}</div>
+      ) : null}
+      {message && <div className="macro-zone-alert">{message}</div>}
       {item.snippet ? (
         <p className="macro-snippet">{item.snippet}</p>
       ) : (
         <p className="macro-snippet macro-snippet-empty">PDF veya Telegram notu bekleniyor</p>
       )}
-      <LevelList title="Destek" values={item.supports} cls="macro-support" />
-      <LevelList title="Direnç" values={item.resistances} cls="macro-resist" />
+      <LevelList title="Destek" values={item.supports} cls="macro-support" coin={item.coin} />
+      <LevelList title="Direnç" values={item.resistances} cls="macro-resist" coin={item.coin} />
     </div>
   )
 }

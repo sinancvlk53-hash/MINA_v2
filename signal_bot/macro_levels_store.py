@@ -18,6 +18,7 @@ MACRO_PANEL_COINS: tuple[str, ...] = (
     "OTHERS",
     "BTC.D",
     "USDT.D",
+    "BTCUSDT",
     "ETHUSDT",
     "XAUUSDT",
     "XAGUSDT",
@@ -34,6 +35,8 @@ _PANEL_ALIASES: Dict[str, str] = {
     "BTC D": "BTC.D",
     "USDTD": "USDT.D",
     "USDT D": "USDT.D",
+    "BTC": "BTCUSDT",
+    "BITCOIN": "BTCUSDT",
     "ETH": "ETHUSDT",
     "XAU": "XAUUSDT",
     "XAG": "XAGUSDT",
@@ -73,6 +76,7 @@ def detect_panel_coins_in_text(text: str) -> List[str]:
         (r"\bOTHERS\b|\bDİĞER\b|\bDIGER\b", "OTHERS"),
         (r"\bTOTAL\b", "TOTAL"),
         (r"\bBRENT\b", "BRENT"),
+        (r"\bBTCUSDT\b|\bBITCOIN\b|\bBTC\b", "BTCUSDT"),
         (r"\bETHUSDT\b|\bETH\b", "ETHUSDT"),
         (r"\bXAUUSDT\b|\bXAU\b", "XAUUSDT"),
         (r"\bXAGUSDT\b|\bXAG\b", "XAGUSDT"),
@@ -82,6 +86,26 @@ def detect_panel_coins_in_text(text: str) -> List[str]:
             seen.add(key)
             found.append(key)
     return found
+
+
+def _sort_levels_desc(values: List[float]) -> List[float]:
+    """Destek/direnç — büyükten küçüğe (2.25T → 1.91T)."""
+    try:
+        return sorted({float(v) for v in (values or [])}, reverse=True)
+    except (TypeError, ValueError):
+        return []
+
+
+def _empty_slot(coin: str) -> Dict[str, Any]:
+    return {
+        "coin": coin,
+        "supports": [],
+        "resistances": [],
+        "snippet": "",
+        "direction": None,
+        "source": None,
+        "updated_at": None,
+    }
 
 
 def load_macro_levels() -> Dict[str, Any]:
@@ -95,7 +119,10 @@ def load_macro_levels() -> Dict[str, Any]:
 
 
 def merge_macro_levels(incoming: List[Dict[str, Any]], source: str) -> None:
-    """Gelen kayıtları mevcut dosyayla birleştir (coin bazlı güncelle)."""
+    """
+    Birikimli birleştir: yalnızca incoming'de geçen semboller güncellenir.
+    Bahsedilmeyen semboller eski snippet/SR/direction/source değerlerini korur.
+    """
     existing = load_macro_levels()
     by_coin: Dict[str, Dict[str, Any]] = {}
     for row in existing.get("levels") or []:
@@ -103,29 +130,45 @@ def merge_macro_levels(incoming: List[Dict[str, Any]], source: str) -> None:
         if key:
             by_coin[key] = dict(row)
 
+    # Dosyada hiç kaydı olmayan slotlar için boş şablon (sıfırlama değil)
+    for c in MACRO_PANEL_COINS:
+        by_coin.setdefault(c, _empty_slot(c))
+
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    touched: set[str] = set()
+
     for m in incoming:
         key = panel_key_for(str(m.get("coin", "")))
         if not key:
             key = m.get("coin")
         if key not in MACRO_PANEL_COINS:
             continue
-        snippet = (m.get("text") or m.get("snippet") or "")[:400]
-        prev = by_coin.get(key) or {"coin": key}
+
+        touched.add(key)
+        prev = by_coin.get(key) or _empty_slot(key)
+        snippet_in = (m.get("text") or m.get("snippet") or "").strip()[:400]
+
+        supports = list(prev.get("supports") or [])
+        resistances = list(prev.get("resistances") or [])
+        if isinstance(m.get("supports"), list) and m["supports"]:
+            supports = list(m["supports"])
+        if isinstance(m.get("resistances"), list) and m["resistances"]:
+            resistances = list(m["resistances"])
+
         by_coin[key] = {
             "coin": key,
-            "supports": m.get("supports") or prev.get("supports") or [],
-            "resistances": m.get("resistances") or prev.get("resistances") or [],
-            "direction": m.get("direction") if m.get("direction") is not None else prev.get("direction"),
-            "snippet": snippet or prev.get("snippet") or "",
+            "supports": _sort_levels_desc(supports),
+            "resistances": _sort_levels_desc(resistances),
+            "direction": m["direction"] if m.get("direction") is not None else prev.get("direction"),
+            "snippet": snippet_in if snippet_in else (prev.get("snippet") or ""),
             "source": source,
             "updated_at": now,
         }
 
     payload = {
-        "updated_at": now,
-        "source": source,
-        "levels": [by_coin.get(c) or {"coin": c, "supports": [], "resistances": [], "snippet": "", "direction": None, "source": None} for c in MACRO_PANEL_COINS],
+        "updated_at": now if touched else existing.get("updated_at"),
+        "source": source if touched else existing.get("source"),
+        "levels": [by_coin[c] for c in MACRO_PANEL_COINS],
     }
     os.makedirs(os.path.dirname(MACRO_LEVELS_FILE), exist_ok=True)
     with open(MACRO_LEVELS_FILE, "w", encoding="utf-8") as f:
@@ -138,6 +181,8 @@ def panel_levels_for_dashboard() -> List[Dict[str, Any]]:
     by_coin = {r.get("coin"): r for r in (data.get("levels") or []) if r.get("coin")}
     out: List[Dict[str, Any]] = []
     for c in MACRO_PANEL_COINS:
-        row = by_coin.get(c) or {"coin": c, "supports": [], "resistances": [], "snippet": "", "direction": None, "source": None}
+        row = dict(by_coin.get(c) or _empty_slot(c))
+        row["supports"] = _sort_levels_desc(row.get("supports") or [])
+        row["resistances"] = _sort_levels_desc(row.get("resistances") or [])
         out.append(row)
     return out

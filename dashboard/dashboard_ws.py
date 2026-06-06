@@ -63,14 +63,25 @@ def get_macro_levels():
         data = read_json(MACRO_LEVELS_PATH)
         levels = data.get('levels') or []
 
+    prices = {}
+    try:
+        from signal_bot.macro_prices import fetch_macro_prices
+        prices = fetch_macro_prices(get_client())
+    except Exception as exc:
+        log.warning(f"macro_prices: {exc}")
+
     out = []
     for row in levels:
         item = dict(row)
         snippet = (item.get('snippet') or item.get('text') or '').strip()
         item['snippet'] = snippet
         item['text'] = snippet
-        if not item.get('coin'):
+        coin = item.get('coin')
+        if not coin:
             continue
+        px = prices.get(coin) or {}
+        item['markPrice'] = px.get('value')
+        item['markDisplay'] = px.get('display')
         out.append(item)
     if not out and os.path.isfile(MACRO_LEVELS_PATH):
         log.warning("macro_levels: panel bos — dosya=%s", MACRO_LEVELS_PATH)
@@ -285,9 +296,52 @@ async def get_data():
 
         update_logs()
 
+        risk_status = {}
+        daily_pnl = 0.0
+        try:
+            from datetime import date
+            from mina_dashboard_settings import (
+                daily_loss_limit_pct,
+                load_daily_risk_state,
+                is_new_entries_blocked,
+            )
+            from mina_trading_journal import TradingJournal
+
+            risk_status = load_daily_risk_state()
+            today = date.today().isoformat()
+            if risk_status.get("date") != today:
+                balance_risk = balance
+                limit_pct = daily_loss_limit_pct()
+                limit_usdt = -(balance_risk * limit_pct / 100.0)
+                half_usdt = limit_usdt / 2.0
+                db_path = os.path.join(ROOT, "mina_trading_journal.db")
+                journal = TradingJournal(db_path=db_path)
+                today_pnl = journal.get_today_realized_pnl()
+                journal.close()
+                level = "ok"
+                if today_pnl <= limit_usdt:
+                    level = "kill"
+                elif today_pnl <= half_usdt:
+                    level = "warn"
+                risk_status = {
+                    "date": today,
+                    "today_pnl": round(today_pnl, 2),
+                    "balance": round(balance_risk, 2),
+                    "limit_pct": limit_pct,
+                    "limit_usdt": round(limit_usdt, 2),
+                    "half_usdt": round(half_usdt, 2),
+                    "level": level,
+                }
+            daily_pnl = float(risk_status.get("today_pnl") or 0)
+            risk_status["newEntriesBlocked"] = is_new_entries_blocked()
+        except Exception as exc:
+            log.debug(f"risk_status: {exc}")
+
         return {
             'balance':         balance,
             'floatingPnl':     sum(p['pnlUSDT'] for p in positions),
+            'dailyPnl':        daily_pnl,
+            'riskStatus':      risk_status,
             'positionCount':   len(positions),
             'motorCount':      len(motor_positions),
             'merterCount':     len(merter_positions),
@@ -392,7 +446,7 @@ async def manual_open_position(websocket, symbol, side, leverage=4, entry_price=
     """Dashboard / WS üzerinden manuel motor girişi."""
     allowed_leverages = {1, 2, 3, 4, 5, 10}
     try:
-        from mina_dashboard_settings import is_motor_paused
+        from mina_dashboard_settings import is_motor_paused, is_new_entries_blocked
         if is_motor_paused():
             await websocket.send(json.dumps({
                 'action': 'manual_open_result',
@@ -400,6 +454,15 @@ async def manual_open_position(websocket, symbol, side, leverage=4, entry_price=
                 'symbol': (symbol or '').upper(),
                 'side': (side or 'LONG').upper(),
                 'output': 'Motor pasif (dashboard ayarları)',
+            }))
+            return
+        if is_new_entries_blocked():
+            await websocket.send(json.dumps({
+                'action': 'manual_open_result',
+                'ok': False,
+                'symbol': (symbol or '').upper(),
+                'side': (side or 'LONG').upper(),
+                'output': 'Günlük zarar limiti aşıldı — yeni pozisyon açılamaz',
             }))
             return
         import subprocess

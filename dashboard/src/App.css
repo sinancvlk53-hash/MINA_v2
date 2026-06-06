@@ -32,6 +32,18 @@ body {
   height: 100vh;
 }
 
+/* ── Risk alarm ─────────────────────────────────────────────────────────── */
+.risk-alarm-banner {
+  background: linear-gradient(90deg, #3d1010 0%, #5c1414 50%, #3d1010 100%);
+  border-bottom: 2px solid #f6465d;
+  color: #ffb4b4;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 10px 16px;
+  text-align: center;
+}
+
 /* ── HEADER ───────────────────────────────────── */
 .header {
   flex-shrink: 0;
@@ -716,6 +728,48 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 8px;
   padding: 10px 12px;
+}
+
+.macro-card-zone-ok.macro-card-filled {
+  border-color: rgba(46, 204, 113, 0.45);
+  background: rgba(46, 204, 113, 0.06);
+}
+
+.macro-card-zone-support {
+  border-color: rgba(241, 196, 15, 0.65);
+  background: rgba(241, 196, 15, 0.1);
+}
+
+.macro-card-zone-resist {
+  border-color: rgba(231, 76, 60, 0.65);
+  background: rgba(231, 76, 60, 0.1);
+}
+
+.macro-live-price {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 6px;
+  font-family: var(--font-mono);
+}
+
+.macro-zone-alert {
+  font-size: 11px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  letter-spacing: 0.02em;
+}
+
+.macro-card-zone-support .macro-zone-alert {
+  color: #f1c40f;
+}
+
+.macro-card-zone-resist .macro-zone-alert {
+  color: #e74c3c;
+}
+
+.macro-card-zone-ok.macro-card-filled .macro-zone-alert {
+  color: #2ecc71;
 }
 
 .macro-card-head {
