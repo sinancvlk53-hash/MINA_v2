@@ -30,6 +30,7 @@ FILES = [
     "signal_bot/listener.py",
     "signal_bot/signal_parser.py",
     "signal_bot/haluk_pdf_parser.py",
+    "signal_bot/haluk_pdf_visual.py",
     "signal_bot/macro_levels_store.py",
     "signal_bot/signal_slot_bridge.py",
     "signal_bot/merter_dca_manager.py",
@@ -96,10 +97,17 @@ def main() -> None:
         print("PUT ops/mina-dashboard-ws.service → /etc/systemd/system/")
         sftp.put(unit_local, "/etc/systemd/system/mina-dashboard-ws.service")
 
+    backup_local = os.path.join(LOCAL, "ops", "backup_mina.sh")
+    if os.path.isfile(backup_local):
+        print("PUT ops/backup_mina.sh")
+        sftp.put(backup_local, f"{REMOTE}/ops/backup_mina.sh")
+
     sftp.close()
 
     systemd_cmds = [
         f"rm -f {REMOTE}/dashboard_ws.py",
+        f"sed -i 's/\\r$//' {REMOTE}/ops/backup_mina.sh 2>/dev/null || true",
+        f"chmod +x {REMOTE}/ops/backup_mina.sh 2>/dev/null || true",
         "systemctl daemon-reload",
     ]
 
@@ -113,6 +121,7 @@ def main() -> None:
     )
 
     restart_cmds = systemd_cmds + [
+        f"{REMOTE}/venv/bin/pip install -q pymupdf pdfplumber 2>/dev/null || true",
         listener_clean + "systemctl restart mina-engine.service",
         "systemctl restart mina-merter-dca.service",
         "systemctl restart mina-queue-watcher.service 2>/dev/null || true",

@@ -1,0 +1,25 @@
+#!/usr/bin/env python3
+import paramiko
+import os
+
+PASS = os.environ.get("MINA_SSH_PASS", "REDACTED")
+c = paramiko.SSHClient()
+c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+c.connect("178.105.150.40", username="root", password=PASS, timeout=30)
+s = c.open_sftp()
+s.put("ops/backup_mina.sh", "/root/MINA_v2/ops/backup_mina.sh")
+s.close()
+for cmd in [
+    "sed -i 's/\\r$//' /root/MINA_v2/ops/backup_mina.sh",
+    "chmod +x /root/MINA_v2/ops/backup_mina.sh",
+    "bash /root/MINA_v2/ops/backup_mina.sh",
+    "ls -lt /root/backups/*.tar.gz | head -2",
+    "crontab -l | grep backup_mina",
+]:
+    print(">>>", cmd)
+    _, o, e = c.exec_command(cmd, timeout=300)
+    print(o.read().decode("utf-8", errors="replace"))
+    err = e.read().decode("utf-8", errors="replace")
+    if err.strip():
+        print("ERR:", err)
+c.close()
