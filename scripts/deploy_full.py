@@ -91,7 +91,17 @@ def main() -> None:
             print(f"PUT dashboard/dist/{rel}/{f}" if rel != "." else f"PUT dashboard/dist/{f}")
             sftp.put(lp, rp)
 
+    unit_local = os.path.join(LOCAL, "ops", "mina-dashboard-ws.service")
+    if os.path.isfile(unit_local):
+        print("PUT ops/mina-dashboard-ws.service → /etc/systemd/system/")
+        sftp.put(unit_local, "/etc/systemd/system/mina-dashboard-ws.service")
+
     sftp.close()
+
+    systemd_cmds = [
+        f"rm -f {REMOTE}/dashboard_ws.py",
+        "systemctl daemon-reload",
+    ]
 
     listener_clean = (
         f"systemctl stop mina-listener.service 2>/dev/null || true; "
@@ -102,7 +112,7 @@ def main() -> None:
         f"systemctl reset-failed mina-listener.service 2>/dev/null || true; "
     )
 
-    restart_cmds = [
+    restart_cmds = systemd_cmds + [
         listener_clean + "systemctl restart mina-engine.service",
         "systemctl restart mina-merter-dca.service",
         "systemctl restart mina-queue-watcher.service 2>/dev/null || true",
