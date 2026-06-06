@@ -30,3 +30,11 @@
 
 - [ ] Dashboard URL'sini güvenli bağlantıya al (HTTPS)
 - [ ] Sunucu monitoring ekle
+
+## Ek Kontroller
+
+- [ ] Motor ve Merter aynı coin kilidi canlıda test edilmeli
+- [ ] Rate limit koruması canlıda nasıl davranıyor test edilmeli
+- [ ] Haluk PDF görsel parser canlıda `ANTHROPIC_API_KEY` doğru yükleniyor mu kontrol et
+- [ ] Günlük otomatik yedek canlı sunucuda kurulmuş mu doğrula (`crontab -l | grep backup_mina`)
+- [ ] Recovery prosedürünü oku ve bir kez masaüstü tatbikatı yap → [`RECOVERY.md`](RECOVERY.md)
