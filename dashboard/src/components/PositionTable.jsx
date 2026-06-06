@@ -1,8 +1,17 @@
 import React, { useRef, useEffect, useState } from 'react'
 import { fmt, defenseStageLabel, calcDefense } from '../utils/trading.js'
-import PositionChartEmbed from './PositionChartEmbed.jsx'
-import ChartBottomSheet from './ChartBottomSheet.jsx'
+import ChartFullscreenModal from './ChartFullscreenModal.jsx'
+import ClosePositionConfirm from './ClosePositionConfirm.jsx'
 import useMediaQuery from '../hooks/useMediaQuery.js'
+
+function SideBadge({ side }) {
+  const isLong = side === 'LONG'
+  return (
+    <span className={`side-badge ${isLong ? 'side-badge-long' : 'side-badge-short'}`} title={side}>
+      {isLong ? 'L' : 'S'}
+    </span>
+  )
+}
 
 function PnlValue({ value, className = '' }) {
   const prev = useRef(value)
@@ -159,7 +168,6 @@ function PositionCards({
   return (
     <div className="pos-cards">
       {positions.map((p) => {
-        const isLong = p.side === 'LONG'
         const stage = defenseStageLabel(p.defenseLevel || 0)
         const roePositive = p.roe >= 0
         const isSelected =
@@ -181,10 +189,8 @@ function PositionCards({
                 <span className="sym-pair">/USDT</span>
               </div>
               <div className="pos-card-badges">
+                <SideBadge side={p.side} />
                 <SourceBadge source={p.signalSource} label={p.signalSourceLabel} />
-                <span className={`badge-pill ${isLong ? 'badge-pill-long' : 'badge-pill-short'}`}>
-                  {p.side}
-                </span>
                 <span className="badge-lev">{p.leverage}x</span>
                 <RvolBadge rvol={p.rvol} />
                 {p.leverage === 4 && (
@@ -287,7 +293,7 @@ function PositionTableDesktop({
                   <SourceBadge source={p.signalSource} label={p.signalSourceLabel} />
                 </td>
                 <td>
-                  <span className={`badge ${isLong ? 'badge-long' : 'badge-short'}`}>{p.side}</span>
+                  <SideBadge side={p.side} />
                 </td>
                 <td className="mono">{p.leverage}x</td>
                 <td className={`mono ${p.rvol >= 2 ? 'text-green' : 'dim'}`}>
@@ -400,12 +406,12 @@ export default function PositionTable({
   selectedPos,
   chartSheetOpen = false,
   onChartSheetChange,
-  showInlineChart = true,
 }) {
   const isMobile = useMediaQuery('(max-width: 768px)')
   const mobile = mobileMode || isMobile
   const [selected, setSelected] = useState(null)
   const [localSheetOpen, setLocalSheetOpen] = useState(false)
+  const [closeTarget, setCloseTarget] = useState(null)
 
   const motor = motorPositions.length ? motorPositions : (legacyPositions ?? []).filter((p) => p.slotType !== 'merter')
   const merter = merterPositions.length ? merterPositions : (legacyPositions ?? []).filter((p) => p.slotType === 'merter')
@@ -435,17 +441,29 @@ export default function PositionTable({
     onSelectPos?.(p)
   }
 
-  function handleClose(p, e, msgFn) {
+  function handleCloseRequest(p, e) {
     e?.stopPropagation()
-    if (msgFn || sendMessage) {
-      (msgFn || sendMessage)({ action: 'close_position', symbol: p.symbol, side: p.side })
+    setCloseTarget(p)
+  }
+
+  function confirmClosePosition() {
+    if (closeTarget && sendMessage) {
+      sendMessage({
+        action: 'close_position',
+        symbol: closeTarget.symbol,
+        side: closeTarget.side,
+      })
     }
-    onClose?.(p)
+    setCloseTarget(null)
+  }
+
+  function handleClose(p, e, msgFn) {
+    handleCloseRequest(p, e)
   }
 
   function handleRowClick(p) {
     selectPos(p)
-    if (mobile) setSheetOpen(true)
+    setSheetOpen(true)
   }
 
   const chartPos = (selectedPos ?? selected) || allPositions[0]
@@ -496,8 +514,18 @@ export default function PositionTable({
           />
         </div>
         {sheetOpen && chartPos && (
-          <ChartBottomSheet pos={chartPos} slotSize={slotSize} onClose={() => setSheetOpen(false)} />
+          <ChartFullscreenModal
+            pos={chartPos}
+            slotSize={slotSize}
+            onClose={() => setSheetOpen(false)}
+          />
         )}
+        <ClosePositionConfirm
+          open={!!closeTarget}
+          pos={closeTarget}
+          onConfirm={confirmClosePosition}
+          onCancel={() => setCloseTarget(null)}
+        />
       </>
     )
   }
@@ -527,9 +555,19 @@ export default function PositionTable({
           {...common}
         />
       </div>
-      {showInlineChart && chartPos && (
-        <PositionChartEmbed pos={chartPos} slotSize={slotSize} />
+      {sheetOpen && chartPos && (
+        <ChartFullscreenModal
+          pos={chartPos}
+          slotSize={slotSize}
+          onClose={() => setSheetOpen(false)}
+        />
       )}
+      <ClosePositionConfirm
+        open={!!closeTarget}
+        pos={closeTarget}
+        onConfirm={confirmClosePosition}
+        onCancel={() => setCloseTarget(null)}
+      />
     </>
   )
 }

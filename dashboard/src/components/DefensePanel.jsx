@@ -1,10 +1,12 @@
 import React from 'react'
-import { fmt, calcDefense, defenseStageLabel } from '../utils/trading.js'
+import { fmt, calcDefense, calcBreakevenPrice, defenseStageLabel } from '../utils/trading.js'
 
-function DefenseMiniCard({ pos, slotSize }) {
+function DefenseMiniCard({ pos, slotSize, breakevenMult }) {
   const def = calcDefense(pos, slotSize)
   const stage = defenseStageLabel(pos.defenseLevel || 0)
   const isLong = pos.side === 'LONG'
+  const bePrice = calcBreakevenPrice(pos, breakevenMult)
+  const liq = pos.liqPrice
 
   return (
     <div className="def-mini-card">
@@ -12,32 +14,50 @@ function DefenseMiniCard({ pos, slotSize }) {
         <div>
           <span className="def-mini-symbol">{pos.symbol.replace(/USDT$/, '')}</span>
           <span className={`badge sm ${isLong ? 'badge-long' : 'badge-short'}`}>{pos.side}</span>
+          <span className="badge sm dim">{pos.leverage}x</span>
         </div>
         <span className={`def-stage ${stage.cls}`}>{stage.text}</span>
       </div>
+
       <div className="def-mini-mark">
+        Giriş <strong className="mono">${fmt(pos.entryPrice, 4)}</strong>
+        {' · '}
         Mark <strong className="mono">${fmt(pos.markPrice, 4)}</strong>
       </div>
-      {def ? (
-        <div className="def-mini-levels">
-          <div className="def-mini-level">
-            <span className="lvl-d1">D1</span>
-            <span className="mono">${fmt(def.d1Price, 3)}</span>
-          </div>
-          <div className="def-mini-level">
-            <span className="lvl-d2">D2</span>
-            <span className="mono">${fmt(def.d2Price, 3)}</span>
-          </div>
-          <div className="def-mini-level">
-            <span className="lvl-d3">D3</span>
-            <span className="mono">${fmt(def.d3Price, 3)}</span>
-          </div>
+
+      <div className="def-mini-levels def-mini-levels-full">
+        <div className="def-mini-level def-mini-level-liq">
+          <span className="lvl-liq">Likidasyon</span>
+          <span className="mono">${fmt(liq, 4)}</span>
         </div>
-      ) : (
-        <p className="def-mini-muted">{pos.leverage}x — defans yok</p>
-      )}
+        <div className="def-mini-level def-mini-level-be">
+          <span className="lvl-be">Breakeven</span>
+          <span className="mono">${fmt(bePrice, 4)}</span>
+        </div>
+        {def ? (
+          <>
+            <div className="def-mini-level">
+              <span className="lvl-d1">D1</span>
+              <span className="mono">${fmt(def.d1Price, 4)}</span>
+            </div>
+            <div className="def-mini-level">
+              <span className="lvl-d2">D2</span>
+              <span className="mono">${fmt(def.d2Price, 4)}</span>
+            </div>
+            <div className="def-mini-level">
+              <span className="lvl-d3">D3 / Hard</span>
+              <span className="mono">${fmt(def.hardStop, 4)}</span>
+            </div>
+          </>
+        ) : (
+          <p className="def-mini-muted">{pos.leverage}x — D1/D2/D3 yok</p>
+        )}
+      </div>
+
       <div className={`def-mini-pnl ${pos.pnlUSDT >= 0 ? 'text-green' : 'text-red'}`}>
         {pos.pnlUSDT >= 0 ? '+' : ''}{fmt(pos.pnlUSDT, 2)} USDT
+        {' · '}
+        ROE {fmt(pos.roe, 2)}%
       </div>
     </div>
   )
@@ -47,8 +67,11 @@ function DerrSummary({ data }) {
   const derr = data?.derr ?? {}
   const positions = data?.positions ?? []
   const totalPnl = derr.netPnl ?? data?.floatingPnl
+  const totalTrades = derr.totalTrades ?? 0
   const winRate = derr.winRate ?? data?.winRate
-  const totalTrades = derr.totalTrades ?? '—'
+  const winDetail = totalTrades > 0
+    ? `${totalTrades} işlem %${Number(winRate ?? 0).toFixed(1)}`
+    : (winRate != null ? `0 işlem %${Number(winRate).toFixed(1)}` : '—')
   const best = derr.bestCoin ?? (positions.length
     ? positions.reduce((a, b) => (a.pnlUSDT > b.pnlUSDT ? a : b)).symbol.replace(/USDT$/, '')
     : '—')
@@ -60,15 +83,9 @@ function DerrSummary({ data }) {
     <div className="derr-box">
       <div className="derr-title">DERR Özeti</div>
       <div className="derr-grid">
-        <div className="derr-item">
-          <span className="derr-label">Toplam İşlem</span>
-          <span className="derr-value">{totalTrades}</span>
-        </div>
-        <div className="derr-item">
-          <span className="derr-label">Kazanma Oranı</span>
-          <span className="derr-value accent">
-            {winRate != null ? `${Number(winRate).toFixed(1)}%` : '—'}
-          </span>
+        <div className="derr-item full">
+          <span className="derr-label">Kazanma Oranı (DERR)</span>
+          <span className="derr-value accent">{winDetail}</span>
         </div>
         <div className="derr-item">
           <span className="derr-label">En İyi Coin</span>
@@ -90,9 +107,10 @@ function DerrSummary({ data }) {
 }
 
 export default function DefensePanel({ data }) {
-  const positions = data?.positions ?? []
+  const positions = (data?.positions ?? []).filter((p) => Number(p.amount) > 0)
   const slotSize = (data?.balance ?? 0) / 10
   const engineOn = data?.engineRunning
+  const breakevenMult = data?.settings?.breakevenMult ?? 1.002
   const defPositions = positions.filter((p) => p.leverage === 4)
 
   return (
@@ -109,12 +127,22 @@ export default function DefensePanel({ data }) {
           <p className="empty-state sm">4x defanslı pozisyon yok</p>
         ) : (
           defPositions.map((p) => (
-            <DefenseMiniCard key={p.posKey} pos={p} slotSize={slotSize} />
+            <DefenseMiniCard
+              key={p.posKey}
+              pos={p}
+              slotSize={slotSize}
+              breakevenMult={breakevenMult}
+            />
           ))
         )}
 
         {positions.filter((p) => p.leverage !== 4).map((p) => (
-          <DefenseMiniCard key={p.posKey} pos={p} slotSize={slotSize} />
+          <DefenseMiniCard
+            key={p.posKey}
+            pos={p}
+            slotSize={slotSize}
+            breakevenMult={breakevenMult}
+          />
         ))}
 
         <DerrSummary data={data} />

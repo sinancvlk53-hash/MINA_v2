@@ -65,6 +65,23 @@ class AccountManager:
         except Exception as e:
             print(f"Bakiye okuma hatası: {e}")
             return 0.0
+
+    def get_balance_breakdown(self) -> dict:
+        """Futures USDT: toplam, işlemde (kullanılan), boşta (available)."""
+        try:
+            acct = self.client.futures_account()
+            total = float(acct.get('totalWalletBalance') or 0)
+            available = float(acct.get('availableBalance') or 0)
+            in_use = max(0.0, total - available)
+            return {
+                'total': round(total, 2),
+                'inUse': round(in_use, 2),
+                'available': round(available, 2),
+            }
+        except Exception as e:
+            print(f"Bakiye breakdown hatası: {e}")
+            bal = self.get_usdt_balance()
+            return {'total': round(bal, 2), 'inUse': 0.0, 'available': round(bal, 2)}
     
     def calculate_slot_size(self):
         """

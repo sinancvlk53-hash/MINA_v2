@@ -126,6 +126,31 @@ class TradingJournal:
                 CREATE INDEX IF NOT EXISTS idx_signal_scenario
                 ON signal_decisions(scenario_label)
             ''')
+
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS haluk_messages (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp TEXT NOT NULL,
+                    message_id INTEGER,
+                    raw_text TEXT NOT NULL,
+                    message_type TEXT NOT NULL DEFAULT 'diger',
+                    coins_mentioned TEXT,
+                    direction TEXT,
+                    price_levels TEXT,
+                    analysis_summary TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_haluk_ts ON haluk_messages(timestamp)
+            ''')
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_haluk_type ON haluk_messages(message_type)
+            ''')
+            cursor.execute('''
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_haluk_message_id
+                ON haluk_messages(message_id) WHERE message_id IS NOT NULL
+            ''')
             
             self.conn.commit()
             
@@ -566,6 +591,119 @@ class TradingJournal:
         except Exception as e:
             print(f"❌ get_today_realized_pnl hatası: {e}")
             return 0.0
+
+    def haluk_message_exists(self, message_id: Optional[int]) -> bool:
+        if message_id is None:
+            return False
+        try:
+            cur = self.conn.cursor()
+            cur.execute(
+                "SELECT 1 FROM haluk_messages WHERE message_id = ? LIMIT 1",
+                (message_id,),
+            )
+            return cur.fetchone() is not None
+        except Exception:
+            return False
+
+    def insert_haluk_message(
+        self,
+        *,
+        timestamp: str,
+        message_id: Optional[int],
+        raw_text: str,
+        message_type: str = "diger",
+        coins_mentioned: Optional[List[str]] = None,
+        direction: Optional[str] = None,
+        price_levels: Optional[List] = None,
+        analysis_summary: Optional[str] = None,
+    ) -> int:
+        try:
+            cur = self.conn.cursor()
+            cur.execute(
+                '''
+                INSERT OR IGNORE INTO haluk_messages (
+                    timestamp, message_id, raw_text, message_type,
+                    coins_mentioned, direction, price_levels, analysis_summary
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''',
+                (
+                    timestamp,
+                    message_id,
+                    raw_text,
+                    message_type,
+                    json.dumps(coins_mentioned or [], ensure_ascii=False),
+                    direction,
+                    json.dumps(price_levels or [], ensure_ascii=False),
+                    analysis_summary,
+                ),
+            )
+            self.conn.commit()
+            return cur.lastrowid or 0
+        except Exception as e:
+            print(f"❌ insert_haluk_message hatası: {e}")
+            return -1
+
+    def list_haluk_messages(
+        self,
+        *,
+        coin: Optional[str] = None,
+        message_type: Optional[str] = None,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> Dict:
+        try:
+            clauses = ["1=1"]
+            params: list = []
+            if message_type and message_type != "all":
+                clauses.append("message_type = ?")
+                params.append(message_type)
+            if date_from:
+                clauses.append("timestamp >= ?")
+                params.append(date_from)
+            if date_to:
+                clauses.append("timestamp <= ?")
+                params.append(date_to + " 23:59:59")
+            if coin:
+                clauses.append(
+                    "(coins_mentioned LIKE ? OR raw_text LIKE ?)"
+                )
+                c = coin.upper().replace("USDT", "")
+                params.extend([f'%"{c}"%', f"%{c}%"])
+
+            where = " AND ".join(clauses)
+            cur = self.conn.cursor()
+            cur.execute(f"SELECT COUNT(*) FROM haluk_messages WHERE {where}", params)
+            total = int(cur.fetchone()[0])
+
+            cur.execute(
+                f'''
+                SELECT id, timestamp, message_id, raw_text, message_type,
+                       coins_mentioned, direction, price_levels, analysis_summary, created_at
+                FROM haluk_messages
+                WHERE {where}
+                ORDER BY timestamp DESC
+                LIMIT ? OFFSET ?
+                ''',
+                params + [limit, offset],
+            )
+            rows = []
+            for row in cur.fetchall():
+                item = dict(row)
+                try:
+                    item["coins_mentioned"] = json.loads(item.get("coins_mentioned") or "[]")
+                except json.JSONDecodeError:
+                    item["coins_mentioned"] = []
+                try:
+                    item["price_levels"] = json.loads(item.get("price_levels") or "[]")
+                except json.JSONDecodeError:
+                    item["price_levels"] = []
+                rows.append(item)
+            return {"total": total, "items": rows}
+        except Exception as e:
+            print(f"❌ list_haluk_messages hatası: {e}")
+            return {"total": 0, "items": []}
 
     def close(self) -> None:
         """Veritabanı bağlantısını kapat."""

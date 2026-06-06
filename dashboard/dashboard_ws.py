@@ -2,19 +2,28 @@
 # -*- coding: utf-8 -*-
 """
 MINA v2 — Dashboard WebSocket Server  port 8765
-15 sn'de bir Binance verisi + log akışı yayınlar.
+Binance pozisyon sayısı gerçek zamanlı; varsayılan 5 sn broadcast.
 """
 import asyncio, json, os, sys, logging, time
 
 ROOT = os.environ.get('MINA_DATA_ROOT', '/root/MINA_v2')
 sys.path.insert(0, ROOT)
-BROADCAST_SEC = int(os.environ.get('MINA_WS_BROADCAST_SEC', '15'))
+DASH_DIR = os.path.join(ROOT, 'dashboard')
+if DASH_DIR not in sys.path:
+    sys.path.insert(0, DASH_DIR)
+BROADCAST_SEC = int(os.environ.get('MINA_WS_BROADCAST_SEC', '3'))
+
+from dotenv import load_dotenv
+load_dotenv(os.path.join(ROOT, '.env'))
 
 import websockets
+from dashboard_auth import validate_login, create_session_token, verify_session_token
 from backend.config import BinanceConfig, AccountManager
 
 MERTER_STATE_PATH = os.path.join(ROOT, 'signal_bot/merter_dca_state.json')
 _rvol_cache = {}  # symbol -> (value, ts)
+_futures_symbols_cache = {"ts": 0.0, "data": []}
+_FUTURES_SYMBOLS_TTL = 600
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 log = logging.getLogger('mina-ws')
@@ -49,6 +58,20 @@ def engine_running():
 LOG_PATH     = os.path.join(ROOT, 'mina_bot.log')
 _log_buf     = []
 _log_pos     = 0
+
+_GHOST_LOG_MARKERS = (
+    'HAYALET', 'hayalet', '👻', 'ghost position', 'GHOST PO',
+)
+
+
+def _filter_dashboard_logs(lines: list) -> list:
+    """Hayalet pozisyon uyarılarını dashboard log akışından çıkar."""
+    out = []
+    for line in lines:
+        if any(m in line for m in _GHOST_LOG_MARKERS):
+            continue
+        out.append(line)
+    return out
 
 MACRO_LEVELS_PATH = os.path.join(ROOT, 'signal_bot/macro_levels.json')
 
@@ -86,6 +109,115 @@ def get_macro_levels():
     if not out and os.path.isfile(MACRO_LEVELS_PATH):
         log.warning("macro_levels: panel bos — dosya=%s", MACRO_LEVELS_PATH)
     return out
+
+def get_futures_symbols_list():
+    """Aktif USDT perpetual semboller — 10 dk cache."""
+    now = time.time()
+    cached = _futures_symbols_cache.get("data") or []
+    if cached and now - float(_futures_symbols_cache.get("ts") or 0) < _FUTURES_SYMBOLS_TTL:
+        return cached
+    try:
+        info = get_client().futures_exchange_info()
+        symbols = []
+        for s in info.get("symbols", []):
+            sym = str(s.get("symbol") or "")
+            if not sym.endswith("USDT"):
+                continue
+            if s.get("status") != "TRADING":
+                continue
+            ct = s.get("contractType")
+            if ct is not None and ct != "PERPETUAL":
+                continue
+            symbols.append(sym)
+        symbols = sorted(set(symbols))
+        if not symbols:
+            symbols = sorted(
+                str(s.get("symbol"))
+                for s in info.get("symbols", [])
+                if s.get("status") == "TRADING"
+                and str(s.get("symbol", "")).endswith("USDT")
+            )
+        _futures_symbols_cache["ts"] = now
+        _futures_symbols_cache["data"] = symbols
+        log.info("futures_exchange_info: %s aktif USDT sembol", len(symbols))
+        return symbols
+    except Exception as exc:
+        log.error("futures_exchange_info hatası: %s", exc)
+        return cached or []
+
+
+def _format_manual_open_output(text: str, max_len: int = 4000) -> str:
+    """Subprocess çıktısından tam Binance hata satırını önceliklendir."""
+    text = (text or "").strip()
+    if not text:
+        return "Çıktı yok"
+    if len(text) <= max_len:
+        return text
+    for line in reversed(text.splitlines()):
+        low = line.lower()
+        if any(k in low for k in ("binanceapiexception", "apierror", "red:", "api error", "error code")):
+            return line.strip()
+    return text[-max_len:]
+
+
+def _log_manual_open_attempt(
+    symbol: str,
+    side: str,
+    leverage: int,
+    entry_price,
+    ok: bool,
+    output: str = "",
+    blocked_reason: str = "",
+) -> None:
+    """Her manuel açılış denemesini dashboard_ws.log'a yaz."""
+    sym = (symbol or "").upper()
+    sd = (side or "LONG").upper()
+    ep = ""
+    if entry_price is not None:
+        try:
+            ep = f" entry={float(entry_price):.8g}"
+        except (TypeError, ValueError):
+            ep = f" entry={entry_price}"
+    status = "OK" if ok else "FAIL"
+    parts = [f"MANUAL_OPEN {status} {sym} {sd} {leverage}x{ep}"]
+    if blocked_reason:
+        parts.append(f"blocked={blocked_reason}")
+    body = (output or "").strip()
+    if body:
+        parts.append(f"output={body}")
+    log.info(" | ".join(parts))
+
+
+def get_symbol_mark_price(symbol: str) -> float:
+    sym = (symbol or "").upper()
+    if not sym:
+        raise ValueError("symbol gerekli")
+    ticker = get_client().futures_mark_price(symbol=sym)
+    return float(ticker["markPrice"])
+
+
+async def send_futures_symbols(websocket):
+    await websocket.send(json.dumps({
+        "action": "futures_symbols",
+        "symbols": get_futures_symbols_list(),
+    }))
+
+
+async def send_mark_price(websocket, symbol: str):
+    sym = (symbol or "").upper()
+    try:
+        price = get_symbol_mark_price(sym)
+        await websocket.send(json.dumps({
+            "action": "mark_price",
+            "symbol": sym,
+            "price": price,
+        }))
+    except Exception as exc:
+        await websocket.send(json.dumps({
+            "action": "mark_price",
+            "symbol": sym,
+            "error": str(exc),
+        }))
 
 def get_dashboard_settings():
     try:
@@ -194,6 +326,102 @@ def calculate_rvol(client, symbol):
         return None
 
 
+def get_derr_summary() -> dict:
+    """DERR kapalı işlemlerden win rate ve özet istatistik."""
+    db_path = os.path.join(ROOT, "mina_trading_journal.db")
+    if not os.path.isfile(db_path):
+        return {}
+    try:
+        from mina_trading_journal import TradingJournal
+
+        journal = TradingJournal(db_path=db_path)
+        cur = journal.conn.cursor()
+        cur.execute(
+            """
+            SELECT
+                COUNT(*) AS total,
+                SUM(CASE WHEN pnl_usdt > 0 THEN 1 ELSE 0 END) AS winners,
+                SUM(CASE WHEN pnl_usdt <= 0 THEN 1 ELSE 0 END) AS losers,
+                SUM(pnl_usdt) AS net_pnl,
+                AVG(CASE WHEN pnl_usdt > 0 THEN pnl_usdt END) AS avg_profit,
+                AVG(CASE WHEN pnl_usdt < 0 THEN pnl_usdt END) AS avg_loss
+            FROM trades
+            WHERE status = 'closed'
+            """
+        )
+        row = cur.fetchone()
+        total = int(row["total"] or 0)
+        winners = int(row["winners"] or 0)
+        losers = int(row["losers"] or 0)
+        net_pnl = float(row["net_pnl"] or 0)
+        avg_profit = float(row["avg_profit"] or 0)
+        avg_loss = float(row["avg_loss"] or 0)
+        win_rate = round(winners / total * 100, 1) if total else 0.0
+
+        cur.execute(
+            """
+            SELECT symbol, pnl_usdt
+            FROM trades
+            WHERE status = 'closed'
+            ORDER BY pnl_usdt DESC
+            LIMIT 1
+            """
+        )
+        best_row = cur.fetchone()
+        cur.execute(
+            """
+            SELECT symbol, pnl_usdt
+            FROM trades
+            WHERE status = 'closed'
+            ORDER BY pnl_usdt ASC
+            LIMIT 1
+            """
+        )
+        worst_row = cur.fetchone()
+
+        cur.execute(
+            """
+            SELECT symbol, SUM(pnl_usdt) AS sym_pnl
+            FROM trades
+            WHERE status = 'closed'
+            GROUP BY symbol
+            ORDER BY sym_pnl DESC
+            """
+        )
+        sym_rows = cur.fetchall()
+        best = sym_rows[0]["symbol"].replace("USDT", "") if sym_rows else None
+        worst = sym_rows[-1]["symbol"].replace("USDT", "") if sym_rows else None
+        journal.close()
+        best_trade = None
+        worst_trade = None
+        if best_row and best_row["pnl_usdt"] is not None:
+            best_trade = {
+                "symbol": str(best_row["symbol"]).replace("USDT", ""),
+                "pnl": round(float(best_row["pnl_usdt"]), 2),
+            }
+        if worst_row and worst_row["pnl_usdt"] is not None:
+            worst_trade = {
+                "symbol": str(worst_row["symbol"]).replace("USDT", ""),
+                "pnl": round(float(worst_row["pnl_usdt"]), 2),
+            }
+        return {
+            "totalTrades": total,
+            "winningTrades": winners,
+            "losingTrades": losers,
+            "winRate": win_rate,
+            "netPnl": round(net_pnl, 2),
+            "avgProfit": round(avg_profit, 2),
+            "avgLoss": round(avg_loss, 2),
+            "bestTrade": best_trade,
+            "worstTrade": worst_trade,
+            "bestCoin": best,
+            "worstCoin": worst,
+        }
+    except Exception as exc:
+        log.debug("derr summary: %s", exc)
+        return {}
+
+
 def update_logs():
     global _log_buf, _log_pos
     try:
@@ -201,17 +429,46 @@ def update_logs():
         with open(LOG_PATH, 'r', encoding='utf-8', errors='replace') as f:
             if _log_pos == 0:
                 lines = f.readlines()
-                _log_buf = [l.rstrip() for l in lines[-60:] if l.strip()]
+                _log_buf = _filter_dashboard_logs([l.rstrip() for l in lines[-60:] if l.strip()])
                 _log_pos = f.seek(0, 2)
             elif size > _log_pos:
                 f.seek(_log_pos)
                 new = f.read()
                 _log_pos = f.tell()
-                new_lines = [l.rstrip() for l in new.splitlines() if l.strip()]
+                new_lines = _filter_dashboard_logs([l.rstrip() for l in new.splitlines() if l.strip()])
                 _log_buf.extend(new_lines)
                 _log_buf = _log_buf[-120:]
     except Exception as e:
         log.debug(f"log update: {e}")
+
+
+def _binance_open_keys(raw_positions) -> set:
+    keys = set()
+    for p in raw_positions:
+        amt = float(p.get('positionAmt') or 0)
+        if amt == 0:
+            continue
+        sym = p['symbol']
+        side = 'LONG' if amt > 0 else 'SHORT'
+        keys.add(f"{sym}_{side}")
+    return keys
+
+
+def _prune_stale_tracking(open_keys: set) -> None:
+    """Binance'te kapalı pozisyonların tracking kayıtlarını sil."""
+    if not open_keys and open_keys is not None:
+        pass
+    try:
+        import mina_tracking as mt
+        for fname in mt.TRACKING_FILES:
+            data = mt.load_json(fname)
+            stale = [k for k in list(data.keys()) if k not in open_keys]
+            if stale:
+                for k in stale:
+                    del data[k]
+                mt.save_json(fname, data)
+    except Exception as exc:
+        log.debug("prune tracking: %s", exc)
 
 # ── Binance veri çekimi ──────────────────────────────────────────────────────
 async def get_data():
@@ -219,9 +476,27 @@ async def get_data():
         client  = get_client()
         account = AccountManager(client)
         balance = account.get_usdt_balance()
+        balance_breakdown = account.get_balance_breakdown()
+
+        btc_mark = None
+        try:
+            btc_mark = round(float(client.futures_mark_price(symbol='BTCUSDT')['markPrice']), 2)
+        except Exception:
+            pass
 
         raw            = client.futures_position_information()
+        open_keys      = _binance_open_keys(raw)
+        _prune_stale_tracking(open_keys)
         defense_levels = read_json(os.path.join(ROOT, 'defense_levels.json'))
+        for stale_key in list(defense_levels.keys()):
+            if stale_key not in open_keys:
+                defense_levels.pop(stale_key, None)
+        try:
+            with open(os.path.join(ROOT, 'defense_levels.json'), 'w', encoding='utf-8') as df:
+                json.dump(defense_levels, df, indent=2)
+                df.write('\n')
+        except OSError:
+            pass
         merter_slots   = get_merter_slots_meta()
         try:
             from mina_signal_source import SOURCE_LABELS, get_position_sources
@@ -296,6 +571,8 @@ async def get_data():
 
         update_logs()
 
+        derr = get_derr_summary()
+
         risk_status = {}
         daily_pnl = 0.0
         try:
@@ -339,6 +616,8 @@ async def get_data():
 
         return {
             'balance':         balance,
+            'balanceBreakdown': balance_breakdown,
+            'btcMarkPrice':    btc_mark,
             'floatingPnl':     sum(p['pnlUSDT'] for p in positions),
             'dailyPnl':        daily_pnl,
             'riskStatus':      risk_status,
@@ -366,6 +645,10 @@ async def get_data():
                 'slotTotal': SLOT_TOTAL,
             },
             'logs':            list(_log_buf),
+            'derr':            derr,
+            'winRate':         derr.get('winRate'),
+            'totalTrades':     derr.get('totalTrades'),
+            'winningTrades':   derr.get('winningTrades'),
         }
     except Exception as e:
         log.error(f"get_data: {e}")
@@ -384,9 +667,56 @@ async def update_dashboard_settings(websocket, settings):
     try:
         from mina_dashboard_settings import save_settings
         saved = save_settings(settings or {})
+        log.info(
+            "SETTINGS_SAVED merterTimeStopH=%s halukTimeStopH=%s dailyLossLimitPct=%s breakevenMult=%s motorActive=%s",
+            saved.get("merterTimeStopH"),
+            saved.get("halukTimeStopH"),
+            saved.get("dailyLossLimitPct"),
+            saved.get("breakevenMult"),
+            saved.get("motorActive"),
+        )
         await websocket.send(json.dumps({'action': 'settings_saved', 'settings': saved}))
     except Exception as e:
+        log.error("SETTINGS_SAVE_FAIL: %s", e)
         await websocket.send(json.dumps({'action': 'error', 'message': str(e)}))
+
+def _reconcile_derr_sync() -> int:
+    """Binance vs DERR hayalet kapatma (blocking — executor'da çalıştır)."""
+    try:
+        from mina_position_manager import MinaPositionManager
+        from mina_trading_journal import TradingJournal
+
+        client = get_client()
+        account = AccountManager(client)
+        slot = account.calculate_slot_size()
+        db_path = os.path.join(ROOT, 'mina_trading_journal.db')
+        journal = TradingJournal(db_path=db_path)
+        mina = MinaPositionManager(client, slot, journal=journal, data_root=ROOT)
+        closed = mina.reconcile_derr_with_binance(verbose=False)
+        journal.close()
+        if closed:
+            log.info("DERR reconcile (WS): %s kayit kapandi", len(closed))
+        return len(closed)
+    except Exception as exc:
+        log.warning("DERR reconcile (WS): %s", exc)
+        return 0
+
+async def push_broadcast():
+    """Bağlı tüm istemcilere anında güncel Binance snapshot gönder."""
+    if not CONNECTED:
+        return
+    try:
+        data = await get_data()
+        msg = json.dumps(data)
+        dead = set()
+        for ws in list(CONNECTED):
+            try:
+                await ws.send(msg)
+            except Exception:
+                dead.add(ws)
+        CONNECTED.difference_update(dead)
+    except Exception as e:
+        log.error(f"push_broadcast: {e}")
 
 # ── Tek pozisyon kapat ───────────────────────────────────────────────────────
 async def close_position(websocket, symbol, side):
@@ -411,10 +741,15 @@ async def close_position(websocket, symbol, side):
             closed = True
             log.warning(f"Client closed: {symbol} {side} qty={qty}")
             break
+        if closed:
+            await asyncio.to_thread(_reconcile_derr_sync)
+            raw_all = client.futures_position_information()
+            _prune_stale_tracking(_binance_open_keys(raw_all))
         await websocket.send(json.dumps({
             'action': 'close_position_result',
             'symbol': symbol, 'side': side, 'closed': closed,
         }))
+        await push_broadcast()
     except Exception as e:
         await websocket.send(json.dumps({'action': 'error', 'message': str(e)}))
 
@@ -438,44 +773,54 @@ async def close_all(websocket):
                 log.warning(f"PANIC closed: {sym} {side}")
             except Exception as e:
                 log.error(f"close error {sym}: {e}")
+        await asyncio.to_thread(_reconcile_derr_sync)
         await websocket.send(json.dumps({'action': 'close_all_result', 'closed': closed}))
+        await push_broadcast()
     except Exception as e:
         await websocket.send(json.dumps({'action': 'error', 'message': str(e)}))
 
-async def manual_open_position(websocket, symbol, side, leverage=4, entry_price=None):
+async def manual_open_position(
+    websocket, symbol, side, leverage=4, entry_price=None, order_type=None, stop_price=None
+):
     """Dashboard / WS üzerinden manuel motor girişi."""
     allowed_leverages = {1, 2, 3, 4, 5, 10}
+    sym = (symbol or '').upper()
+    sd = (side or 'LONG').upper()
+    lev = int(leverage or 4)
     try:
         from mina_dashboard_settings import is_motor_paused, is_new_entries_blocked
         if is_motor_paused():
-            await websocket.send(json.dumps({
-                'action': 'manual_open_result',
-                'ok': False,
-                'symbol': (symbol or '').upper(),
-                'side': (side or 'LONG').upper(),
-                'output': 'Motor pasif (dashboard ayarları)',
-            }))
-            return
-        if is_new_entries_blocked():
-            await websocket.send(json.dumps({
-                'action': 'manual_open_result',
-                'ok': False,
-                'symbol': (symbol or '').upper(),
-                'side': (side or 'LONG').upper(),
-                'output': 'Günlük zarar limiti aşıldı — yeni pozisyon açılamaz',
-            }))
-            return
-        import subprocess
-        sym = (symbol or '').upper()
-        sd = (side or 'LONG').upper()
-        lev = int(leverage or 4)
-        if lev not in allowed_leverages:
+            out = 'Motor pasif (dashboard ayarları)'
+            _log_manual_open_attempt(sym, sd, lev, entry_price, False, out, 'motor_paused')
             await websocket.send(json.dumps({
                 'action': 'manual_open_result',
                 'ok': False,
                 'symbol': sym,
                 'side': sd,
-                'output': f'Geçersiz kaldıraç {lev}x — izin verilen: 1, 2, 3, 4, 5, 10',
+                'output': out,
+            }))
+            return
+        if is_new_entries_blocked():
+            out = 'Günlük zarar limiti aşıldı — yeni pozisyon açılamaz'
+            _log_manual_open_attempt(sym, sd, lev, entry_price, False, out, 'daily_loss_kill')
+            await websocket.send(json.dumps({
+                'action': 'manual_open_result',
+                'ok': False,
+                'symbol': sym,
+                'side': sd,
+                'output': out,
+            }))
+            return
+        import subprocess
+        if lev not in allowed_leverages:
+            out = f'Geçersiz kaldıraç {lev}x — izin verilen: 1, 2, 3, 4, 5, 10'
+            _log_manual_open_attempt(sym, sd, lev, entry_price, False, out, 'invalid_leverage')
+            await websocket.send(json.dumps({
+                'action': 'manual_open_result',
+                'ok': False,
+                'symbol': sym,
+                'side': sd,
+                'output': out,
             }))
             return
         cmd = [
@@ -486,45 +831,171 @@ async def manual_open_position(websocket, symbol, side, leverage=4, entry_price=
             '--leverage', str(lev),
             '--source', 'haluk',
         ]
-        if entry_price is not None:
-            try:
-                ep = float(entry_price)
-                if ep > 0:
-                    cmd.extend(['--entry-price', str(ep)])
-            except (TypeError, ValueError):
-                pass
+        ot = (order_type or 'market').lower().replace(' ', '_')
+        if ot in ('stop_market', 'stop'):
+            cmd.extend(['--order-type', 'stop_market'])
+            if stop_price is not None:
+                try:
+                    sp = float(stop_price)
+                    if sp > 0:
+                        cmd.extend(['--stop-price', str(sp)])
+                except (TypeError, ValueError):
+                    pass
+        elif ot == 'limit':
+            cmd.extend(['--order-type', 'limit'])
+            if entry_price is not None:
+                try:
+                    ep = float(entry_price)
+                    if ep > 0:
+                        cmd.extend(['--entry-price', str(ep)])
+                except (TypeError, ValueError):
+                    pass
+        else:
+            cmd.extend(['--order-type', 'market'])
+            if entry_price is not None:
+                try:
+                    ep = float(entry_price)
+                    if ep > 0:
+                        cmd.extend(['--entry-price', str(ep)])
+                except (TypeError, ValueError):
+                    pass
+        log.info(
+            "MANUAL_OPEN START %s %s %sx type=%s entry=%s stop=%s",
+            sym, sd, lev, ot, entry_price, stop_price,
+        )
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60, cwd=ROOT)
-        out = (proc.stdout or '') + (proc.stderr or '')
+        raw_out = (proc.stdout or '') + (proc.stderr or '')
+        formatted = _format_manual_open_output(raw_out)
         ok = proc.returncode == 0
+        _log_manual_open_attempt(sym, sd, lev, entry_price, ok, raw_out.strip())
         await websocket.send(json.dumps({
             'action': 'manual_open_result',
             'ok': ok,
             'symbol': sym,
             'side': sd,
-            'output': out.strip()[-500:],
+            'output': formatted,
         }))
     except Exception as e:
+        import traceback
+        tb = traceback.format_exc()
+        _log_manual_open_attempt(sym, sd, lev, entry_price, False, f"{type(e).__name__}: {e}\n{tb}", 'exception')
+        log.error("MANUAL_OPEN exception %s %s: %s", sym, sd, e)
+        await websocket.send(json.dumps({'action': 'error', 'message': str(e)}))
+
+async def send_haluk_archive(websocket, msg: dict):
+    try:
+        from signal_bot.haluk_message_store import query_haluk_messages
+        result = query_haluk_messages(
+            coin=msg.get('coin'),
+            message_type=msg.get('messageType'),
+            date_from=msg.get('dateFrom'),
+            date_to=msg.get('dateTo'),
+            limit=int(msg.get('limit') or 50),
+            offset=int(msg.get('offset') or 0),
+        )
+        await websocket.send(json.dumps({
+            'action': 'haluk_archive',
+            'total': result.get('total', 0),
+            'items': result.get('items', []),
+        }))
+    except Exception as e:
+        log.error(f"haluk_archive: {e}")
+        await websocket.send(json.dumps({'action': 'error', 'message': str(e)}))
+
+
+async def send_upbit_listings(websocket, msg: dict):
+    try:
+        from signal_bot.haluk_message_store import query_upbit_listings
+        result = query_upbit_listings(limit=int(msg.get('limit') or 300))
+        await websocket.send(json.dumps({
+            'action': 'upbit_listings',
+            'total': result.get('total', 0),
+            'items': result.get('items', []),
+            'coins': result.get('coins', []),
+        }))
+    except Exception as e:
+        log.error(f"upbit_listings: {e}")
         await websocket.send(json.dumps({'action': 'error', 'message': str(e)}))
 
 # ── WebSocket handler ────────────────────────────────────────────────────────
 CONNECTED = set()
 
+def _is_authenticated(websocket) -> bool:
+    return bool(getattr(websocket, 'authenticated', False))
+
+
+async def _send_full_snapshot(websocket):
+    data = await get_data()
+    await websocket.send(json.dumps(data))
+    await send_futures_symbols(websocket)
+
+
 async def handler(websocket):
+    websocket.authenticated = False
+    websocket.auth_user = None
     CONNECTED.add(websocket)
     log.info(f"+ client ({len(CONNECTED)} total)")
-    # İlk bağlantıda hemen veri gönder
     try:
-        data = await get_data()
-        await websocket.send(json.dumps(data))
-    except Exception: pass
+        await websocket.send(json.dumps({'action': 'auth_required'}))
+    except Exception as exc:
+        log.error("handler auth_required: %s", exc)
 
     try:
         async for message in websocket:
             try:
                 msg = json.loads(message)
-                if msg.get('action') == 'close_all':
+                action = msg.get('action')
+
+                if action == 'login':
+                    username = (msg.get('username') or '').strip()
+                    password = msg.get('password') or ''
+                    if validate_login(username, password):
+                        session = create_session_token(username)
+                        websocket.authenticated = True
+                        websocket.auth_user = username
+                        await websocket.send(json.dumps({'action': 'login_ok', **session}))
+                        await _send_full_snapshot(websocket)
+                    else:
+                        await websocket.send(json.dumps({
+                            'action': 'login_failed',
+                            'error': 'Kullanıcı adı veya şifre hatalı',
+                        }))
+                    continue
+
+                if action == 'auth':
+                    ok, user = verify_session_token(msg.get('token') or '')
+                    if ok:
+                        websocket.authenticated = True
+                        websocket.auth_user = user
+                        await websocket.send(json.dumps({'action': 'auth_ok', 'user': user}))
+                        await _send_full_snapshot(websocket)
+                    else:
+                        await websocket.send(json.dumps({
+                            'action': 'auth_failed',
+                            'error': 'Geçersiz veya süresi dolmuş oturum',
+                        }))
+                    continue
+
+                if action == 'logout':
+                    websocket.authenticated = False
+                    websocket.auth_user = None
+                    await websocket.send(json.dumps({'action': 'logged_out'}))
+                    continue
+
+                if not _is_authenticated(websocket):
+                    await websocket.send(json.dumps({
+                        'action': 'auth_required',
+                        'error': 'Oturum gerekli',
+                    }))
+                    continue
+
+                if action == 'close_all':
                     log.warning("PANIC triggered by client!")
                     await close_all(websocket)
+                elif msg.get('action') == 'get_futures_symbols':
+                    await send_futures_symbols(websocket)
+                elif msg.get('action') == 'get_mark_price':
+                    await send_mark_price(websocket, msg.get('symbol'))
                 elif msg.get('action') == 'close_position':
                     await close_position(websocket, msg.get('symbol'), msg.get('side'))
                 elif msg.get('action') == 'manual_open':
@@ -534,9 +1005,15 @@ async def handler(websocket):
                         msg.get('side'),
                         msg.get('leverage', 4),
                         msg.get('entryPrice'),
+                        msg.get('orderType'),
+                        msg.get('stopPrice'),
                     )
                 elif msg.get('action') == 'update_settings':
                     await update_dashboard_settings(websocket, msg.get('settings'))
+                elif msg.get('action') == 'get_haluk_archive':
+                    await send_haluk_archive(websocket, msg)
+                elif msg.get('action') == 'get_upbit_listings':
+                    await send_upbit_listings(websocket, msg)
             except Exception as e:
                 log.error(f"handler msg: {e}")
     except websockets.exceptions.ConnectionClosed:
@@ -556,6 +1033,8 @@ async def broadcast_loop():
             msg  = json.dumps(data)
             dead = set()
             for ws in list(CONNECTED):
+                if not _is_authenticated(ws):
+                    continue
                 try:    await ws.send(msg)
                 except: dead.add(ws)
             CONNECTED.difference_update(dead)

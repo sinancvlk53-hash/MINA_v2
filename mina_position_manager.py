@@ -107,6 +107,25 @@ class MinaPositionManager:
         self._load_state()
         self._load_trade_ids_from_journal()
 
+    def _rules_for_leverage(self, leverage: int) -> dict:
+        """Kaldıraç kuralları — dashboard strateji ayarı ile birleştirilir."""
+        base = dict(self.leverage_rules.get(leverage) or {})
+        if leverage == 4:
+            base['has_defense'] = True
+            base['stop_loss_pct'] = None
+            return base
+        try:
+            from mina_dashboard_settings import leverage_strategy_mode
+            mode = leverage_strategy_mode(leverage)
+        except ImportError:
+            mode = 'defense'
+        if mode == 'defense':
+            base['has_defense'] = True
+            base['stop_loss_pct'] = None
+        else:
+            base['has_defense'] = False
+        return base
+
     # ---------------------------------------------------------------------
     # Binance ↔ disk senkronizasyonu
     # ---------------------------------------------------------------------
@@ -318,7 +337,7 @@ class MinaPositionManager:
                     trade_id=trade_id,
                     close_price=close_price,
                     qty=qty,
-                    close_reason='Reconciliation (Binance kapalı)',
+                    close_reason='Reconciliation',
                     pnl_usdt=pnl_usdt,
                     pnl_percent=pnl_percent,
                     roe_percent=roe_percent,
@@ -329,7 +348,7 @@ class MinaPositionManager:
                     'trade_id': trade_id,
                     'symbol': symbol,
                     'side': side,
-                    'reason': 'Reconciliation (Binance kapalı)',
+                    'reason': 'Reconciliation',
                     'close_price': close_price,
                     'pnl_usdt': round(pnl_usdt, 4),
                 })
@@ -339,6 +358,26 @@ class MinaPositionManager:
         if closed_report:
             self._save_state()
         return closed_report
+
+    def get_binance_open_keys(self) -> set:
+        """Binance'teki gerçek açık pozisyon anahtarları (DERR değil)."""
+        from position_manager import PositionManager
+
+        pm = PositionManager(self.client)
+        positions = pm.get_all_positions()
+        return {self._pos_key(p['symbol'], p['side']) for p in positions}
+
+    def reconcile_derr_with_binance(self, verbose: bool = False) -> List[Dict[str, Any]]:
+        """Binance'te kapalı, DERR'de açık kalan kayıtları Reconciliation ile kapat."""
+        open_keys = self.get_binance_open_keys()
+        reconciled = self.reconcile_journal_closed(open_keys)
+        if verbose and reconciled:
+            for r in reconciled:
+                print(
+                    f"[RECONCILE] id={r['trade_id']} {r['key']} "
+                    f"pnl={r.get('pnl_usdt')} reason={r.get('reason')}"
+                )
+        return reconciled
 
     def _load_trade_ids_from_journal(self) -> None:
         if not self.journal:
@@ -637,8 +676,8 @@ class MinaPositionManager:
         except ImportError:
             pass
 
-        rules = self.leverage_rules.get(leverage)
-        if rules is None:
+        rules = self._rules_for_leverage(leverage)
+        if not rules:
             return {'action': 'hold', 'reason': f'Bilinmeyen kaldıraç: {leverage}x'}
 
         state = self.position_states.get(symbol)
@@ -775,7 +814,7 @@ class MinaPositionManager:
     # ---------------------------------------------------------------------
 
     def calculate_stop_loss_price(self, entry_price: float, leverage: int, side: str) -> float:
-        rules = self.leverage_rules.get(leverage, {})
+        rules = self._rules_for_leverage(leverage)
         pct = rules.get('stop_loss_pct') or 0.0
         if side == 'LONG':
             return entry_price * (1 - pct / 100)

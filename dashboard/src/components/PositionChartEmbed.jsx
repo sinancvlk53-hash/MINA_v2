@@ -41,7 +41,7 @@ function DefenseLinesOverlay({ pos, slotSize }) {
   )
 }
 
-export default function PositionChartEmbed({ pos, slotSize = 0, mobile = false }) {
+export default function PositionChartEmbed({ pos, slotSize = 0, mobile = false, fullscreen = false }) {
   const symbol = pos?.symbol
 
   const iframeSrc = useMemo(() => {
@@ -51,7 +51,7 @@ export default function PositionChartEmbed({ pos, slotSize = 0, mobile = false }
       theme: 'dark',
       style: '1',
       locale: 'tr',
-      toolbar_bg: '#131722',
+      toolbar_bg: '#0B0E11',
       enable_publishing: 'false',
       hide_top_toolbar: 'false',
       save_image: 'false',
@@ -62,13 +62,21 @@ export default function PositionChartEmbed({ pos, slotSize = 0, mobile = false }
 
   if (!pos) return null
 
+  const wrapClass = fullscreen
+    ? 'panel-chart-fullscreen'
+    : mobile
+      ? 'panel-chart-mobile'
+      : ''
+
   return (
-    <div className={`panel panel-chart ${mobile ? 'panel-chart-mobile' : ''}`}>
-      <div className="panel-head">
-        <span className="panel-title">Grafik — {symbol}</span>
-        <span className={`badge ${pos.side === 'LONG' ? 'badge-long' : 'badge-short'}`}>{pos.side}</span>
-        <span className="panel-badge mono">Mark ${fmt(pos.markPrice, 4)}</span>
-      </div>
+    <div className={`panel panel-chart ${wrapClass}`}>
+      {!fullscreen && (
+        <div className="panel-head">
+          <span className="panel-title">Grafik — {symbol}</span>
+          <span className={`badge ${pos.side === 'LONG' ? 'badge-long' : 'badge-short'}`}>{pos.side}</span>
+          <span className="panel-badge mono">Mark ${fmt(pos.markPrice, 4)}</span>
+        </div>
+      )}
       <div className="chart-embed-wrap">
         <DefenseLinesOverlay pos={pos} slotSize={slotSize} />
         <iframe
@@ -76,7 +84,7 @@ export default function PositionChartEmbed({ pos, slotSize = 0, mobile = false }
           title={`${symbol} chart`}
           src={iframeSrc}
           width="100%"
-          height="400"
+          height={fullscreen ? '100%' : '400'}
           frameBorder="0"
           className="chart-iframe"
         />

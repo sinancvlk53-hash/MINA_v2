@@ -122,21 +122,25 @@ function MacroCard({ item }) {
   )
 }
 
-export default function MacroLevelsPanel({ levels = [] }) {
+export default function MacroLevelsPanel({ levels = [], coinsFilter = null, compact = false }) {
   const byCoin = Object.fromEntries((levels || []).map((l) => [l.coin, l]))
-  const items = PANEL_ORDER.map((c) => normalizeItem(byCoin[c], c))
+  const order = coinsFilter || PANEL_ORDER
+  const items = order.map((c) => normalizeItem(byCoin[c], c))
   const filled = items.filter((i) => i.snippet || i.supports?.length || i.resistances?.length).length
+  const title = compact ? 'Makro Seviyeler' : 'Haluk Makro Panel'
+  const subtitle = compact ? 'TOTAL · OTHERS · BTC.D' : 'PDF + Telegram · işlem sinyali değil'
 
   return (
-    <div className="panel panel-macro">
+    <div className={`panel panel-macro ${compact ? 'panel-macro-compact' : ''}`}>
       <div className="panel-head">
         <div>
-          <span className="panel-title">Haluk Makro Panel</span>
-          <span className="panel-subtitle">PDF + Telegram · işlem sinyali değil</span>
+          <span className="panel-title">{title}</span>
+          {!compact && <span className="panel-subtitle">{subtitle}</span>}
+          {compact && <span className="panel-subtitle">{subtitle}</span>}
         </div>
-        <span className="panel-badge">{filled}/{PANEL_ORDER.length}</span>
+        {!compact && <span className="panel-badge">{filled}/{PANEL_ORDER.length}</span>}
       </div>
-      <div className="macro-grid macro-grid-wide">
+      <div className={`macro-grid ${compact ? 'macro-grid-compact' : 'macro-grid-wide'}`}>
         {items.map((item) => (
           <MacroCard key={item.coin} item={item} />
         ))}

@@ -36,6 +36,7 @@ FILES = [
     "backend/ghost_positions.py",
     "backend/position_manager.py",
     "signal_bot/listener.py",
+    "signal_bot/haluk_message_store.py",
     "signal_bot/signal_parser.py",
     "signal_bot/haluk_pdf_parser.py",
     "signal_bot/haluk_pdf_visual.py",
@@ -46,8 +47,13 @@ FILES = [
     "signal_bot/merter_dca_runner.py",
     "signal_bot/approval_bot.py",
     "scripts/manual_open.py",
+    "scripts/reconcile_derr_ghosts.py",
+    "scripts/test_entry_orders.py",
+    "scripts/migrate_haluk_messages.py",
+    "scripts/analyze_haluk_history.py",
     "tools/telegram_bot.py",
     "dashboard/dashboard_ws.py",
+    "dashboard/dashboard_auth.py",
 ]
 
 SERVICES = [
@@ -111,6 +117,22 @@ def main() -> None:
         print("PUT ops/backup_mina.sh")
         sftp.put(backup_local, f"{REMOTE}/ops/backup_mina.sh")
 
+    env_remote = f"{REMOTE}/.env"
+    try:
+        with sftp.open(env_remote, "r") as f:
+            env_body = f.read().decode("utf-8")
+    except FileNotFoundError:
+        env_body = ""
+    dash_keys = ("DASHBOARD_USERNAME", "DASHBOARD_PASSWORD")
+    dash_missing = [k for k in dash_keys if f"{k}=" not in env_body]
+    if dash_missing:
+        append = "\n# MINA Dashboard auth\nDASHBOARD_USERNAME=admin\nDASHBOARD_PASSWORD=admin\n"
+        with sftp.open(env_remote, "a") as f:
+            if env_body and not env_body.endswith("\n"):
+                f.write("\n")
+            f.write(append)
+        print(f"APPEND {env_remote}: {', '.join(dash_missing)}")
+
     sftp.close()
 
     systemd_cmds = [
@@ -137,6 +159,8 @@ def main() -> None:
         "systemctl start mina-listener.service",
         "systemctl restart mina-dashboard-ws.service",
         "systemctl restart mina-dashboard-vite.service",
+        f"{REMOTE}/venv/bin/python {REMOTE}/scripts/test_entry_orders.py 2>&1 | tail -8",
+        f"{REMOTE}/venv/bin/python {REMOTE}/scripts/reconcile_derr_ghosts.py",
         "sleep 4",
         "systemctl is-active " + " ".join(SERVICES),
         f"tail -3 {REMOTE}/signal_bot/signals_log.txt 2>/dev/null || true",

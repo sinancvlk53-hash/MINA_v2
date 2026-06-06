@@ -136,6 +136,11 @@ def _dispatch_merter(text: str, msg_id: int) -> None:
 def _dispatch_haluk_text(text: str, msg_id: int) -> None:
     preview = text[:200].replace("\n", " ")
     _log(f"[HALUK] İLK MESAJ / YENİ | id={msg_id} | metin: {preview}")
+    try:
+        from signal_bot.haluk_message_store import archive_haluk_message_async
+        archive_haluk_message_async(text, message_id=msg_id)
+    except Exception as e:
+        _log(f"[HALUK] arşiv hatası: {e}")
     records, pause = parse_haluk_telegram(text)
     if records:
         enqueue_records(records)
@@ -151,6 +156,14 @@ async def _dispatch_haluk_pdf(event: events.NewMessage.Event, msg_id: int) -> No
     filepath = os.path.join(pdf_dir, f"tg_{ts}_{msg_id}.pdf")
     await event.message.download_media(file=filepath)
     _log(f"[HALUK PDF] indirildi: {filepath}")
+    try:
+        from signal_bot.haluk_message_store import archive_haluk_message_async
+        archive_haluk_message_async(
+            f"[PDF] {os.path.basename(filepath)}",
+            message_id=msg_id,
+        )
+    except Exception as e:
+        _log(f"[HALUK PDF] arşiv hatası: {e}")
     records = parse_pdf_and_enqueue(filepath)
     _log(f"[HALUK PDF] → {len(records)} kayıt")
 

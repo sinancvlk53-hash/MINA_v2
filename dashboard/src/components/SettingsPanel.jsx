@@ -1,4 +1,13 @@
 import React, { useEffect, useState } from 'react'
+import LogStream from './LogStream.jsx'
+
+const DEFAULT_LEVERAGE_STRATEGY = {
+  '1': 'defense',
+  '2': 'defense',
+  '3': 'defense',
+  '5': 'defense',
+  '10': 'defense',
+}
 
 const DEFAULTS = {
   merterTimeStopH: 4,
@@ -7,22 +16,85 @@ const DEFAULTS = {
   dailyLossLimitPct: 20,
   telegramNotify: true,
   motorActive: true,
+  leverageStrategy: { ...DEFAULT_LEVERAGE_STRATEGY },
 }
 
-export default function SettingsPanel({ data, sendMessage, status }) {
+const STRATEGY_LEVERS = [1, 2, 3, 5, 10]
+
+export default function SettingsPanel({ data, sendMessage, status, actionMsg, logs = [], testLogs = [] }) {
   const server = data?.settings ?? {}
   const slotSummary = data?.slotSummary ?? {}
 
-  const [form, setForm] = useState({ ...DEFAULTS, ...server })
+  const [form, setForm] = useState({ ...DEFAULTS, ...server, leverageStrategy: { ...DEFAULT_LEVERAGE_STRATEGY, ...(server.leverageStrategy || {}) } })
+  const [dailyLossInput, setDailyLossInput] = useState(String(server.dailyLossLimitPct ?? DEFAULTS.dailyLossLimitPct))
+  const [dirty, setDirty] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saveNote, setSaveNote] = useState('')
 
   useEffect(() => {
-    setForm((prev) => ({ ...DEFAULTS, ...prev, ...server }))
-  }, [server.merterTimeStopH, server.halukTimeStopH, server.breakevenMult, server.dailyLossLimitPct, server.telegramNotify, server.motorActive])
+    if (dirty) return
+    setForm({
+      ...DEFAULTS,
+      ...server,
+      leverageStrategy: { ...DEFAULT_LEVERAGE_STRATEGY, ...(server.leverageStrategy || {}) },
+    })
+    setDailyLossInput(String(server.dailyLossLimitPct ?? DEFAULTS.dailyLossLimitPct))
+  }, [server, dirty])
 
-  function patch(partial) {
-    const next = { ...form, ...partial }
-    setForm(next)
-    sendMessage?.({ action: 'update_settings', settings: next })
+  useEffect(() => {
+    if (actionMsg?.action !== 'settings_saved') return
+    setSaving(false)
+    setDirty(false)
+    setSaveNote('Ayarlar kaydedildi')
+    setForm({
+      ...DEFAULTS,
+      ...actionMsg.settings,
+      leverageStrategy: { ...DEFAULT_LEVERAGE_STRATEGY, ...(actionMsg.settings?.leverageStrategy || {}) },
+    })
+    setDailyLossInput(String(actionMsg.settings?.dailyLossLimitPct ?? DEFAULTS.dailyLossLimitPct))
+  }, [actionMsg])
+
+  useEffect(() => {
+    if (actionMsg?.action === 'error' && saving) {
+      setSaving(false)
+      setSaveNote(actionMsg.message || 'Kayıt hatası')
+    }
+  }, [actionMsg, saving])
+
+  function updateField(partial) {
+    setForm((prev) => ({ ...prev, ...partial }))
+    setDirty(true)
+    setSaveNote('')
+  }
+
+  function updateLeverageStrategy(lev, mode) {
+    setForm((prev) => ({
+      ...prev,
+      leverageStrategy: { ...prev.leverageStrategy, [String(lev)]: mode },
+    }))
+    setDirty(true)
+    setSaveNote('')
+  }
+
+  function handleSave() {
+    if (status !== 'connected' || !sendMessage) return
+    const parsedDaily = parseFloat(String(dailyLossInput).replace(',', '.'))
+    if (Number.isNaN(parsedDaily) || parsedDaily < 5 || parsedDaily > 50) {
+      setSaveNote('Günlük zarar limiti 5–50 arası olmalı')
+      return
+    }
+    setSaving(true)
+    setSaveNote('')
+    const payload = {
+      merterTimeStopH: Number(form.merterTimeStopH) || DEFAULTS.merterTimeStopH,
+      halukTimeStopH: Number(form.halukTimeStopH) || DEFAULTS.halukTimeStopH,
+      dailyLossLimitPct: parsedDaily,
+      breakevenMult: Number(form.breakevenMult) || DEFAULTS.breakevenMult,
+      telegramNotify: !!form.telegramNotify,
+      motorActive: !!form.motorActive,
+      leverageStrategy: { ...form.leverageStrategy },
+    }
+    sendMessage({ action: 'update_settings', settings: payload })
   }
 
   const ei = slotSummary.merterEiMax ?? 2
@@ -45,7 +117,7 @@ export default function SettingsPanel({ data, sendMessage, status }) {
             max="168"
             step="1"
             value={form.merterTimeStopH}
-            onChange={(e) => patch({ merterTimeStopH: Number(e.target.value) || 4 })}
+            onChange={(e) => updateField({ merterTimeStopH: Number(e.target.value) || 4 })}
           />
           <label className="field-label">Haluk motor (saat)</label>
           <input
@@ -55,8 +127,32 @@ export default function SettingsPanel({ data, sendMessage, status }) {
             max="168"
             step="1"
             value={form.halukTimeStopH}
-            onChange={(e) => patch({ halukTimeStopH: Number(e.target.value) || 8 })}
+            onChange={(e) => updateField({ halukTimeStopH: Number(e.target.value) || 8 })}
           />
+        </section>
+
+        <section className="settings-section">
+          <h3 className="settings-section-title">Kaldıraç stratejisi</h3>
+          <div className="field-hint settings-strategy-hint">
+            Savunma: D1/D2/D3, stop-loss yok · Stop: stop-loss aktif, savunma yok
+          </div>
+          <div className="settings-strategy-row settings-strategy-locked">
+            <span className="settings-strategy-lev">4x</span>
+            <span className="settings-strategy-mode">Savunma modu (sabit)</span>
+          </div>
+          {STRATEGY_LEVERS.map((lev) => (
+            <div key={lev} className="settings-strategy-row">
+              <span className="settings-strategy-lev">{lev}x</span>
+              <select
+                className="field-input settings-strategy-select"
+                value={form.leverageStrategy[String(lev)] || 'defense'}
+                onChange={(e) => updateLeverageStrategy(lev, e.target.value)}
+              >
+                <option value="defense">Savunma modu</option>
+                <option value="stop">Stop modu</option>
+              </select>
+            </div>
+          ))}
         </section>
 
         <section className="settings-section">
@@ -74,12 +170,15 @@ export default function SettingsPanel({ data, sendMessage, status }) {
           <label className="field-label">Günlük zarar limiti (%)</label>
           <input
             className="field-input"
-            type="number"
-            min="5"
-            max="50"
-            step="1"
-            value={form.dailyLossLimitPct}
-            onChange={(e) => patch({ dailyLossLimitPct: Number(e.target.value) || 20 })}
+            type="text"
+            inputMode="decimal"
+            placeholder="20"
+            value={dailyLossInput}
+            onChange={(e) => {
+              setDailyLossInput(e.target.value)
+              setDirty(true)
+              setSaveNote('')
+            }}
           />
           <div className="field-hint">
             Vadeli bakiyenin yüzdesi — örn. %20 ve 5000 USDT → -1000 USDT limit
@@ -95,7 +194,7 @@ export default function SettingsPanel({ data, sendMessage, status }) {
             max="1.05"
             step="0.0001"
             value={form.breakevenMult}
-            onChange={(e) => patch({ breakevenMult: parseFloat(e.target.value) || 1.002 })}
+            onChange={(e) => updateField({ breakevenMult: parseFloat(e.target.value) || 1.002 })}
           />
           <div className="field-hint">Merter BE çıkış: ortalama × çarpan</div>
         </section>
@@ -106,7 +205,7 @@ export default function SettingsPanel({ data, sendMessage, status }) {
             <input
               type="checkbox"
               checked={!!form.telegramNotify}
-              onChange={(e) => patch({ telegramNotify: e.target.checked })}
+              onChange={(e) => updateField({ telegramNotify: e.target.checked })}
             />
           </label>
           <label className="settings-toggle-row">
@@ -114,14 +213,28 @@ export default function SettingsPanel({ data, sendMessage, status }) {
             <input
               type="checkbox"
               checked={!!form.motorActive}
-              onChange={(e) => patch({ motorActive: e.target.checked })}
+              onChange={(e) => updateField({ motorActive: e.target.checked })}
             />
           </label>
         </section>
 
-        <div className="field-hint" style={{ marginTop: 8 }}>
-          {status === 'connected' ? 'Ayarlar sunucuya kaydedildi' : 'Bağlantı bekleniyor…'}
+        <button
+          type="button"
+          className="btn btn-settings-save"
+          disabled={status !== 'connected' || saving}
+          onClick={handleSave}
+        >
+          {saving ? 'Kaydediliyor…' : 'Kaydet'}
+        </button>
+
+        <div className={`field-hint settings-save-note ${saveNote.includes('hata') ? 'err' : saveNote ? 'ok' : ''}`}>
+          {saveNote || (status === 'connected' ? (dirty ? 'Kaydedilmemiş değişiklikler var' : 'Sunucu ile senkron') : 'Bağlantı bekleniyor…')}
         </div>
+
+        <section className="settings-section settings-log-section">
+          <h3 className="settings-section-title">Log Akışı</h3>
+          <LogStream logs={logs} testLogs={testLogs} compact />
+        </section>
       </div>
     </div>
   )

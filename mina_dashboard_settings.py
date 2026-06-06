@@ -11,6 +11,14 @@ ROOT = os.environ.get("MINA_DATA_ROOT", os.path.dirname(os.path.abspath(__file__
 SETTINGS_FILE = os.path.join(ROOT, "dashboard_settings.json")
 MOTOR_PAUSE_FILE = os.path.join(ROOT, "motor_paused.flag")
 
+DEFAULT_LEVERAGE_STRATEGY: Dict[str, str] = {
+    "1": "defense",
+    "2": "defense",
+    "3": "defense",
+    "5": "defense",
+    "10": "defense",
+}
+
 DEFAULTS: Dict[str, Any] = {
     "merterTimeStopH": 4,
     "halukTimeStopH": 8,
@@ -18,6 +26,7 @@ DEFAULTS: Dict[str, Any] = {
     "dailyLossLimitPct": 20,
     "telegramNotify": True,
     "motorActive": True,
+    "leverageStrategy": dict(DEFAULT_LEVERAGE_STRATEGY),
 }
 
 DAILY_LOSS_KILL_FILE = os.path.join(ROOT, "daily_loss_kill.flag")
@@ -34,6 +43,10 @@ def load_settings() -> Dict[str, Any]:
                 data.update(raw)
         except (OSError, json.JSONDecodeError):
             pass
+    strat = dict(DEFAULT_LEVERAGE_STRATEGY)
+    if isinstance(data.get("leverageStrategy"), dict):
+        strat.update({str(k): v for k, v in data["leverageStrategy"].items() if v in ("defense", "stop")})
+    data["leverageStrategy"] = strat
     data["motorActive"] = not os.path.isfile(MOTOR_PAUSE_FILE)
     return data
 
@@ -43,6 +56,14 @@ def save_settings(updates: Dict[str, Any]) -> Dict[str, Any]:
     allowed = set(DEFAULTS.keys())
     for k, v in updates.items():
         if k not in allowed:
+            continue
+        if k == "leverageStrategy" and isinstance(v, dict):
+            strat = dict(current.get("leverageStrategy") or DEFAULT_LEVERAGE_STRATEGY)
+            for lev, mode in v.items():
+                key = str(lev)
+                if key in DEFAULT_LEVERAGE_STRATEGY and mode in ("defense", "stop"):
+                    strat[key] = mode
+            current["leverageStrategy"] = strat
             continue
         current[k] = v
 
@@ -135,3 +156,12 @@ def save_daily_risk_state(state: Dict[str, Any]) -> None:
 def is_new_entries_blocked() -> bool:
     """Tam günlük zarar limiti — yeni pozisyon açma engeli."""
     return is_daily_loss_kill_active()
+
+
+def leverage_strategy_mode(leverage: int) -> str:
+    """4x her zaman savunma; diğerleri dashboard ayarından."""
+    if leverage == 4:
+        return "defense"
+    strat = load_settings().get("leverageStrategy") or DEFAULT_LEVERAGE_STRATEGY
+    mode = strat.get(str(leverage), "defense")
+    return mode if mode in ("defense", "stop") else "defense"

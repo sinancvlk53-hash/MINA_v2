@@ -75,8 +75,13 @@ def run() -> None:
 
     interval = int(os.environ.get("MINA_CHECK_INTERVAL", "30"))
     ghost_every = max(1, int(os.environ.get("MINA_GHOST_EVERY", "6")))
+    reconcile_every = int(os.environ.get("MINA_RECONCILE_EVERY", "300"))
     loop_n = 0
-    logger.info("Motor başladı — interval=%ss ghost_every=%s", interval, ghost_every)
+    last_reconcile = time.time()
+    logger.info(
+        "Motor başladı — interval=%ss ghost_every=%s reconcile_every=%ss",
+        interval, ghost_every, reconcile_every,
+    )
 
     while True:
         try:
@@ -98,6 +103,13 @@ def run() -> None:
                 print(f"  📥 {filled} bekleyen limit emri doldu → tracking seed")
             raw_positions = client.futures_position_information()
             positions = pm.parse_open_positions(raw_positions)
+            now = time.time()
+            if now - last_reconcile >= reconcile_every:
+                reconciled = mina.reconcile_derr_with_binance(verbose=True)
+                if reconciled:
+                    logger.info("DERR reconcile: %s kayit kapandi", len(reconciled))
+                    print(f"  🔄 DERR reconcile: {len(reconciled)} hayalet kayit kapatildi")
+                last_reconcile = now
             if loop_n % ghost_every == 0:
                 ghosts = detect_ghost_positions(raw_positions)
                 if ghosts:
