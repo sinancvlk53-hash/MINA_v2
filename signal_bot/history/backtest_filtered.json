@@ -1,0 +1,2225 @@
+[
+  {
+    "timestamp": "2026-05-03 23:00",
+    "coin": "TIAUSDT",
+    "btc_pct": -0.72,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.347,
+      "exit_price": 0.362962,
+      "bars": 22
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.347,
+      "exit_price": 0.349892,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-04 02:00",
+    "coin": "JUPUSDT",
+    "btc_pct": 0.73,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.1813,
+      "exit_price": 0.177674,
+      "bars": 8
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.1813,
+      "exit_price": 0.178278,
+      "bars": 5
+    }
+  },
+  {
+    "timestamp": "2026-05-04 06:00",
+    "coin": "APTUSDT",
+    "btc_pct": -0.14,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.9993,
+      "exit_price": 0.979314,
+      "bars": 4
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.9993,
+      "exit_price": 0.982645,
+      "bars": 4
+    }
+  },
+  {
+    "timestamp": "2026-05-04 10:00",
+    "coin": "INJUSDT",
+    "btc_pct": -1.23,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 5.36,
+      "entry": 3.695,
+      "exit_price": 3.761,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 3.695,
+      "exit_price": 3.725792,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-04 13:00",
+    "coin": "JUPUSDT",
+    "btc_pct": -0.2,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.1772,
+      "exit_price": 0.185351,
+      "bars": 17
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.1772,
+      "exit_price": 0.178677,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-04 22:00",
+    "coin": "TIAUSDT",
+    "btc_pct": -0.18,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.3575,
+      "exit_price": 0.373945,
+      "bars": 4
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.3575,
+      "exit_price": 0.360479,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-05 01:00",
+    "coin": "TIAUSDT",
+    "btc_pct": 0.23,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.3731,
+      "exit_price": 0.365638,
+      "bars": 3
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.3731,
+      "exit_price": 0.376209,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-05 05:00",
+    "coin": "PNUTUSDT",
+    "btc_pct": 0.12,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.06066,
+      "exit_price": 0.06345,
+      "bars": 4
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.06066,
+      "exit_price": 0.061165,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-05 07:00",
+    "coin": "CRVUSDT",
+    "btc_pct": -0.13,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 5.87,
+      "entry": 0.2402,
+      "exit_price": 0.2449,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.2402,
+      "exit_price": 0.242202,
+      "bars": 6
+    }
+  },
+  {
+    "timestamp": "2026-05-05 08:00",
+    "coin": "JUPUSDT",
+    "btc_pct": -0.1,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.1846,
+      "exit_price": 0.193092,
+      "bars": 5
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.1846,
+      "exit_price": 0.186138,
+      "bars": 4
+    }
+  },
+  {
+    "timestamp": "2026-05-05 09:00",
+    "coin": "GMTUSDT",
+    "btc_pct": -0.27,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.01079,
+      "exit_price": 0.011286,
+      "bars": 21
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.01079,
+      "exit_price": 0.01088,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-05 10:00",
+    "coin": "CRVUSDT",
+    "btc_pct": 0.3,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.2401,
+      "exit_price": 0.251145,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.2401,
+      "exit_price": 0.242101,
+      "bars": 3
+    }
+  },
+  {
+    "timestamp": "2026-05-05 12:00",
+    "coin": "APTUSDT",
+    "btc_pct": 0.36,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.9892,
+      "exit_price": 0.969416,
+      "bars": 4
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.9892,
+      "exit_price": 0.972713,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-05 14:00",
+    "coin": "INJUSDT",
+    "btc_pct": -0.06,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 6.71,
+      "entry": 3.756,
+      "exit_price": 3.84,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 3.756,
+      "exit_price": 3.7873,
+      "bars": 6
+    }
+  },
+  {
+    "timestamp": "2026-05-06 00:00",
+    "coin": "TIAUSDT",
+    "btc_pct": 0.13,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.362,
+      "exit_price": 0.378652,
+      "bars": 3
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.362,
+      "exit_price": 0.365017,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-06 01:00",
+    "coin": "ZKUSDT",
+    "btc_pct": 0.5,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.0174,
+      "exit_price": 0.0182,
+      "bars": 8
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.0174,
+      "exit_price": 0.017545,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-06 05:00",
+    "coin": "APTUSDT",
+    "btc_pct": -0.03,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 1.0142,
+      "exit_price": 1.060853,
+      "bars": 4
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 1.0142,
+      "exit_price": 1.022652,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-07 01:00",
+    "coin": "APTUSDT",
+    "btc_pct": 0.15,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 9.35,
+      "entry": 1.0011,
+      "exit_price": 1.0323,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 1.0011,
+      "exit_price": 1.009443,
+      "bars": 3
+    }
+  },
+  {
+    "timestamp": "2026-05-07 09:00",
+    "coin": "JUPUSDT",
+    "btc_pct": -0.37,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.2038,
+      "exit_price": 0.199724,
+      "bars": 6
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.2038,
+      "exit_price": 0.205498,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-07 11:00",
+    "coin": "PNUTUSDT",
+    "btc_pct": -0.01,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.06155,
+      "exit_price": 0.060319,
+      "bars": 3
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.06155,
+      "exit_price": 0.062063,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-07 12:00",
+    "coin": "INJUSDT",
+    "btc_pct": 0.36,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 3.932,
+      "exit_price": 3.85336,
+      "bars": 2
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 3.932,
+      "exit_price": 3.866467,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-07 23:00",
+    "coin": "APTUSDT",
+    "btc_pct": 0.14,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 1.0267,
+      "exit_price": 1.073928,
+      "bars": 16
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 1.0267,
+      "exit_price": 1.035256,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-08 01:00",
+    "coin": "PNUTUSDT",
+    "btc_pct": -0.04,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 9.2,
+      "entry": 0.06098,
+      "exit_price": 0.06285,
+      "bars": 24
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.06098,
+      "exit_price": 0.059964,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-08 03:00",
+    "coin": "APTUSDT",
+    "btc_pct": 0.11,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 1.0424,
+      "exit_price": 1.09035,
+      "bars": 14
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 1.0424,
+      "exit_price": 1.051087,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-08 04:00",
+    "coin": "TIAUSDT",
+    "btc_pct": 0.1,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.3983,
+      "exit_price": 0.416622,
+      "bars": 8
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.3983,
+      "exit_price": 0.401619,
+      "bars": 3
+    }
+  },
+  {
+    "timestamp": "2026-05-08 08:00",
+    "coin": "CRVUSDT",
+    "btc_pct": 0.28,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.2449,
+      "exit_price": 0.256165,
+      "bars": 8
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.2449,
+      "exit_price": 0.246941,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-08 10:00",
+    "coin": "CRVUSDT",
+    "btc_pct": 0.42,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.2465,
+      "exit_price": 0.257839,
+      "bars": 11
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.2465,
+      "exit_price": 0.248554,
+      "bars": 4
+    }
+  },
+  {
+    "timestamp": "2026-05-08 14:00",
+    "coin": "JUPUSDT",
+    "btc_pct": 0.65,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.2122,
+      "exit_price": 0.221961,
+      "bars": 2
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.2122,
+      "exit_price": 0.213968,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-09 21:00",
+    "coin": "APTUSDT",
+    "btc_pct": -0.0,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 1.1122,
+      "exit_price": 1.089956,
+      "bars": 4
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 1.1122,
+      "exit_price": 1.093663,
+      "bars": 3
+    }
+  },
+  {
+    "timestamp": "2026-05-09 22:00",
+    "coin": "PNUTUSDT",
+    "btc_pct": 0.0,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.06115,
+      "exit_price": 0.063963,
+      "bars": 20
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.06115,
+      "exit_price": 0.06166,
+      "bars": 5
+    }
+  },
+  {
+    "timestamp": "2026-05-10 01:00",
+    "coin": "GMTUSDT",
+    "btc_pct": -0.01,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.01191,
+      "exit_price": 0.012458,
+      "bars": 15
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.01191,
+      "exit_price": 0.012009,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-10 07:00",
+    "coin": "PNUTUSDT",
+    "btc_pct": 0.02,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.06208,
+      "exit_price": 0.060838,
+      "bars": 3
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.06208,
+      "exit_price": 0.061045,
+      "bars": 3
+    }
+  },
+  {
+    "timestamp": "2026-05-10 09:00",
+    "coin": "PNUTUSDT",
+    "btc_pct": -0.03,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.06132,
+      "exit_price": 0.064141,
+      "bars": 9
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.06132,
+      "exit_price": 0.061831,
+      "bars": 3
+    }
+  },
+  {
+    "timestamp": "2026-05-10 10:00",
+    "coin": "CRVUSDT",
+    "btc_pct": 0.09,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.2543,
+      "exit_price": 0.265998,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.2543,
+      "exit_price": 0.256419,
+      "bars": 5
+    }
+  },
+  {
+    "timestamp": "2026-05-10 12:00",
+    "coin": "APTUSDT",
+    "btc_pct": 0.12,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 1.1066,
+      "exit_price": 1.157504,
+      "bars": 5
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 1.1066,
+      "exit_price": 1.115822,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-10 16:00",
+    "coin": "INJUSDT",
+    "btc_pct": -0.1,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 4.262,
+      "exit_price": 4.17676,
+      "bars": 11
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 4.262,
+      "exit_price": 4.297517,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-10 21:00",
+    "coin": "JUPUSDT",
+    "btc_pct": -0.03,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.2607,
+      "exit_price": 0.272692,
+      "bars": 1
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.2607,
+      "exit_price": 0.262872,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-11 08:00",
+    "coin": "JUPUSDT",
+    "btc_pct": 0.03,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.2547,
+      "exit_price": 0.249606,
+      "bars": 5
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.2547,
+      "exit_price": 0.250455,
+      "bars": 5
+    }
+  },
+  {
+    "timestamp": "2026-05-11 11:00",
+    "coin": "GMTUSDT",
+    "btc_pct": 0.18,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.01263,
+      "exit_price": 0.013211,
+      "bars": 4
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.01263,
+      "exit_price": 0.012735,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-11 13:00",
+    "coin": "TIAUSDT",
+    "btc_pct": -0.02,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -5.56,
+      "entry": 0.4426,
+      "exit_price": 0.4344,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.4426,
+      "exit_price": 0.446288,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-11 16:00",
+    "coin": "PNUTUSDT",
+    "btc_pct": 0.26,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.06218,
+      "exit_price": 0.060936,
+      "bars": 9
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.06218,
+      "exit_price": 0.062698,
+      "bars": 3
+    }
+  },
+  {
+    "timestamp": "2026-05-11 23:00",
+    "coin": "APTUSDT",
+    "btc_pct": -0.12,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 1.1283,
+      "exit_price": 1.105734,
+      "bars": 2
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 1.1283,
+      "exit_price": 1.109495,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-12 00:00",
+    "coin": "INJUSDT",
+    "btc_pct": -0.23,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 4.579,
+      "exit_price": 4.789634,
+      "bars": 9
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 4.579,
+      "exit_price": 4.617158,
+      "bars": 4
+    }
+  },
+  {
+    "timestamp": "2026-05-12 01:00",
+    "coin": "JUPUSDT",
+    "btc_pct": -0.45,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.2439,
+      "exit_price": 0.239022,
+      "bars": 4
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.2439,
+      "exit_price": 0.245932,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-12 05:00",
+    "coin": "CRVUSDT",
+    "btc_pct": 0.01,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.2838,
+      "exit_price": 0.278124,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.2838,
+      "exit_price": 0.286165,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-12 10:00",
+    "coin": "GMTUSDT",
+    "btc_pct": -0.21,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.01322,
+      "exit_price": 0.012956,
+      "bars": 3
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.01322,
+      "exit_price": 0.013,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-12 22:00",
+    "coin": "JUPUSDT",
+    "btc_pct": 0.16,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.2325,
+      "exit_price": 0.243195,
+      "bars": 4
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.2325,
+      "exit_price": 0.234437,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-12 23:00",
+    "coin": "APTUSDT",
+    "btc_pct": -0.27,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 1.0811,
+      "exit_price": 1.059478,
+      "bars": 14
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 1.0811,
+      "exit_price": 1.090109,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-13 01:00",
+    "coin": "PNUTUSDT",
+    "btc_pct": 0.34,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.06033,
+      "exit_price": 0.059123,
+      "bars": 11
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.06033,
+      "exit_price": 0.060833,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-13 22:00",
+    "coin": "GMTUSDT",
+    "btc_pct": 0.03,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.01258,
+      "exit_price": 0.012328,
+      "bars": 5
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.01258,
+      "exit_price": 0.012685,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-14 05:00",
+    "coin": "CRVUSDT",
+    "btc_pct": 0.49,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.2683,
+      "exit_price": 0.280642,
+      "bars": 16
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.2683,
+      "exit_price": 0.263828,
+      "bars": 6
+    }
+  },
+  {
+    "timestamp": "2026-05-14 08:00",
+    "coin": "INJUSDT",
+    "btc_pct": 0.02,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 5.028,
+      "exit_price": 5.259288,
+      "bars": 2
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 5.028,
+      "exit_price": 5.0699,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-14 14:00",
+    "coin": "PNUTUSDT",
+    "btc_pct": 0.82,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.06151,
+      "exit_price": 0.064339,
+      "bars": 2
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.06151,
+      "exit_price": 0.062023,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-14 18:00",
+    "coin": "APTUSDT",
+    "btc_pct": -0.1,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 1.0742,
+      "exit_price": 1.052716,
+      "bars": 5
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 1.0742,
+      "exit_price": 1.056297,
+      "bars": 5
+    }
+  },
+  {
+    "timestamp": "2026-05-15 14:00",
+    "coin": "INJUSDT",
+    "btc_pct": 0.24,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 4.796,
+      "exit_price": 4.70008,
+      "bars": 16
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 4.796,
+      "exit_price": 4.835967,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-15 15:00",
+    "coin": "TIAUSDT",
+    "btc_pct": -0.01,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.4229,
+      "exit_price": 0.414442,
+      "bars": 15
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.4229,
+      "exit_price": 0.426424,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-15 20:00",
+    "coin": "PNUTUSDT",
+    "btc_pct": -0.04,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.06075,
+      "exit_price": 0.063545,
+      "bars": 6
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.06075,
+      "exit_price": 0.061256,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-15 21:00",
+    "coin": "ZKUSDT",
+    "btc_pct": -0.14,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.01662,
+      "exit_price": 0.016288,
+      "bars": 9
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.01662,
+      "exit_price": 0.016343,
+      "bars": 9
+    }
+  },
+  {
+    "timestamp": "2026-05-15 22:00",
+    "coin": "CRVUSDT",
+    "btc_pct": 0.14,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.2552,
+      "exit_price": 0.250096,
+      "bars": 8
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.2552,
+      "exit_price": 0.250947,
+      "bars": 6
+    }
+  },
+  {
+    "timestamp": "2026-05-16 01:00",
+    "coin": "CRVUSDT",
+    "btc_pct": 0.08,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.2528,
+      "exit_price": 0.247744,
+      "bars": 5
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.2528,
+      "exit_price": 0.248587,
+      "bars": 5
+    }
+  },
+  {
+    "timestamp": "2026-05-16 06:00",
+    "coin": "TIAUSDT",
+    "btc_pct": -0.45,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.413,
+      "exit_price": 0.40474,
+      "bars": 1
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.413,
+      "exit_price": 0.406117,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-16 07:00",
+    "coin": "GMTUSDT",
+    "btc_pct": -0.32,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": -2.95,
+      "entry": 0.0112,
+      "exit_price": 0.01109,
+      "bars": 24
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.0112,
+      "exit_price": 0.011013,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-16 16:00",
+    "coin": "INJUSDT",
+    "btc_pct": -0.06,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 4.729,
+      "exit_price": 4.63442,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 4.729,
+      "exit_price": 4.768408,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-16 18:00",
+    "coin": "APTUSDT",
+    "btc_pct": 0.03,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.953,
+      "exit_price": 0.93394,
+      "bars": 23
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.953,
+      "exit_price": 0.937117,
+      "bars": 7
+    }
+  },
+  {
+    "timestamp": "2026-05-16 19:00",
+    "coin": "TIAUSDT",
+    "btc_pct": 0.05,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.3992,
+      "exit_price": 0.391216,
+      "bars": 6
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.3992,
+      "exit_price": 0.392547,
+      "bars": 6
+    }
+  },
+  {
+    "timestamp": "2026-05-16 20:00",
+    "coin": "PNUTUSDT",
+    "btc_pct": -0.0,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.059,
+      "exit_price": 0.061714,
+      "bars": 15
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.059,
+      "exit_price": 0.059492,
+      "bars": 7
+    }
+  },
+  {
+    "timestamp": "2026-05-16 23:00",
+    "coin": "CRVUSDT",
+    "btc_pct": 0.01,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.2404,
+      "exit_price": 0.235592,
+      "bars": 17
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.2404,
+      "exit_price": 0.236393,
+      "bars": 15
+    }
+  },
+  {
+    "timestamp": "2026-05-17 08:00",
+    "coin": "APTUSDT",
+    "btc_pct": -0.1,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.9526,
+      "exit_price": 0.933548,
+      "bars": 9
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.9526,
+      "exit_price": 0.960538,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-17 09:00",
+    "coin": "TIAUSDT",
+    "btc_pct": 0.18,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.3994,
+      "exit_price": 0.391412,
+      "bars": 5
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.3994,
+      "exit_price": 0.392743,
+      "bars": 4
+    }
+  },
+  {
+    "timestamp": "2026-05-17 10:00",
+    "coin": "JUPUSDT",
+    "btc_pct": 0.29,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.2006,
+      "exit_price": 0.196588,
+      "bars": 7
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.2006,
+      "exit_price": 0.197257,
+      "bars": 4
+    }
+  },
+  {
+    "timestamp": "2026-05-17 23:00",
+    "coin": "APTUSDT",
+    "btc_pct": -0.63,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 5.71,
+      "entry": 0.9292,
+      "exit_price": 0.9469,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.9292,
+      "exit_price": 0.936943,
+      "bars": 3
+    }
+  },
+  {
+    "timestamp": "2026-05-18 00:00",
+    "coin": "GMTUSDT",
+    "btc_pct": -0.54,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 4.28,
+      "entry": 0.01052,
+      "exit_price": 0.01067,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.01052,
+      "exit_price": 0.010608,
+      "bars": 3
+    }
+  },
+  {
+    "timestamp": "2026-05-18 01:00",
+    "coin": "APTUSDT",
+    "btc_pct": 0.05,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 3.93,
+      "entry": 0.931,
+      "exit_price": 0.9432,
+      "bars": 24
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.931,
+      "exit_price": 0.915483,
+      "bars": 9
+    }
+  },
+  {
+    "timestamp": "2026-05-18 16:00",
+    "coin": "APTUSDT",
+    "btc_pct": 0.01,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 7.31,
+      "entry": 0.9199,
+      "exit_price": 0.9423,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.9199,
+      "exit_price": 0.927566,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-19 14:00",
+    "coin": "PNUTUSDT",
+    "btc_pct": -0.61,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 10.88,
+      "entry": 0.05624,
+      "exit_price": 0.05828,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.05624,
+      "exit_price": 0.056709,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-19 20:00",
+    "coin": "INJUSDT",
+    "btc_pct": 0.24,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 4.943,
+      "exit_price": 5.170378,
+      "bars": 19
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 4.943,
+      "exit_price": 4.984192,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-20 08:00",
+    "coin": "APTUSDT",
+    "btc_pct": 0.23,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 7.77,
+      "entry": 0.9424,
+      "exit_price": 0.9668,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.9424,
+      "exit_price": 0.950253,
+      "bars": 6
+    }
+  },
+  {
+    "timestamp": "2026-05-20 09:00",
+    "coin": "GMTUSDT",
+    "btc_pct": 0.03,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.01024,
+      "exit_price": 0.010035,
+      "bars": 4
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.01024,
+      "exit_price": 0.010069,
+      "bars": 3
+    }
+  },
+  {
+    "timestamp": "2026-05-20 19:00",
+    "coin": "APTUSDT",
+    "btc_pct": 0.32,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 6.81,
+      "entry": 0.956,
+      "exit_price": 0.9777,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.956,
+      "exit_price": 0.963967,
+      "bars": 7
+    }
+  },
+  {
+    "timestamp": "2026-05-20 23:00",
+    "coin": "TIAUSDT",
+    "btc_pct": 0.06,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.4096,
+      "exit_price": 0.401408,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.4096,
+      "exit_price": 0.413013,
+      "bars": 4
+    }
+  },
+  {
+    "timestamp": "2026-05-21 07:00",
+    "coin": "INJUSDT",
+    "btc_pct": 0.32,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 4.919,
+      "exit_price": 5.145274,
+      "bars": 10
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 4.919,
+      "exit_price": 4.959992,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-21 12:00",
+    "coin": "GMTUSDT",
+    "btc_pct": 0.04,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.0103,
+      "exit_price": 0.010774,
+      "bars": 20
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.0103,
+      "exit_price": 0.010386,
+      "bars": 3
+    }
+  },
+  {
+    "timestamp": "2026-05-21 20:00",
+    "coin": "TIAUSDT",
+    "btc_pct": -0.03,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.4248,
+      "exit_price": 0.444341,
+      "bars": 7
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.4248,
+      "exit_price": 0.42834,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-21 21:00",
+    "coin": "APTUSDT",
+    "btc_pct": -0.02,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.9767,
+      "exit_price": 0.957166,
+      "bars": 21
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.9767,
+      "exit_price": 0.984839,
+      "bars": 7
+    }
+  },
+  {
+    "timestamp": "2026-05-22 11:00",
+    "coin": "GMTUSDT",
+    "btc_pct": 0.12,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.0106,
+      "exit_price": 0.010388,
+      "bars": 7
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.0106,
+      "exit_price": 0.010688,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-22 12:00",
+    "coin": "INJUSDT",
+    "btc_pct": 0.14,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 5.452,
+      "exit_price": 5.34296,
+      "bars": 2
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 5.452,
+      "exit_price": 5.497433,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-23 06:00",
+    "coin": "GMTUSDT",
+    "btc_pct": -0.11,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.01256,
+      "exit_price": 0.013138,
+      "bars": 1
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.01256,
+      "exit_price": 0.012665,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-23 07:00",
+    "coin": "JUPUSDT",
+    "btc_pct": -1.07,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.1912,
+      "exit_price": 0.199995,
+      "bars": 11
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.1912,
+      "exit_price": 0.192793,
+      "bars": 6
+    }
+  },
+  {
+    "timestamp": "2026-05-23 10:00",
+    "coin": "ZKUSDT",
+    "btc_pct": 0.09,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.01428,
+      "exit_price": 0.014937,
+      "bars": 8
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.01428,
+      "exit_price": 0.014399,
+      "bars": 3
+    }
+  },
+  {
+    "timestamp": "2026-05-23 17:00",
+    "coin": "APTUSDT",
+    "btc_pct": 0.05,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.9525,
+      "exit_price": 0.996315,
+      "bars": 4
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.9525,
+      "exit_price": 0.960437,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-24 21:00",
+    "coin": "INJUSDT",
+    "btc_pct": -0.64,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 5.096,
+      "exit_price": 5.330416,
+      "bars": 13
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 5.096,
+      "exit_price": 5.138467,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-25 04:00",
+    "coin": "APTUSDT",
+    "btc_pct": 0.42,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 5.37,
+      "entry": 0.9495,
+      "exit_price": 0.9665,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.9495,
+      "exit_price": 0.957412,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-25 08:00",
+    "coin": "APTUSDT",
+    "btc_pct": 0.03,
+    "3x": {
+      "result": "TIMEOUT",
+      "roe": 4.35,
+      "entry": 0.9649,
+      "exit_price": 0.9789,
+      "bars": 24
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.9649,
+      "exit_price": 0.972941,
+      "bars": 6
+    }
+  },
+  {
+    "timestamp": "2026-05-25 09:00",
+    "coin": "JUPUSDT",
+    "btc_pct": 0.24,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.2027,
+      "exit_price": 0.198646,
+      "bars": 16
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.2027,
+      "exit_price": 0.204389,
+      "bars": 5
+    }
+  },
+  {
+    "timestamp": "2026-05-25 10:00",
+    "coin": "CRVUSDT",
+    "btc_pct": -0.07,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.2281,
+      "exit_price": 0.223538,
+      "bars": 15
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.2281,
+      "exit_price": 0.230001,
+      "bars": 7
+    }
+  },
+  {
+    "timestamp": "2026-05-25 20:00",
+    "coin": "CRVUSDT",
+    "btc_pct": -0.21,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.2248,
+      "exit_price": 0.220304,
+      "bars": 5
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.2248,
+      "exit_price": 0.221053,
+      "bars": 5
+    }
+  },
+  {
+    "timestamp": "2026-05-26 01:00",
+    "coin": "APTUSDT",
+    "btc_pct": -0.68,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.9539,
+      "exit_price": 0.997779,
+      "bars": 9
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.9539,
+      "exit_price": 0.961849,
+      "bars": 3
+    }
+  },
+  {
+    "timestamp": "2026-05-26 03:00",
+    "coin": "JUPUSDT",
+    "btc_pct": 0.01,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.2,
+      "exit_price": 0.2092,
+      "bars": 11
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.2,
+      "exit_price": 0.201667,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-26 09:00",
+    "coin": "APTUSDT",
+    "btc_pct": -0.11,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.9784,
+      "exit_price": 0.958832,
+      "bars": 19
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.9784,
+      "exit_price": 0.986553,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-26 10:00",
+    "coin": "PNUTUSDT",
+    "btc_pct": 1.04,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.05828,
+      "exit_price": 0.057114,
+      "bars": 2
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.05828,
+      "exit_price": 0.058766,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-26 14:00",
+    "coin": "CRVUSDT",
+    "btc_pct": -0.24,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.2243,
+      "exit_price": 0.219814,
+      "bars": 5
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.2243,
+      "exit_price": 0.220562,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-26 15:00",
+    "coin": "INJUSDT",
+    "btc_pct": -0.63,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 5.796,
+      "exit_price": 5.68008,
+      "bars": 4
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 5.796,
+      "exit_price": 5.6994,
+      "bars": 4
+    }
+  },
+  {
+    "timestamp": "2026-05-27 04:00",
+    "coin": "APTUSDT",
+    "btc_pct": -0.12,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.9636,
+      "exit_price": 0.944328,
+      "bars": 17
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.9636,
+      "exit_price": 0.97163,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-27 10:00",
+    "coin": "INJUSDT",
+    "btc_pct": 0.01,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 5.697,
+      "exit_price": 5.58306,
+      "bars": 3
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 5.697,
+      "exit_price": 5.744475,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-27 11:00",
+    "coin": "TIAUSDT",
+    "btc_pct": -0.21,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.4468,
+      "exit_price": 0.467353,
+      "bars": 3
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.4468,
+      "exit_price": 0.450523,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-27 14:00",
+    "coin": "GMTUSDT",
+    "btc_pct": 0.07,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.01055,
+      "exit_price": 0.010339,
+      "bars": 7
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.01055,
+      "exit_price": 0.010638,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-27 19:00",
+    "coin": "CRVUSDT",
+    "btc_pct": 0.04,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.2189,
+      "exit_price": 0.214522,
+      "bars": 2
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.2189,
+      "exit_price": 0.215252,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-27 20:00",
+    "coin": "JUPUSDT",
+    "btc_pct": 0.28,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.1963,
+      "exit_price": 0.192374,
+      "bars": 1
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.1963,
+      "exit_price": 0.193028,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-28 03:00",
+    "coin": "TIAUSDT",
+    "btc_pct": -1.34,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.4185,
+      "exit_price": 0.41013,
+      "bars": 1
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.4185,
+      "exit_price": 0.411525,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-28 11:00",
+    "coin": "GMTUSDT",
+    "btc_pct": 0.14,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.01007,
+      "exit_price": 0.010533,
+      "bars": 2
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.01007,
+      "exit_price": 0.010154,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-28 13:00",
+    "coin": "APTUSDT",
+    "btc_pct": -0.69,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.9209,
+      "exit_price": 0.902482,
+      "bars": 24
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.9209,
+      "exit_price": 0.905552,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-28 20:00",
+    "coin": "PNUTUSDT",
+    "btc_pct": 0.17,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.05266,
+      "exit_price": 0.051607,
+      "bars": 17
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 0.05266,
+      "exit_price": 0.051782,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-28 21:00",
+    "coin": "INJUSDT",
+    "btc_pct": 0.34,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 5.52,
+      "exit_price": 5.77392,
+      "bars": 8
+    },
+    "6x": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "entry": 5.52,
+      "exit_price": 5.428,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-28 22:00",
+    "coin": "CRVUSDT",
+    "btc_pct": -0.44,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.2115,
+      "exit_price": 0.221229,
+      "bars": 14
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.2115,
+      "exit_price": 0.213262,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-29 00:00",
+    "coin": "JUPUSDT",
+    "btc_pct": 0.15,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.1768,
+      "exit_price": 0.184933,
+      "bars": 17
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.1768,
+      "exit_price": 0.178273,
+      "bars": 2
+    }
+  },
+  {
+    "timestamp": "2026-05-29 05:00",
+    "coin": "TIAUSDT",
+    "btc_pct": 0.22,
+    "3x": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "entry": 0.4143,
+      "exit_price": 0.406014,
+      "bars": 7
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.4143,
+      "exit_price": 0.417752,
+      "bars": 1
+    }
+  },
+  {
+    "timestamp": "2026-05-29 22:00",
+    "coin": "ZKUSDT",
+    "btc_pct": 0.02,
+    "3x": {
+      "result": "WIN",
+      "roe": 13.8,
+      "entry": 0.01358,
+      "exit_price": 0.014205,
+      "bars": 5
+    },
+    "6x": {
+      "result": "WIN",
+      "roe": 5.0,
+      "entry": 0.01358,
+      "exit_price": 0.013693,
+      "bars": 1
+    }
+  }
+]

@@ -1009,14 +1009,28 @@ class MinaPositionManager:
                     quantity=close_qty,
                     positionSide=side
                 )
-                
-                # TP1 kısmi kapama — journal tam kapanış trailing/stop'ta yazılır
+
+                entry_price = state.get('weighted_avg_price', position.get('entry_price', 0))
+                partial_pnl = (close_price - entry_price) * close_qty if side == 'LONG' else (entry_price - close_price) * close_qty
+                partial_pct = (partial_pnl / (entry_price * close_qty)) * 100 if entry_price > 0 else 0
+                partial_roe = (partial_pnl / state.get('initial_margin', 1)) * 100 if state.get('initial_margin', 0) > 0 else 0
             except Exception as e:
                 print(f"   ❌ TP1 market kapama hatası: {e}")
                 return False
 
             remaining_qty = self._round_quantity(amount - close_qty, symbol)
             if remaining_qty > 0:
+                self.log_position_close(
+                    symbol=symbol,
+                    side=side,
+                    close_price=close_price,
+                    qty=close_qty,
+                    close_reason='TP1 Partial',
+                    pnl_usdt=partial_pnl,
+                    pnl_percent=partial_pct,
+                    roe_percent=partial_roe,
+                    remaining_open_qty=remaining_qty,
+                )
                 stop_price = self._round_price(state.get('weighted_avg_price', position.get('entry_price')))
                 try:
                     self.client.futures_create_order(
@@ -1529,14 +1543,33 @@ class MinaPositionManager:
         pnl_usdt: float,
         pnl_percent: float,
         roe_percent: float,
+        remaining_open_qty: float | None = None,
     ) -> None:
-        """Pozisyon tamamen kapandığında journal.log_trade_close çağırır."""
-        self._cancel_merter_dca_limits(symbol)
+        """Tam kapanış veya kısmi TP sonrası DERR güncelle."""
         trade_id = self._trade_id_for(symbol, side)
         if not self.journal or trade_id is None:
             print(f"⚠️  Journal close atlandı (trade_id yok): {symbol} {side}")
             return
 
+        if remaining_open_qty is not None and remaining_open_qty > 0:
+            state = self.position_states.get(symbol, {})
+            old_margin = float(state.get("initial_margin") or 0)
+            old_qty = float(qty) + float(remaining_open_qty)
+            ratio = float(remaining_open_qty) / old_qty if old_qty > 0 else 1.0
+            new_margin = old_margin * ratio if old_margin > 0 else old_margin
+            try:
+                self.journal.reconcile_open_qty(trade_id, remaining_open_qty, new_margin)
+                state["initial_margin"] = new_margin
+                self._save_state()
+                print(
+                    f"📔 [Journal] Kısmi kapanış ({close_reason}): {symbol} "
+                    f"kalan qty={remaining_open_qty}"
+                )
+            except Exception as e:
+                print(f"❌ Journal kısmi qty güncelleme hatası: {e}")
+            return
+
+        self._cancel_merter_dca_limits(symbol)
         try:
             self.journal.log_trade_close(
                 trade_id=trade_id,

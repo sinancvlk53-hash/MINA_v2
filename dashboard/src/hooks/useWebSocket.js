@@ -21,7 +21,13 @@ export default function useWebSocket(url) {
 
       ws.onmessage = (e) => {
         if (!mountedRef.current) return
-        try { setData(JSON.parse(e.data)) } catch {}
+        try {
+          const msg = JSON.parse(e.data)
+          if (msg.action) return
+          if (msg.macroLevels != null || msg.positions != null || msg.balance != null) {
+            setData(msg)
+          }
+        } catch {}
       }
 
       ws.onclose = () => {

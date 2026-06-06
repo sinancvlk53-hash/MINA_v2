@@ -107,6 +107,15 @@ def main() -> None:
         print(f"RED: {reason}")
         sys.exit(1)
 
+    try:
+        from mina_coin_lock import check_motor_can_open
+        lock_reason = check_motor_can_open(symbol, client, ROOT)
+        if lock_reason:
+            print(f"RED: {lock_reason}")
+            sys.exit(1)
+    except ImportError:
+        pass
+
     account = AccountManager(client)
     slot = account.calculate_slot_size()
     margin = slot * ENTRY_SLOT_RATIO

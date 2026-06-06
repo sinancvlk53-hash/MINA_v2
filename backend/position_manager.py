@@ -15,6 +15,35 @@ class PositionManager:
         self.client = client
         self.slot_count = 10
     
+    def parse_open_positions(self, raw_positions: List[Dict]) -> List[Dict]:
+        """Tek futures_position_information çağrısından pozisyon listesi."""
+        open_positions = []
+        for pos in raw_positions:
+            amount = float(pos['positionAmt'])
+            if amount == 0:
+                continue
+            lev = 0
+            try:
+                lev = int(pos.get('leverage') or 0)
+            except (TypeError, ValueError):
+                lev = 0
+            if lev <= 0:
+                lev = 4
+            iso = float(pos.get('isolatedMargin') or pos.get('isolatedWallet') or 0)
+            open_positions.append({
+                'symbol': pos['symbol'],
+                'side': 'LONG' if amount > 0 else 'SHORT',
+                'amount': abs(amount),
+                'entry_price': float(pos['entryPrice']),
+                'mark_price': float(pos['markPrice']),
+                'liquidation_price': float(pos['liquidationPrice']),
+                'unrealized_pnl': float(pos['unRealizedProfit']),
+                'leverage': lev,
+                'margin_type': pos.get('marginType', 'isolated'),
+                'isolated_margin': iso,
+            })
+        return open_positions
+
     def get_all_positions(self) -> List[Dict]:
         """
         Tüm açık pozisyonları getir
@@ -22,39 +51,7 @@ class PositionManager:
         """
         try:
             positions = self.client.futures_position_information()
-            
-            # Sadece açık pozisyonlar
-            open_positions = []
-            for pos in positions:
-                amount = float(pos['positionAmt'])
-                if amount != 0:
-                    lev = 0
-                    try:
-                        lev = int(pos.get('leverage') or 0)
-                    except (TypeError, ValueError):
-                        lev = 0
-                    if lev <= 0:
-                        try:
-                            risk = self.client.futures_position_risk(symbol=pos['symbol'])
-                            if risk:
-                                lev = int(risk[0].get('leverage', 4))
-                        except Exception:
-                            lev = 4
-                    iso = float(pos.get('isolatedMargin') or pos.get('isolatedWallet') or 0)
-                    open_positions.append({
-                        'symbol': pos['symbol'],
-                        'side': 'LONG' if amount > 0 else 'SHORT',
-                        'amount': abs(amount),
-                        'entry_price': float(pos['entryPrice']),
-                        'mark_price': float(pos['markPrice']),
-                        'liquidation_price': float(pos['liquidationPrice']),
-                        'unrealized_pnl': float(pos['unRealizedProfit']),
-                        'leverage': lev,
-                        'margin_type': pos.get('marginType', 'isolated'),
-                        'isolated_margin': iso,
-                    })
-            
-            return open_positions
+            return self.parse_open_positions(positions)
             
         except Exception as e:
             print(f"❌ Pozisyon okuma hatası: {e}")

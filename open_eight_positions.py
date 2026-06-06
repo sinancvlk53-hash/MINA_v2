@@ -84,17 +84,17 @@ def main() -> None:
     opened = 0
 
     for primary, backup in LONG_PLAN:
-        for attempt in range(1, 3):
+        for attempt in range(1, 4):
             if try_open_with_backup(client, primary, backup, "LONG", margin_usdt, step_sizes, exclude):
                 opened += 1
                 break
             print(f"RETRY_LONG {primary} attempt={attempt}")
-            time.sleep(1.5)
-        time.sleep(0.5)
+            time.sleep(2.0)
+        time.sleep(1.0)
 
     for primary, backup in SHORT_PLAN:
         ok = False
-        for attempt in range(1, 3):
+        for attempt in range(1, 4):
             ok = try_open_with_backup(client, primary, backup, "SHORT", margin_usdt, step_sizes, exclude)
             if ok:
                 break
@@ -105,10 +105,10 @@ def main() -> None:
                 if ok:
                     break
             print(f"RETRY_SHORT {primary} attempt={attempt}")
-            time.sleep(1.5)
+            time.sleep(2.0)
         if ok:
             opened += 1
-        time.sleep(0.5)
+        time.sleep(1.0)
 
     balance_after = account.get_usdt_balance()
     all_pos = client.futures_position_information()

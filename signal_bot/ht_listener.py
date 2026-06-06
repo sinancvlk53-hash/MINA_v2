@@ -186,23 +186,7 @@ async def analyze_image(img_bytes: bytes, mime: str = 'image/jpeg') -> list:
 # Kuyruk yazma
 # ---------------------------------------------------------------------------
 
-def write_queue_from_text(text: str, label: str = 'HT'):
-    """Telegram metnini signal_parser ile RAW kuyruğa yaz."""
-    try:
-        from signal_bot.signal_parser import parse_merter, parse_haluk_telegram, enqueue_records
-        records = parse_merter(text)
-        pause = False
-        if not records:
-            records, pause = parse_haluk_telegram(text)
-        if records:
-            enqueue_records(records)
-            print(f"[{label} KUYRUK] {len(records)} kayıt → raw_signal_queue (pause={pause})")
-    except Exception as e:
-        print(f'[{label} KUYRUK] Yazma hatası: {e}')
-
-
 def write_queue(signals: list, source_info: str):
-    """Görsel/legacy sinyal listesi — ht_signals_queue yedek."""
     try:
         with open(QUEUE_FILE, 'w', encoding='utf-8') as f:
             json.dump({'signals': signals, 'source': source_info}, f, ensure_ascii=False)
@@ -224,16 +208,11 @@ async def handler(event):
 
     # --- METİN SİNYALİ ---
     if text:
-        if _is_update_trap(text):
-            write_queue_from_text(text, 'HT')
-            return
         signals = parse_text_signal(text)
         if signals:
             print(f'[HT TEXT {now}] {signals[0]["coin"]} {signals[0]["side"]}')
-            write_queue_from_text(text, 'HT')
             write_queue(signals, f'HT Metin | {now}')
             return
-        write_queue_from_text(text, 'HT')
 
     # --- GÖRSEL SİNYALİ ---
     has_photo = bool(msg.photo)

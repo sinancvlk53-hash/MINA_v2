@@ -2,15 +2,18 @@
 # -*- coding: utf-8 -*-
 """
 MINA v2 — Dashboard WebSocket Server  port 8765
-5 sn'de bir Binance verisi + log akışı yayınlar.
+15 sn'de bir Binance verisi + log akışı yayınlar.
 """
 import asyncio, json, os, sys, logging, time
-sys.path.insert(0, '/root/MINA_v2')
+
+ROOT = os.environ.get('MINA_DATA_ROOT', '/root/MINA_v2')
+sys.path.insert(0, ROOT)
+BROADCAST_SEC = int(os.environ.get('MINA_WS_BROADCAST_SEC', '15'))
 
 import websockets
 from backend.config import BinanceConfig, AccountManager
 
-MERTER_STATE_PATH = '/root/MINA_v2/signal_bot/merter_dca_state.json'
+MERTER_STATE_PATH = os.path.join(ROOT, 'signal_bot/merter_dca_state.json')
 _rvol_cache = {}  # symbol -> (value, ts)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
@@ -27,13 +30,15 @@ def get_client():
 # ── JSON yardımcı ────────────────────────────────────────────────────────────
 def read_json(path):
     try:
-        with open(path) as f: return json.load(f)
-    except Exception: return {}
+        with open(path, encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {}
 
 # ── Engine durumu ────────────────────────────────────────────────────────────
 def engine_running():
     try:
-        with open('/root/MINA_v2/engine.lock') as f:
+        with open(os.path.join(ROOT, 'engine.lock')) as f:
             pid = int(f.read().strip())
         import psutil
         return psutil.pid_exists(pid)
@@ -41,29 +46,34 @@ def engine_running():
         return False
 
 # ── Log tamponu ─────────────────────────────────────────────────────────────
-LOG_PATH     = '/root/MINA_v2/mina_bot.log'
+LOG_PATH     = os.path.join(ROOT, 'mina_bot.log')
 _log_buf     = []
 _log_pos     = 0
 
-MACRO_LEVELS_PATH = '/root/MINA_v2/signal_bot/macro_levels.json'
+MACRO_LEVELS_PATH = os.path.join(ROOT, 'signal_bot/macro_levels.json')
 
 def get_macro_levels():
+    """Makro panel — snippet alanı her zaman dolu/boş string olarak gider."""
     levels: list = []
     try:
-        sys.path.insert(0, '/root/MINA_v2')
         from signal_bot.macro_levels_store import panel_levels_for_dashboard
         levels = panel_levels_for_dashboard()
     except Exception as exc:
-        log.warning(f"macro_levels: {exc}")
+        log.warning(f"macro_levels import: {exc}")
         data = read_json(MACRO_LEVELS_PATH)
         levels = data.get('levels') or []
 
     out = []
     for row in levels:
         item = dict(row)
-        if not item.get('snippet') and item.get('text'):
-            item['snippet'] = item['text']
+        snippet = (item.get('snippet') or item.get('text') or '').strip()
+        item['snippet'] = snippet
+        item['text'] = snippet
+        if not item.get('coin'):
+            continue
         out.append(item)
+    if not out and os.path.isfile(MACRO_LEVELS_PATH):
+        log.warning("macro_levels: panel bos — dosya=%s", MACRO_LEVELS_PATH)
     return out
 
 def get_dashboard_settings():
@@ -200,14 +210,14 @@ async def get_data():
         balance = account.get_usdt_balance()
 
         raw            = client.futures_position_information()
-        defense_levels = read_json('/root/MINA_v2/defense_levels.json')
+        defense_levels = read_json(os.path.join(ROOT, 'defense_levels.json'))
         merter_slots   = get_merter_slots_meta()
         try:
             from mina_signal_source import SOURCE_LABELS, get_position_sources
             position_sources = get_position_sources()
         except ImportError:
             SOURCE_LABELS = {"HT": "Haluk Hoca", "MZ": "Merter", "MANUEL": "Manuel"}
-            position_sources = read_json('/root/MINA_v2/position_sources.json')
+            position_sources = read_json(os.path.join(ROOT, 'position_sources.json'))
         try:
             from mina_slot_policy import SLOTS_HALUK_MOTOR, SLOTS_MERTER_MOTOR, SLOT_TOTAL
             from mina_slot_policy import SLOTS_EI_DCA, SLOTS_MERTER_OTHER_DCA
@@ -289,7 +299,7 @@ async def get_data():
             'merterPositions': merter_positions,
             'merterSlots':     merter_slots,
             'macroLevels':     get_macro_levels(),
-            'halukPdfTimestamp': read_json('/root/MINA_v2/signal_bot/raw_signal_queue.json').get('haluk_pdf_timestamp'),
+            'halukPdfTimestamp': read_json(os.path.join(ROOT, 'signal_bot/raw_signal_queue.json')).get('haluk_pdf_timestamp'),
             'slotSummary': {
                 'motorUsed':  len(motor_positions),
                 'motorMax':   SLOTS_HALUK_MOTOR,
@@ -406,8 +416,8 @@ async def manual_open_position(websocket, symbol, side, leverage=4, entry_price=
             }))
             return
         cmd = [
-            '/root/MINA_v2/venv/bin/python',
-            '/root/MINA_v2/scripts/manual_open.py',
+            os.path.join(ROOT, 'venv/bin/python'),
+            os.path.join(ROOT, 'scripts/manual_open.py'),
             '--symbol', sym,
             '--side', sd,
             '--leverage', str(lev),
@@ -420,7 +430,7 @@ async def manual_open_position(websocket, symbol, side, leverage=4, entry_price=
                     cmd.extend(['--entry-price', str(ep)])
             except (TypeError, ValueError):
                 pass
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60, cwd='/root/MINA_v2')
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60, cwd=ROOT)
         out = (proc.stdout or '') + (proc.stderr or '')
         ok = proc.returncode == 0
         await websocket.send(json.dumps({
@@ -472,11 +482,11 @@ async def handler(websocket):
         CONNECTED.discard(websocket)
         log.info(f"- client ({len(CONNECTED)} total)")
 
-# ── Broadcast döngüsü (5 sn) ────────────────────────────────────────────────
+# ── Broadcast döngüsü ───────────────────────────────────────────────────────
 async def broadcast_loop():
     global CONNECTED
     while True:
-        await asyncio.sleep(5)
+        await asyncio.sleep(BROADCAST_SEC)
         if not CONNECTED: continue
         try:
             data = await get_data()

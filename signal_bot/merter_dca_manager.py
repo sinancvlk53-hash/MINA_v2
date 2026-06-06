@@ -543,6 +543,14 @@ class MerterDCAManager:
         if self._yuva_busy(signal_source):
             _log_reject(signal_source, symbol, "yuva dolu")
             return False
+        try:
+            from mina_coin_lock import check_merter_can_open
+            lock_reason = check_merter_can_open(symbol, self._client_get())
+            if lock_reason:
+                _log_reject(signal_source, symbol, lock_reason)
+                return False
+        except ImportError:
+            pass
         if not self.passes_min_volume(symbol, signal_source):
             return False
         if initial_parts < 1 or initial_parts > PARTS_PER_YUVA:

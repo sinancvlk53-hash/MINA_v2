@@ -329,6 +329,15 @@ def open_signal_position(
         print(f"[SLOT_BRIDGE] Reddedildi {symbol} {side}: {reason}")
         return None
 
+    try:
+        from mina_coin_lock import check_motor_can_open
+        lock_reason = check_motor_can_open(symbol, manager.client)
+        if lock_reason:
+            print(f"[SLOT_BRIDGE] Reddedildi {symbol} {side}: {lock_reason}")
+            return None
+    except ImportError:
+        pass
+
     _prepare_symbol(manager.client, symbol)
     time.sleep(0.15)
 

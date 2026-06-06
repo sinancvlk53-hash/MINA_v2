@@ -1,14 +1,50 @@
 {
-  "BTCUSDT": {
-    "entry_price": 68115.7578125,
+  "SOLUSDT": {
+    "entry_price": 63.01329974811,
     "tp1_done": false,
     "tp2_done": false,
-    "highest_price": 67380.4,
+    "highest_price": 62.14927147,
+    "defense_stage": 1,
+    "d2_order_active": false,
+    "d2_order_id": null,
+    "d3_order_id": null,
+    "tp_disabled": false,
+    "weighted_avg_price": 62.92679045799821
+  },
+  "LINKUSDT": {
+    "entry_price": 7.311,
+    "tp1_done": false,
+    "tp2_done": false,
+    "highest_price": 7.27616913,
     "defense_stage": 0,
     "d2_order_active": false,
     "d2_order_id": null,
     "d3_order_id": null,
     "tp_disabled": false,
-    "weighted_avg_price": 68115.7578125
+    "weighted_avg_price": 7.311
+  },
+  "ATOMUSDT": {
+    "entry_price": 1.647,
+    "tp1_done": false,
+    "tp2_done": false,
+    "highest_price": 1.646,
+    "defense_stage": 0,
+    "d2_order_active": false,
+    "d2_order_id": null,
+    "d3_order_id": null,
+    "tp_disabled": false,
+    "weighted_avg_price": 1.647
+  },
+  "NXPCUSDT": {
+    "entry_price": 0.344,
+    "tp1_done": false,
+    "tp2_done": false,
+    "highest_price": 0.35299436,
+    "defense_stage": 0,
+    "d2_order_active": false,
+    "d2_order_id": null,
+    "d3_order_id": null,
+    "tp_disabled": false,
+    "weighted_avg_price": 0.344
   }
 }

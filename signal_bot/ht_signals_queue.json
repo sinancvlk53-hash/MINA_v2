@@ -1,22 +1,12 @@
 {
   "signals": [
     {
-      "coin": "BTCUSDT",
+      "coin": "ETHUSDT",
       "side": "LONG",
-      "entry": "65000.0",
-      "stop": "63000.0",
+      "entry": "—",
+      "stop": "—",
       "leverage": 5,
       "leverage_label": "5x",
-      "d1_price": 63000.0,
-      "source": "merter"
-    },
-    {
-      "coin": "SOLUSDT",
-      "side": "LONG",
-      "entry": "125.0",
-      "stop": "—",
-      "leverage": 2,
-      "leverage_label": "2x",
       "d1_price": null,
       "source": "merter"
     }

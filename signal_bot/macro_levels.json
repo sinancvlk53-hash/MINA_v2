@@ -1,0 +1,92 @@
+{
+  "updated_at": "2026-06-06T05:47:09Z",
+  "source": "HALUK_PDF:tg_20260606_054706_11519.pdf",
+  "levels": [
+    {
+      "coin": "TOTAL",
+      "supports": [],
+      "resistances": [],
+      "direction": "UP",
+      "snippet": "TOTAL: Bugün pek bulaşmalık değil, bi izlemek lazım. İkili dip yapmayaçalışıyor, burası\ntutmazsa sıkıntı1.91'e kadar boş.",
+      "source": "HALUK_PDF:tg_20260606_054706_11519.pdf",
+      "updated_at": "2026-06-06T05:47:09Z"
+    },
+    {
+      "coin": "OTHERS",
+      "supports": [],
+      "resistances": [],
+      "direction": null,
+      "snippet": "OTHERS: 160'a doğru gidiyoruz, hazırlıklıolun.\nYayın Özetleri Sayfa 1",
+      "source": "HALUK_PDF:tg_20260605_143707_11497.pdf",
+      "updated_at": "2026-06-05T14:37:12Z"
+    },
+    {
+      "coin": "BTC.D",
+      "supports": [],
+      "resistances": [],
+      "snippet": "",
+      "direction": null,
+      "source": null
+    },
+    {
+      "coin": "USDT.D",
+      "supports": [],
+      "resistances": [],
+      "snippet": "",
+      "direction": null,
+      "source": null
+    },
+    {
+      "coin": "ETHUSDT",
+      "supports": [],
+      "resistances": [],
+      "direction": null,
+      "snippet": "ETH:aşağıyıbi fitilledi geri döndü. Almak için acele etmeyin.",
+      "source": "HALUK_PDF:tg_20260606_054706_11519.pdf",
+      "updated_at": "2026-06-06T05:47:09Z"
+    },
+    {
+      "coin": "XAUUSDT",
+      "supports": [],
+      "resistances": [],
+      "direction": null,
+      "snippet": "XAU: altın tutunamadı4bin'e doğru gidiyor.",
+      "source": "HALUK_PDF:tg_20260605_143707_11497.pdf",
+      "updated_at": "2026-06-05T14:37:12Z"
+    },
+    {
+      "coin": "XAGUSDT",
+      "supports": [],
+      "resistances": [],
+      "direction": null,
+      "snippet": "XAG: pas daha çok var.",
+      "source": "HALUK_PDF:tg_20260604_142710_11448.pdf",
+      "updated_at": "2026-06-04T21:01:05Z"
+    },
+    {
+      "coin": "BRENT",
+      "supports": [],
+      "resistances": [],
+      "direction": null,
+      "snippet": "BRENT: kırmadıkça burada zikzaklar aynıhala",
+      "source": "HALUK_PDF:tg_20260606_054706_11519.pdf",
+      "updated_at": "2026-06-06T05:47:09Z"
+    },
+    {
+      "coin": "TOTAL2",
+      "supports": [],
+      "resistances": [],
+      "snippet": "",
+      "direction": null,
+      "source": null
+    },
+    {
+      "coin": "TOTAL3",
+      "supports": [],
+      "resistances": [],
+      "snippet": "",
+      "direction": null,
+      "source": null
+    }
+  ]
+}

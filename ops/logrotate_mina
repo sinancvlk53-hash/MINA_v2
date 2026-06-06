@@ -1,0 +1,10 @@
+/root/MINA_v2/mina_bot.log
+/root/MINA_v2/signals_log.txt {
+    daily
+    rotate 7
+    compress
+    delaycompress
+    missingok
+    notifempty
+    copytruncate
+}

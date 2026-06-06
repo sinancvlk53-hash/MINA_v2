@@ -1,13 +1,10 @@
 {
   "processed": [
-    "2026-06-03T09:58:16Z|haluk_telegram|BTCUSDT|BTCUSDT UPDATE: stop seviyesi güncellendi",
-    "2026-06-03T09:58:16Z|merter|BTCUSDT|$BTC için Long, giriş 65000, stop 63000",
-    "2026-06-03T09:58:16Z|merter|SOLUSDT|solana var. 125 maliyet 115-125 çift alım 131-135 çift satım",
-    "2026-06-03T09:59:23Z|haluk_telegram|BTCUSDT|BTCUSDT UPDATE: stop seviyesi güncellendi",
-    "2026-06-03T09:59:23Z|merter|BTCUSDT|$BTC için Long, giriş 65000, stop 63000",
-    "2026-06-03T09:59:23Z|merter|SOLUSDT|solana var. 125 maliyet 115-125 çift alım 131-135 çift satım"
+    "2026-06-04T07:01:50Z|merter|BTCUSDT|James Wynn, Bitcoin tarafında 40x kaldıraçlı yeni bir short pozisyon açtı.\n\nPozisyon büyüklüğü 2,65 BTC olurken, toplam ",
+    "2026-06-04T09:16:33Z|merter|BTCUSDT|Bitcoin tarafında 4 saatlikde pozitif uyumsuzluk var.\n\nciddi anlamda çok düştük tepki almamız lazım",
+    "2026-06-04T10:16:59Z|merter|ETHUSDT|Merter hocanın alım planına çok az kaldı eth\n\nşu anda beklemedeyiz  planımızı önceden yapmıştık zaten"
   ],
-  "baselined_at": "2026-06-03T11:50:07Z",
-  "last_scan": "2026-06-03T11:50:08Z",
-  "last_queue_updated": "2026-06-03T09:59:23Z"
+  "baselined_at": "2026-06-03T11:51:19Z",
+  "last_scan": "2026-06-06T07:58:02Z",
+  "last_queue_updated": "2026-06-06T06:45:21Z"
 }

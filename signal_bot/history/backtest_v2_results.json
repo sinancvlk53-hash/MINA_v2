@@ -1,0 +1,1220 @@
+[
+  {
+    "ts": "2026-05-05 09:00",
+    "coin": "BRETTUSDT",
+    "entry": 0.00795,
+    "ema50": 0.007603,
+    "atr4h": 0.000234,
+    "sup": 0.00787,
+    "fr": 0.0001,
+    "str1": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 24
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 4
+    },
+    "str3": {
+      "result": "WIN",
+      "roe": 4.0,
+      "bars": 4
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 3.46,
+      "bars": 4
+    }
+  },
+  {
+    "ts": "2026-05-05 09:00",
+    "coin": "MAGICUSDT",
+    "entry": 0.0657,
+    "ema50": 0.065575,
+    "atr4h": 0.00115,
+    "sup": 0.0647,
+    "fr": 0.0001,
+    "str1": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 24
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 11
+    },
+    "str3": {
+      "result": "WIN",
+      "roe": 4.0,
+      "bars": 12
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 2.01,
+      "bars": 13
+    }
+  },
+  {
+    "ts": "2026-05-05 09:00",
+    "coin": "PYTHUSDT",
+    "entry": 0.04933,
+    "ema50": 0.048666,
+    "atr4h": 0.000915,
+    "sup": 0.04861,
+    "fr": 0.0001,
+    "str1": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 23
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    },
+    "str3": {
+      "result": "WIN",
+      "roe": 4.0,
+      "bars": 2
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 1.51,
+      "bars": 2
+    }
+  },
+  {
+    "ts": "2026-05-05 09:00",
+    "coin": "SNXUSDT",
+    "entry": 0.3211,
+    "ema50": 0.31558,
+    "atr4h": 0.006793,
+    "sup": 0.3148,
+    "fr": 0.0001,
+    "str1": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 11
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 4
+    },
+    "str3": {
+      "result": "WIN",
+      "roe": 4.0,
+      "bars": 11
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 0.9,
+      "bars": 5
+    }
+  },
+  {
+    "ts": "2026-05-05 15:00",
+    "coin": "TAOUSDT",
+    "entry": 283.04,
+    "ema50": 271.047811,
+    "atr4h": 6.868571,
+    "sup": 276.78,
+    "fr": 0.0001,
+    "str1": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 7
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    },
+    "str3": {
+      "result": "WIN",
+      "roe": 4.0,
+      "bars": 5
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 1.29,
+      "bars": 2
+    }
+  },
+  {
+    "ts": "2026-05-06 15:00",
+    "coin": "STXUSDT",
+    "entry": 0.246,
+    "ema50": 0.230929,
+    "atr4h": 0.010221,
+    "sup": 0.2417,
+    "fr": 0.0001,
+    "str1": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 12
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    },
+    "str3": {
+      "result": "WIN",
+      "roe": 4.0,
+      "bars": 2
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 4.68,
+      "bars": 2
+    }
+  },
+  {
+    "ts": "2026-05-07 09:00",
+    "coin": "ATOMUSDT",
+    "entry": 1.924,
+    "ema50": 1.916471,
+    "atr4h": 0.037,
+    "sup": 1.895,
+    "fr": 0.0001,
+    "str1": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 6
+    },
+    "str2": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 5
+    },
+    "str3": {
+      "result": "LOSS",
+      "roe": -5.0,
+      "bars": 5
+    },
+    "str4": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 6
+    }
+  },
+  {
+    "ts": "2026-05-07 09:00",
+    "coin": "LINKUSDT",
+    "entry": 10.001,
+    "ema50": 9.539395,
+    "atr4h": 0.175786,
+    "sup": 9.852,
+    "fr": 0.0001,
+    "str1": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 17
+    },
+    "str2": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 5
+    },
+    "str3": {
+      "result": "LOSS",
+      "roe": -5.0,
+      "bars": 5
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 0.52,
+      "bars": 4
+    }
+  },
+  {
+    "ts": "2026-05-07 09:00",
+    "coin": "BOMEUSDT",
+    "entry": 0.000601,
+    "ema50": 0.000554,
+    "atr4h": 2.6e-05,
+    "sup": 0.000576,
+    "fr": 0.0001,
+    "str1": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 5
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    },
+    "str3": {
+      "result": "WIN",
+      "roe": 4.0,
+      "bars": 3
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 2.72,
+      "bars": 4
+    }
+  },
+  {
+    "ts": "2026-05-07 09:00",
+    "coin": "HBARUSDT",
+    "entry": 0.09081,
+    "ema50": 0.089745,
+    "atr4h": 0.001347,
+    "sup": 0.09033,
+    "fr": 0.0001,
+    "str1": {
+      "result": "TIMEOUT",
+      "roe": -1.19,
+      "bars": 24
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    },
+    "str3": {
+      "result": "D1_TP1",
+      "roe": -1.0,
+      "bars": 6
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 0.87,
+      "bars": 4
+    }
+  },
+  {
+    "ts": "2026-05-07 09:00",
+    "coin": "WOOUSDT",
+    "entry": 0.01978,
+    "ema50": 0.01948,
+    "atr4h": 0.000399,
+    "sup": 0.0195,
+    "fr": 0.0001,
+    "str1": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 5
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    },
+    "str3": {
+      "result": "WIN",
+      "roe": 4.0,
+      "bars": 3
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 1.62,
+      "bars": 4
+    }
+  },
+  {
+    "ts": "2026-05-07 15:00",
+    "coin": "STORJUSDT",
+    "entry": 0.1127,
+    "ema50": 0.105087,
+    "atr4h": 0.008179,
+    "sup": 0.1088,
+    "fr": 0.0001,
+    "str1": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 9
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    },
+    "str3": {
+      "result": "WIN",
+      "roe": 4.0,
+      "bars": 2
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 1.5,
+      "bars": 2
+    }
+  },
+  {
+    "ts": "2026-05-08 09:00",
+    "coin": "SPXUSDT",
+    "entry": 0.4262,
+    "ema50": 0.39841,
+    "atr4h": 0.016364,
+    "sup": 0.4145,
+    "fr": 0.0001,
+    "str1": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 12
+    },
+    "str2": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 4
+    },
+    "str3": {
+      "result": "LOSS",
+      "roe": -5.0,
+      "bars": 4
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 0.98,
+      "bars": 7
+    }
+  },
+  {
+    "ts": "2026-05-10 09:00",
+    "coin": "PNUTUSDT",
+    "entry": 0.06132,
+    "ema50": 0.05981,
+    "atr4h": 0.001477,
+    "sup": 0.06037,
+    "fr": 0.0001,
+    "str1": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 9
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    },
+    "str3": {
+      "result": "WIN",
+      "roe": 4.0,
+      "bars": 3
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 4.81,
+      "bars": 6
+    }
+  },
+  {
+    "ts": "2026-05-10 09:00",
+    "coin": "SYNUSDT",
+    "entry": 0.05783,
+    "ema50": 0.055931,
+    "atr4h": 0.001118,
+    "sup": 0.05714,
+    "fr": 0.0001,
+    "str1": {
+      "result": "TIMEOUT",
+      "roe": 9.13,
+      "bars": 24
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    },
+    "str3": {
+      "result": "WIN",
+      "roe": 4.0,
+      "bars": 1
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 5.73,
+      "bars": 2
+    }
+  },
+  {
+    "ts": "2026-05-10 09:00",
+    "coin": "ZILUSDT",
+    "entry": 0.00432,
+    "ema50": 0.004215,
+    "atr4h": 7.3e-05,
+    "sup": 0.00425,
+    "fr": 0.0001,
+    "str1": {
+      "result": "TIMEOUT",
+      "roe": 2.08,
+      "bars": 24
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    },
+    "str3": {
+      "result": "WIN",
+      "roe": 4.0,
+      "bars": 3
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 2.62,
+      "bars": 6
+    }
+  },
+  {
+    "ts": "2026-05-10 10:00",
+    "coin": "BTCUSDT",
+    "entry": 80836.4,
+    "ema50": 79646.309344,
+    "atr4h": 405.135714,
+    "sup": 80784.8,
+    "fr": -1.903e-05,
+    "str1": {
+      "result": "TIMEOUT",
+      "roe": 0.43,
+      "bars": 24
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 12
+    },
+    "str3": {
+      "result": "WIN",
+      "roe": 4.0,
+      "bars": 12
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 0.64,
+      "bars": 10
+    }
+  },
+  {
+    "ts": "2026-05-11 09:00",
+    "coin": "ENAUSDT",
+    "entry": 0.1288,
+    "ema50": 0.119578,
+    "atr4h": 0.00475,
+    "sup": 0.1268,
+    "fr": 0.0001,
+    "str1": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 5
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    },
+    "str3": {
+      "result": "WIN",
+      "roe": 4.0,
+      "bars": 1
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 2.06,
+      "bars": 2
+    }
+  },
+  {
+    "ts": "2026-05-11 10:00",
+    "coin": "DYMUSDT",
+    "entry": 0.02424,
+    "ema50": 0.02175,
+    "atr4h": 0.001859,
+    "sup": 0.02333,
+    "fr": 0.0001,
+    "str1": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 3
+    },
+    "str2": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 1
+    },
+    "str3": {
+      "result": "LOSS",
+      "roe": -5.0,
+      "bars": 1
+    },
+    "str4": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 3
+    }
+  },
+  {
+    "ts": "2026-05-11 10:00",
+    "coin": "GMXUSDT",
+    "entry": 7.633,
+    "ema50": 7.423229,
+    "atr4h": 0.131286,
+    "sup": 7.505,
+    "fr": 0.0001,
+    "str1": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 15
+    },
+    "str2": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 15
+    },
+    "str3": {
+      "result": "LOSS",
+      "roe": -5.0,
+      "bars": 15
+    },
+    "str4": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 15
+    }
+  },
+  {
+    "ts": "2026-05-11 15:00",
+    "coin": "1000000MOGUSDT",
+    "entry": 0.1679,
+    "ema50": 0.160114,
+    "atr4h": 0.004907,
+    "sup": 0.1643,
+    "fr": 0.0001,
+    "str1": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 22
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    },
+    "str3": {
+      "result": "WIN",
+      "roe": 4.0,
+      "bars": 2
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 1.64,
+      "bars": 2
+    }
+  },
+  {
+    "ts": "2026-05-12 09:00",
+    "coin": "ALGOUSDT",
+    "entry": 0.1236,
+    "ema50": 0.12223,
+    "atr4h": 0.003057,
+    "sup": 0.1216,
+    "fr": 0.0001,
+    "str1": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 6
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 4
+    },
+    "str3": {
+      "result": "D1_TP1",
+      "roe": -1.0,
+      "bars": 2
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 0.71,
+      "bars": 2
+    }
+  },
+  {
+    "ts": "2026-05-12 09:00",
+    "coin": "EIGENUSDT",
+    "entry": 0.2158,
+    "ema50": 0.203936,
+    "atr4h": 0.007436,
+    "sup": 0.2106,
+    "fr": 0.0001,
+    "str1": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 2
+    },
+    "str2": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 2
+    },
+    "str3": {
+      "result": "LOSS",
+      "roe": -5.0,
+      "bars": 1
+    },
+    "str4": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 2
+    }
+  },
+  {
+    "ts": "2026-05-12 09:00",
+    "coin": "GOATUSDT",
+    "entry": 0.02128,
+    "ema50": 0.020068,
+    "atr4h": 0.000816,
+    "sup": 0.02058,
+    "fr": 0.0001,
+    "str1": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 7
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    },
+    "str3": {
+      "result": "WIN",
+      "roe": 4.0,
+      "bars": 2
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 1.4,
+      "bars": 2
+    }
+  },
+  {
+    "ts": "2026-05-12 09:00",
+    "coin": "TAOUSDT",
+    "entry": 314.25,
+    "ema50": 305.230918,
+    "atr4h": 9.627857,
+    "sup": 313.28,
+    "fr": 0.0001,
+    "str1": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 5
+    },
+    "str2": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 5
+    },
+    "str3": {
+      "result": "LOSS",
+      "roe": -5.0,
+      "bars": 3
+    },
+    "str4": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 5
+    }
+  },
+  {
+    "ts": "2026-05-12 09:00",
+    "coin": "ZETAUSDT",
+    "entry": 0.061,
+    "ema50": 0.060611,
+    "atr4h": 0.001543,
+    "sup": 0.0607,
+    "fr": 0.0001,
+    "str1": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 3
+    },
+    "str2": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 3
+    },
+    "str3": {
+      "result": "LOSS",
+      "roe": -5.0,
+      "bars": 1
+    },
+    "str4": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 3
+    }
+  },
+  {
+    "ts": "2026-05-12 10:00",
+    "coin": "NEARUSDT",
+    "entry": 1.574,
+    "ema50": 1.470461,
+    "atr4h": 0.042571,
+    "sup": 1.545,
+    "fr": 0.0001,
+    "str1": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 1
+    },
+    "str2": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 1
+    },
+    "str3": {
+      "result": "LOSS",
+      "roe": -5.0,
+      "bars": 1
+    },
+    "str4": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 1
+    }
+  },
+  {
+    "ts": "2026-05-12 10:00",
+    "coin": "1000SHIBUSDT",
+    "entry": 0.006481,
+    "ema50": 0.006416,
+    "atr4h": 0.000116,
+    "sup": 0.006417,
+    "fr": 0.0001,
+    "str1": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 4
+    },
+    "str2": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 4
+    },
+    "str3": {
+      "result": "LOSS",
+      "roe": -5.0,
+      "bars": 3
+    },
+    "str4": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 4
+    }
+  },
+  {
+    "ts": "2026-05-14 10:00",
+    "coin": "STXUSDT",
+    "entry": 0.2699,
+    "ema50": 0.259772,
+    "atr4h": 0.008979,
+    "sup": 0.2628,
+    "fr": 0.0001,
+    "str1": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 18
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    },
+    "str3": {
+      "result": "LOSS",
+      "roe": -5.0,
+      "bars": 1
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 3.45,
+      "bars": 4
+    }
+  },
+  {
+    "ts": "2026-05-15 15:00",
+    "coin": "AEVOUSDT",
+    "entry": 0.03029,
+    "ema50": 0.029606,
+    "atr4h": 0.000974,
+    "sup": 0.03027,
+    "fr": 0.0001,
+    "str1": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 7
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    },
+    "str3": {
+      "result": "WIN",
+      "roe": 4.0,
+      "bars": 1
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 2.03,
+      "bars": 2
+    }
+  },
+  {
+    "ts": "2026-05-18 10:00",
+    "coin": "DYMUSDT",
+    "entry": 0.02407,
+    "ema50": 0.023311,
+    "atr4h": 0.001014,
+    "sup": 0.02361,
+    "fr": 0.0001,
+    "str1": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 5
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    },
+    "str3": {
+      "result": "LOSS",
+      "roe": -5.0,
+      "bars": 1
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 4.61,
+      "bars": 2
+    }
+  },
+  {
+    "ts": "2026-05-20 09:00",
+    "coin": "COMPUSDT",
+    "entry": 22.68,
+    "ema50": 22.466233,
+    "atr4h": 0.522143,
+    "sup": 22.56,
+    "fr": 0.0001,
+    "str1": {
+      "result": "TIMEOUT",
+      "roe": -0.79,
+      "bars": 24
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    },
+    "str3": {
+      "result": "WIN",
+      "roe": 4.0,
+      "bars": 6
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 1.15,
+      "bars": 4
+    }
+  },
+  {
+    "ts": "2026-05-20 15:00",
+    "coin": "SUNUSDT",
+    "entry": 0.019951,
+    "ema50": 0.019907,
+    "atr4h": 0.000184,
+    "sup": 0.01995,
+    "fr": 0.0001,
+    "str1": {
+      "result": "TIMEOUT",
+      "roe": 2.24,
+      "bars": 24
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 13
+    },
+    "str3": {
+      "result": "WIN",
+      "roe": 4.0,
+      "bars": 14
+    },
+    "str4": {
+      "result": "TP1_TO",
+      "roe": 2.12,
+      "bars": 24
+    }
+  },
+  {
+    "ts": "2026-05-21 15:00",
+    "coin": "CHILLGUYUSDT",
+    "entry": 0.01502,
+    "ema50": 0.014911,
+    "atr4h": 0.000705,
+    "sup": 0.01476,
+    "fr": 0.0001,
+    "str1": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 9
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 2
+    },
+    "str3": {
+      "result": "WIN",
+      "roe": 4.0,
+      "bars": 2
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 2.9,
+      "bars": 3
+    }
+  },
+  {
+    "ts": "2026-05-21 15:00",
+    "coin": "STORJUSDT",
+    "entry": 0.1149,
+    "ema50": 0.113822,
+    "atr4h": 0.003579,
+    "sup": 0.1148,
+    "fr": 0.0001,
+    "str1": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 17
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 10
+    },
+    "str3": {
+      "result": "D1_TP1",
+      "roe": -1.0,
+      "bars": 17
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 1.33,
+      "bars": 12
+    }
+  },
+  {
+    "ts": "2026-05-22 09:00",
+    "coin": "AVAXUSDT",
+    "entry": 9.488,
+    "ema50": 9.474977,
+    "atr4h": 0.130143,
+    "sup": 9.415,
+    "fr": 0.0001,
+    "str1": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 9
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 3
+    },
+    "str3": {
+      "result": "D1_TP1",
+      "roe": -1.0,
+      "bars": 9
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 1.19,
+      "bars": 4
+    }
+  },
+  {
+    "ts": "2026-05-25 09:00",
+    "coin": "ARKMUSDT",
+    "entry": 0.138,
+    "ema50": 0.130475,
+    "atr4h": 0.006171,
+    "sup": 0.1325,
+    "fr": 0.0001,
+    "str1": {
+      "result": "WIN",
+      "roe": 13.8,
+      "bars": 5
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    },
+    "str3": {
+      "result": "WIN",
+      "roe": 4.0,
+      "bars": 2
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 2.43,
+      "bars": 2
+    }
+  },
+  {
+    "ts": "2026-05-25 09:00",
+    "coin": "TAOUSDT",
+    "entry": 277.47,
+    "ema50": 275.257664,
+    "atr4h": 7.52,
+    "sup": 276.12,
+    "fr": 0.0001,
+    "str1": {
+      "result": "TIMEOUT",
+      "roe": 7.73,
+      "bars": 24
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    },
+    "str3": {
+      "result": "WIN",
+      "roe": 4.0,
+      "bars": 10
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 1.16,
+      "bars": 2
+    }
+  },
+  {
+    "ts": "2026-05-26 09:00",
+    "coin": "PENDLEUSDT",
+    "entry": 1.9093,
+    "ema50": 1.867042,
+    "atr4h": 0.050936,
+    "sup": 1.8675,
+    "fr": 0.0001,
+    "str1": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 10
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    },
+    "str3": {
+      "result": "WIN",
+      "roe": 4.0,
+      "bars": 1
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 2.1,
+      "bars": 2
+    }
+  },
+  {
+    "ts": "2026-05-26 09:00",
+    "coin": "WIFUSDT",
+    "entry": 0.1947,
+    "ema50": 0.194037,
+    "atr4h": 0.00425,
+    "sup": 0.1933,
+    "fr": 0.0001,
+    "str1": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 19
+    },
+    "str2": {
+      "result": "WIN",
+      "roe": 5.0,
+      "bars": 1
+    },
+    "str3": {
+      "result": "WIN",
+      "roe": 4.0,
+      "bars": 1
+    },
+    "str4": {
+      "result": "TRAIL",
+      "roe": 2.74,
+      "bars": 4
+    }
+  },
+  {
+    "ts": "2026-05-27 15:00",
+    "coin": "RENDERUSDT",
+    "entry": 2.241,
+    "ema50": 2.049741,
+    "atr4h": 0.106143,
+    "sup": 2.173,
+    "fr": 0.0001,
+    "str1": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 1
+    },
+    "str2": {
+      "result": "LOSS",
+      "roe": -10.0,
+      "bars": 1
+    },
+    "str3": {
+      "result": "LOSS",
+      "roe": -5.0,
+      "bars": 1
+    },
+    "str4": {
+      "result": "LOSS",
+      "roe": -6.0,
+      "bars": 1
+    }
+  },
+  {
+    "ts": "2026-05-30 09:00",
+    "coin": "EIGENUSDT",
+    "entry": 0.2216,
+    "ema50": 0.218643,
+    "atr4h": 0.008779,
+    "sup": 0.2143,
+    "fr": 0.0001,
+    "str1": {
+      "result": "TIMEOUT",
+      "roe": 0.41,
+      "bars": 24
+    },
+    "str2": {
+      "result": "TP1_TO",
+      "roe": 0.81,
+      "bars": 24
+    },
+    "str3": {
+      "result": "TP1_TO",
+      "roe": 1.77,
+      "bars": 24
+    },
+    "str4": {
+      "result": "TP1_TO",
+      "roe": 1.2,
+      "bars": 24
+    }
+  }
+]

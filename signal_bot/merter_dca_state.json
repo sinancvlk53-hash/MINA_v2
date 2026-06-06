@@ -1,0 +1,34 @@
+{
+  "positions": {
+    "merter_other": {
+      "symbol": "NXPCUSDT",
+      "signal_source": "merter_other",
+      "trade_id": 36,
+      "entry_anchor": 0.34391213,
+      "parts_filled": 1,
+      "parts_total": 10,
+      "total_qty": 73.0,
+      "total_cost": 49.879999999999995,
+      "avg_price": 0.344,
+      "opened_at": "2026-06-06T04:56:07.449445Z",
+      "tp1_done": true,
+      "trailing_active": false,
+      "trailing_peak": null,
+      "breakeven_mode": false,
+      "breakeven_since": null,
+      "limit_order_ids": [
+        90524356,
+        90524353,
+        90524369,
+        90524401,
+        90524397,
+        90524303,
+        90524335,
+        90524366,
+        90524361
+      ],
+      "part_usdt": 50.1482819972,
+      "reconciled_at": "2026-06-06T04:57:53Z"
+    }
+  }
+}
