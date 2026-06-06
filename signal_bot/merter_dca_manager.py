@@ -72,6 +72,9 @@ _RE_ACILDI = re.compile(
     r"AÇILDI\s+(merter_ei_1|merter_ei_2|merter_other)\s+(\w+)\s+.*trade_id=(\d+)",
     re.I,
 )
+_RE_EI_RAW_PICK = re.compile(r"EI süzgeçsiz seçildi\s+(\w+)", re.I)
+_RE_EI_FILT_PICK = re.compile(r"EI süzgeçli seçildi\s+(\w+)", re.I)
+_RE_RSI_OK = re.compile(r"RSI teyit OK\s+(\w+)", re.I)
 
 _manager: Optional["MerterDCAManager"] = None
 
@@ -621,6 +624,11 @@ class MerterDCAManager:
         open_msg = format_open_log(MZ, symbol, "LONG")
         _log(open_msg)
         _log(f"AÇILDI {signal_source} {symbol} parts={initial_parts}/{PARTS_PER_YUVA} trade_id={trade_id}")
+        try:
+            from mina_motor_telegram import notify_position_open
+            notify_position_open(symbol, "LONG", LEVERAGE, mark, cost, MZ)
+        except Exception:
+            pass
         return True
 
     def handle_message(self, text: str) -> bool:
@@ -685,6 +693,62 @@ class MerterDCAManager:
             pass
         return out
 
+    def _parse_symbol_yuva_hints_from_log(self) -> Dict[str, str]:
+        """Sembol → yuva (AÇILDI / EI seçimi / RSI teyit satırları)."""
+        out: Dict[str, str] = {}
+        if not os.path.isfile(LOG_FILE):
+            return out
+        try:
+            with open(LOG_FILE, encoding="utf-8", errors="replace") as f:
+                for line in f:
+                    m = _RE_EI_RAW_PICK.search(line)
+                    if m:
+                        out[m.group(1).upper()] = YUVA_EI_RAW
+                        continue
+                    m = _RE_EI_FILT_PICK.search(line)
+                    if m:
+                        out[m.group(1).upper()] = YUVA_EI_FILTERED
+                        continue
+                    m = _RE_RSI_OK.search(line)
+                    if m:
+                        out[m.group(1).upper()] = YUVA_OTHER
+                        continue
+                    m = _RE_ACILDI.search(line)
+                    if m:
+                        out[m.group(2).upper()] = m.group(1)
+        except OSError:
+            pass
+        return out
+
+    def _patch_derr_signal_source(self, trade_id: int, yuva: str) -> None:
+        j = self._journal_get()
+        try:
+            cur = j.conn.cursor()
+            cur.execute("SELECT signal_source FROM trades WHERE id=?", (trade_id,))
+            row = cur.fetchone()
+            if not row or (row["signal_source"] or "").strip() == yuva:
+                return
+            cur.execute("UPDATE trades SET signal_source=? WHERE id=?", (yuva, trade_id))
+            j.conn.commit()
+            _log(f"RECONCILE DERR signal_source trade_id={trade_id} → {yuva}")
+        except Exception as exc:
+            _log(f"RECONCILE DERR patch hatası trade_id={trade_id}: {exc}")
+        finally:
+            j.close()
+
+    def _clear_pending_for_symbol(self, symbol: str) -> bool:
+        sym_u = (symbol or "").upper()
+        pending = self.state.get("pending_confirm") or {}
+        changed = False
+        for yuva in list(pending.keys()):
+            p = pending.get(yuva)
+            if p and (p.get("symbol") or "").upper() == sym_u:
+                pending.pop(yuva, None)
+                changed = True
+        if changed:
+            self.state["pending_confirm"] = pending
+        return changed
+
     def _open_merter_trades_from_derr(self) -> List[Dict[str, Any]]:
         journal = self._journal_get()
         cur = journal.conn.cursor()
@@ -722,6 +786,8 @@ class MerterDCAManager:
         trade: Dict[str, Any],
         log_map: Dict[int, str],
         existing: Dict[str, Any],
+        rebuilt: Dict[str, Dict[str, Any]],
+        hint_map: Dict[str, str],
     ) -> Optional[str]:
         src = (trade.get("signal_source") or "").strip()
         if src in MERTER_DCA_YUVAS:
@@ -730,14 +796,38 @@ class MerterDCAManager:
         if tid in log_map:
             return log_map[tid]
         sym = trade["symbol"]
+        sym_u = sym.upper()
         for yuva, pos in existing.items():
             if not pos:
                 continue
             if int(pos.get("trade_id") or 0) == tid:
                 return yuva
         for yuva, pos in existing.items():
-            if pos and pos.get("symbol") == sym:
+            if pos and (pos.get("symbol") or "").upper() == sym_u:
                 return yuva
+
+        taken = set(rebuilt.keys())
+        for yuva, pos in existing.items():
+            if pos and yuva not in taken:
+                taken.add(yuva)
+
+        candidates: List[str] = []
+        hinted = hint_map.get(sym_u)
+        if hinted:
+            candidates.append(hinted)
+        pending = self.state.get("pending_confirm") or {}
+        for yuva, p in pending.items():
+            if not p or (p.get("symbol") or "").upper() != sym_u:
+                continue
+            if yuva in MERTER_DCA_YUVAS and yuva not in candidates:
+                candidates.append(yuva)
+
+        for cand in candidates:
+            if cand not in taken:
+                return cand
+        for y in MERTER_DCA_YUVAS:
+            if y not in taken:
+                return y
         return None
 
     @staticmethod
@@ -861,18 +951,34 @@ class MerterDCAManager:
                 return len(stale)
             return 0
 
+        open_trades.sort(
+            key=lambda t: (
+                0 if (t.get("signal_source") or "").strip() in MERTER_DCA_YUVAS else 1,
+                int(t["id"]),
+            )
+        )
+
         log_map = self._parse_yuva_map_from_log()
+        hint_map = self._parse_symbol_yuva_hints_from_log()
         existing_all = dict(self.state.get("positions") or {})
         bpos_map = self._binance_long_positions()
         rebuilt: Dict[str, Dict[str, Any]] = {}
         updates = 0
+        pending_dirty = False
 
         for trade in open_trades:
             sym = trade["symbol"]
-            yuva = self._resolve_yuva_for_trade(trade, log_map, existing_all)
+            yuva = self._resolve_yuva_for_trade(
+                trade, log_map, existing_all, rebuilt, hint_map,
+            )
             if not yuva:
                 _log(f"RECONCILE atlandı trade_id={trade['id']} {sym} — yuva çözülemedi")
                 continue
+            if (trade.get("signal_source") or "").strip() not in MERTER_DCA_YUVAS:
+                self._patch_derr_signal_source(int(trade["id"]), yuva)
+                trade["signal_source"] = yuva
+            if self._clear_pending_for_symbol(sym):
+                pending_dirty = True
             if yuva in rebuilt:
                 _log(f"RECONCILE çakışma {yuva} trade_id={trade['id']} — atlandı")
                 continue
@@ -899,7 +1005,7 @@ class MerterDCAManager:
             _log(f"RECONCILE kaldırıldı {y} — DERR/Binance eşleşmesi yok")
             updates += 1
 
-        if updates > 0 or set(existing_all.keys()) != set(rebuilt.keys()):
+        if updates > 0 or set(existing_all.keys()) != set(rebuilt.keys()) or pending_dirty:
             self.state["positions"] = rebuilt
             self._save_state()
         return updates
@@ -933,9 +1039,16 @@ class MerterDCAManager:
                 close_qty = self._round_qty(symbol, qty * 0.5)
                 if close_qty > 0:
                     self._close_qty(symbol, close_qty, "TP1")
+                    tp1_pnl = (mark - avg) * close_qty
+                    tp1_pct = ((mark - avg) / avg) * 100 if avg else 0
                     pos["total_qty"] = qty - close_qty
                     pos["tp1_done"] = True
                     self._save_state()
+                    try:
+                        from mina_motor_telegram import notify_tp1
+                        notify_tp1(symbol, tp1_pct, tp1_pnl)
+                    except Exception:
+                        pass
                 continue
 
             if pos.get("tp1_done") and not pos.get("trailing_active") and mark >= tp2:
@@ -943,6 +1056,14 @@ class MerterDCAManager:
                 pos["trailing_peak"] = mark
                 _log(f"TP2 trailing aktif {symbol} peak={mark:.6f}")
                 self._save_state()
+                rem = float(pos.get("total_qty") or 0)
+                tp2_pnl = (mark - avg) * rem if rem > 0 else 0
+                tp2_pct = ((mark - avg) / avg) * 100 if avg else 0
+                try:
+                    from mina_motor_telegram import notify_tp2
+                    notify_tp2(symbol, tp2_pct, tp2_pnl)
+                except Exception:
+                    pass
                 continue
 
             if pos.get("trailing_active") and pos.get("trailing_peak"):
@@ -1007,6 +1128,15 @@ class MerterDCAManager:
         avg = float(pos.get("avg_price") or mark)
         pnl_usdt = (mark - avg) * qty
         pnl_pct = ((mark - avg) / avg) * 100 if avg else 0
+        symbol = pos.get("symbol") or ""
+        try:
+            from mina_motor_telegram import notify_trailing_closed, notify_time_stop
+            if "Trailing" in reason:
+                notify_trailing_closed(symbol, pnl_usdt)
+            elif "Zaman stopu" in reason or "Breakeven" in reason:
+                notify_time_stop(symbol, pnl_usdt)
+        except Exception:
+            pass
         if trade_id and journal:
             journal.log_trade_close(
                 trade_id=int(trade_id),

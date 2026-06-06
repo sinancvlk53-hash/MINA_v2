@@ -27,6 +27,20 @@ function cardTitle(row) {
   return row.message_type || 'Mesaj'
 }
 
+function formatPct(v) {
+  if (v == null || Number.isNaN(Number(v))) return '—'
+  const n = Number(v)
+  return `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`
+}
+
+function formatPrice(v) {
+  if (v == null || Number.isNaN(Number(v))) return null
+  const n = Number(v)
+  if (n >= 1000) return n.toLocaleString('en-US', { maximumFractionDigits: 2 })
+  if (n >= 1) return n.toFixed(4)
+  return n.toFixed(6)
+}
+
 export default function HalukArchivePanel({ status, sendMessage, actionMsg }) {
   const [messageType, setMessageType] = useState('all')
   const [items, setItems] = useState([])
@@ -36,6 +50,15 @@ export default function HalukArchivePanel({ status, sendMessage, actionMsg }) {
   const [upbitCoins, setUpbitCoins] = useState([])
   const [upbitItems, setUpbitItems] = useState([])
   const [upbitLoading, setUpbitLoading] = useState(false)
+  const [binanceCoins, setBinanceCoins] = useState([])
+  const [binanceUpdatedAt, setBinanceUpdatedAt] = useState(null)
+  const [binanceLoading, setBinanceLoading] = useState(false)
+  const [traderPending, setTraderPending] = useState([])
+  const [traderActive, setTraderActive] = useState([])
+  const [traderTrades, setTraderTrades] = useState([])
+  const [traderSummary, setTraderSummary] = useState(null)
+  const [traderUpdatedAt, setTraderUpdatedAt] = useState(null)
+  const [traderLoading, setTraderLoading] = useState(false)
 
   const fetchArchive = useCallback(() => {
     if (status !== 'connected' || !sendMessage) return
@@ -54,6 +77,18 @@ export default function HalukArchivePanel({ status, sendMessage, actionMsg }) {
     sendMessage({ action: 'get_upbit_listings', limit: 300 })
   }, [status, sendMessage])
 
+  const fetchBinance = useCallback(() => {
+    if (status !== 'connected' || !sendMessage) return
+    setBinanceLoading(true)
+    sendMessage({ action: 'get_binance_new_listings' })
+  }, [status, sendMessage])
+
+  const fetchUpbitTrader = useCallback(() => {
+    if (status !== 'connected' || !sendMessage) return
+    setTraderLoading(true)
+    sendMessage({ action: 'get_upbit_trader_status' })
+  }, [status, sendMessage])
+
   useEffect(() => {
     fetchArchive()
   }, [fetchArchive])
@@ -61,6 +96,16 @@ export default function HalukArchivePanel({ status, sendMessage, actionMsg }) {
   useEffect(() => {
     fetchUpbit()
   }, [fetchUpbit])
+
+  useEffect(() => {
+    fetchBinance()
+  }, [fetchBinance])
+
+  useEffect(() => {
+    fetchUpbitTrader()
+    const t = setInterval(fetchUpbitTrader, 30000)
+    return () => clearInterval(t)
+  }, [fetchUpbitTrader])
 
   useEffect(() => {
     if (actionMsg?.action !== 'haluk_archive') return
@@ -76,6 +121,23 @@ export default function HalukArchivePanel({ status, sendMessage, actionMsg }) {
     setUpbitCoins(actionMsg.coins || [])
   }, [actionMsg])
 
+  useEffect(() => {
+    if (actionMsg?.action !== 'binance_new_listings') return
+    setBinanceLoading(false)
+    setBinanceCoins(actionMsg.coins || [])
+    setBinanceUpdatedAt(actionMsg.updatedAt || null)
+  }, [actionMsg])
+
+  useEffect(() => {
+    if (actionMsg?.action !== 'upbit_trader_status') return
+    setTraderLoading(false)
+    setTraderPending(actionMsg.pending || [])
+    setTraderActive(actionMsg.active || [])
+    setTraderTrades(actionMsg.recent_trades || [])
+    setTraderSummary(actionMsg.summary || null)
+    setTraderUpdatedAt(actionMsg.updated_at || null)
+  }, [actionMsg])
+
   return (
     <div className="panel panel-archive">
       <div className="panel-head">
@@ -86,7 +148,7 @@ export default function HalukArchivePanel({ status, sendMessage, actionMsg }) {
       <div className="panel-body archive-body">
         <section className="upbit-listings-section">
           <div className="upbit-listings-head">
-            <h3 className="settings-section-title">Upbit Listeleme</h3>
+            <h3 className="settings-section-title">Upbit Listelemeleri</h3>
             <span className="panel-badge">{upbitCoins.length}</span>
           </div>
           {upbitLoading && <p className="archive-loading">Upbit taraması…</p>}
@@ -94,14 +156,37 @@ export default function HalukArchivePanel({ status, sendMessage, actionMsg }) {
             <p className="field-hint">upbit / listing / listeleme içeren mesaj bulunamadı</p>
           )}
           {upbitCoins.length > 0 && (
-            <ul className="upbit-coin-list">
-              {upbitCoins.map((row) => (
-                <li key={row.coin} className="upbit-coin-row">
-                  <strong>{row.coin}</strong>
-                  <span className="upbit-coin-date">{formatTs(row.listedAt)}</span>
-                </li>
-              ))}
-            </ul>
+            <>
+              <div className="upbit-coin-grid-head">
+                <span>Coin</span>
+                <span>İlk bahis</span>
+                <span>Bahis</span>
+                <span>Fiyat Δ</span>
+              </div>
+              <ul className="upbit-coin-list">
+                {upbitCoins.map((row) => {
+                  const pct = row.priceChangePct
+                  const pctPositive = pct != null && pct >= 0
+                  return (
+                    <li key={row.coin} className="upbit-coin-row">
+                      <strong className="upbit-coin-symbol">{row.coin}</strong>
+                      <span className="upbit-coin-date">{formatTs(row.firstMention || row.listedAt)}</span>
+                      <span className="upbit-coin-count">{row.mentionCount ?? 1}×</span>
+                      <span
+                        className={`upbit-coin-pct ${pct == null ? '' : pctPositive ? 'text-green' : 'text-red'}`}
+                        title={
+                          row.priceThen != null && row.priceNow != null
+                            ? `${formatPrice(row.priceThen)} → ${formatPrice(row.priceNow)}`
+                            : 'Binance futures verisi yok'
+                        }
+                      >
+                        {formatPct(pct)}
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
+            </>
           )}
           {upbitItems.length > 0 && (
             <details className="upbit-messages-details">
@@ -122,6 +207,164 @@ export default function HalukArchivePanel({ status, sendMessage, actionMsg }) {
                 ))}
               </div>
             </details>
+          )}
+        </section>
+
+        <section className="upbit-listings-section upbit-trader-section">
+          <div className="upbit-listings-head">
+            <h3 className="settings-section-title">Upbit Trader</h3>
+            <span className="panel-badge">
+              {(traderSummary?.watch_count ?? 0) + (traderSummary?.active_count ?? 0)}
+            </span>
+          </div>
+          {traderUpdatedAt && (
+            <p className="field-hint binance-updated-hint">Son güncelleme: {traderUpdatedAt}</p>
+          )}
+          {traderLoading && traderPending.length === 0 && traderActive.length === 0 && (
+            <p className="archive-loading">Trader durumu…</p>
+          )}
+
+          {traderSummary && (
+            <div className="upbit-trader-summary">
+              <div className="upbit-trader-stat">
+                <span className="upbit-trader-stat-label">Toplam K/Z</span>
+                <span className={`upbit-trader-stat-value ${traderSummary.total_pnl >= 0 ? 'text-green' : 'text-red'}`}>
+                  {traderSummary.total_pnl >= 0 ? '+' : ''}{Number(traderSummary.total_pnl).toFixed(2)} USDT
+                </span>
+              </div>
+              <div className="upbit-trader-stat">
+                <span className="upbit-trader-stat-label">Kapanan</span>
+                <span className="upbit-trader-stat-value">{traderSummary.closed_count ?? 0}</span>
+              </div>
+              <div className="upbit-trader-stat">
+                <span className="upbit-trader-stat-label">Kazanç</span>
+                <span className="upbit-trader-stat-value text-green">{traderSummary.win_count ?? 0}</span>
+              </div>
+              <div className="upbit-trader-stat">
+                <span className="upbit-trader-stat-label">Zarar</span>
+                <span className="upbit-trader-stat-value text-red">{traderSummary.loss_count ?? 0}</span>
+              </div>
+            </div>
+          )}
+
+          {traderPending.length > 0 && (
+            <>
+              <p className="upbit-trader-subhead">İzlenen coinler</p>
+              <ul className="upbit-trader-watch-list">
+                {traderPending.map((row) => (
+                  <li key={row.coin} className="upbit-trader-watch-row">
+                    <span className="badge-pill badge-watch">İZLENİYOR</span>
+                    <strong className="upbit-coin-symbol">{row.coin}</strong>
+                    <span className="upbit-trader-meta">
+                      Listeleme: {formatPrice(row.listing_price) ?? '—'}
+                    </span>
+                    <span className="upbit-trader-meta">
+                      Zirve: {formatPrice(row.peak) ?? '—'}
+                      {row.peak_frozen ? ' ✓' : ''}
+                    </span>
+                    <span className="upbit-coin-date">{row.started_at_display || '—'}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          {traderActive.length > 0 && (
+            <>
+              <p className="upbit-trader-subhead">Aktif SHORT</p>
+              <ul className="upbit-trader-active-list">
+                {traderActive.map((row) => (
+                  <li key={row.coin} className="upbit-trader-active-row">
+                    <span className="badge-pill badge-short">SHORT 8x</span>
+                    <strong className="upbit-coin-symbol">{row.coin}</strong>
+                    <span className="upbit-trader-meta">Giriş: {formatPrice(row.entry_price) ?? '—'}</span>
+                    <span className="upbit-trader-meta">TP: {formatPrice(row.tp_price) ?? '—'}</span>
+                    {row.trade_id != null && (
+                      <span className="upbit-trader-meta">DERR #{row.trade_id}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          {!traderLoading && traderPending.length === 0 && traderActive.length === 0 && (
+            <p className="field-hint">Şu an izlenen coin veya aktif pozisyon yok</p>
+          )}
+
+          {traderTrades.length > 0 && (
+            <>
+              <p className="upbit-trader-subhead">Son 10 işlem (DERR)</p>
+              <div className="upbit-trader-trade-grid-head">
+                <span>Coin</span>
+                <span>Durum</span>
+                <span>Giriş</span>
+                <span>Çıkış</span>
+                <span>K/Z</span>
+              </div>
+              <ul className="upbit-coin-list">
+                {traderTrades.map((row) => {
+                  const pnl = row.pnl_usdt
+                  const pnlPositive = pnl != null && Number(pnl) >= 0
+                  const isOpen = row.status === 'open'
+                  return (
+                    <li key={row.id} className="upbit-trader-trade-row">
+                      <strong className="upbit-coin-symbol">{row.coin}</strong>
+                      <span className={`badge-pill ${isOpen ? 'badge-watch' : 'arch-type-diger'}`}>
+                        {isOpen ? 'Açık' : (row.close_reason || 'Kapalı')}
+                      </span>
+                      <span className="binance-price">{formatPrice(row.open_price) ?? '—'}</span>
+                      <span className="binance-price">{isOpen ? '—' : (formatPrice(row.close_price) ?? '—')}</span>
+                      <span className={`upbit-coin-pct ${pnl == null ? '' : pnlPositive ? 'text-green' : 'text-red'}`}>
+                        {pnl == null ? '—' : `${pnlPositive ? '+' : ''}${Number(pnl).toFixed(2)}`}
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
+            </>
+          )}
+        </section>
+
+        <section className="upbit-listings-section binance-listings-section">
+          <div className="upbit-listings-head">
+            <h3 className="settings-section-title">Binance Yeni Listelemeler</h3>
+            <span className="panel-badge">{binanceCoins.length}</span>
+          </div>
+          {binanceUpdatedAt && (
+            <p className="field-hint binance-updated-hint">Son güncelleme: {formatTs(binanceUpdatedAt)} · 6 saatte bir yenilenir</p>
+          )}
+          {binanceLoading && <p className="archive-loading">Binance taraması…</p>}
+          {!binanceLoading && binanceCoins.length === 0 && (
+            <p className="field-hint">Son 50 günde yeni perpetual listeleme bulunamadı</p>
+          )}
+          {binanceCoins.length > 0 && (
+            <>
+              <div className="binance-coin-grid-head">
+                <span>Coin</span>
+                <span>Listeleme</span>
+                <span>İlk</span>
+                <span>Güncel</span>
+                <span>Δ</span>
+              </div>
+              <ul className="upbit-coin-list">
+                {binanceCoins.map((row) => {
+                  const pct = row.priceChangePct
+                  const pctPositive = pct != null && pct >= 0
+                  return (
+                    <li key={row.symbol || row.coin} className="binance-coin-row">
+                      <strong className="upbit-coin-symbol">{row.coin}</strong>
+                      <span className="upbit-coin-date">{formatTs(row.listedAt)}</span>
+                      <span className="binance-price">{formatPrice(row.priceThen) ?? '—'}</span>
+                      <span className="binance-price">{formatPrice(row.priceNow) ?? '—'}</span>
+                      <span className={`upbit-coin-pct ${pct == null ? '' : pctPositive ? 'text-green' : 'text-red'}`}>
+                        {formatPct(pct)}
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
+            </>
           )}
         </section>
 

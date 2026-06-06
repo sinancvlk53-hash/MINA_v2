@@ -7,8 +7,9 @@ import json
 import os
 import re
 import threading
+import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 ROOT = os.environ.get("MINA_DATA_ROOT", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DB_PATH = os.path.join(ROOT, "mina_trading_journal.db")
@@ -224,8 +225,98 @@ def archive_haluk_message_async(
     ).start()
 
 
-def query_upbit_listings(limit: int = 300) -> Dict[str, Any]:
-    """Upbit / listing / listeleme geçen Haluk mesajları."""
+UPBIT_SKIP = {
+    "UPBIT", "LISTING", "LISTELEME", "LISTELEDI", "LISTELENDI", "THE", "AND", "FOR",
+    "USD", "USDT", "KRW", "BTC", "ETH", "API", "NEW", "NOW", "KORE", "KOREA", "COIN",
+    "SPOT", "MARKET", "TRADING", "WILL", "BEEN", "HAVE", "FROM", "WITH", "HABER",
+    "GUNCEL", "DUYURU", "EKLENECEK", "TARIH", "TARİH", "SAAT", "SONRA", "ONCE",
+    "ÖNCE", "ICIN", "İÇIN", "İÇİN", "VE", "ILE", "İLE", "BU", "BIR", "BİR",
+}
+
+_futures_symbols_cache: Dict[str, Any] = {"ts": 0.0, "data": set()}
+
+
+def _ts_to_ms(ts: str) -> int:
+    if not ts:
+        return 0
+    raw = str(ts).replace("T", " ").strip()
+    for fmt, n in (("%Y-%m-%d %H:%M:%S", 19), ("%Y-%m-%d", 10)):
+        try:
+            return int(datetime.strptime(raw[:n], fmt).timestamp() * 1000)
+        except ValueError:
+            continue
+    return 0
+
+
+def _futures_usdt_symbols(client, ttl: int = 600) -> Set[str]:
+    now = time.time()
+    cached = _futures_symbols_cache.get("data") or set()
+    if cached and now - float(_futures_symbols_cache.get("ts") or 0) < ttl:
+        return cached
+    info = client.futures_exchange_info()
+    syms = {
+        s["symbol"]
+        for s in info.get("symbols", [])
+        if str(s.get("symbol", "")).endswith("USDT") and s.get("status") == "TRADING"
+    }
+    _futures_symbols_cache["ts"] = now
+    _futures_symbols_cache["data"] = syms
+    return syms
+
+
+def _extract_upbit_coins(raw: str, coins_json: List[str]) -> List[str]:
+    """coins_mentioned + USDT kalıbı + Upbit/listeleme bağlamındaki semboller."""
+    upper = raw.upper().replace("İ", "I")
+    from_usdt = re.findall(r"\b([A-Z0-9]{2,12})USDT\b", upper)
+    after_upbit = re.findall(r"\bUPBIT\s+([A-Z0-9]{2,12})\b", upper)
+    before_list = re.findall(
+        r"\b([A-Z0-9]{2,12})\s+(?:LISTELEME|LISTELEDI|LISTING)\b", upper
+    )
+    between = re.findall(
+        r"\bUPBIT\s+([A-Z0-9]{2,12})\s+(?:LISTELEME|LISTELEDI|LISTING)\b", upper
+    )
+    coins = list(dict.fromkeys(
+        [str(c).upper().replace("USDT", "") for c in coins_json]
+        + from_usdt + after_upbit + before_list + between
+    ))
+    return [c for c in coins if c not in UPBIT_SKIP and c.isalnum() and 2 <= len(c) <= 12]
+
+
+def _attach_binance_price_changes(coins: List[Dict[str, Any]], client) -> None:
+    if not client or not coins:
+        return
+    valid = _futures_usdt_symbols(client)
+    mark_prices: Dict[str, float] = {}
+    try:
+        for t in client.futures_ticker():
+            sym = t.get("symbol")
+            if sym:
+                mark_prices[sym] = float(t.get("lastPrice") or 0)
+    except Exception:
+        pass
+
+    for row in coins:
+        sym = f"{row['coin']}USDT"
+        if sym not in valid:
+            continue
+        row["priceNow"] = mark_prices.get(sym)
+        start_ms = _ts_to_ms(row.get("firstMention") or "")
+        if start_ms:
+            try:
+                kl = client.futures_klines(symbol=sym, interval="1h", startTime=start_ms, limit=1)
+                if kl:
+                    row["priceThen"] = float(kl[0][4])
+            except Exception:
+                pass
+        if row.get("priceThen") and row.get("priceNow"):
+            then_p = float(row["priceThen"])
+            now_p = float(row["priceNow"])
+            if then_p > 0:
+                row["priceChangePct"] = round((now_p - then_p) / then_p * 100, 2)
+
+
+def query_upbit_listings(limit: int = 300, client=None) -> Dict[str, Any]:
+    """Upbit / listing / listeleme geçen Haluk mesajları + coin istatistikleri."""
     journal = _journal()
     try:
         cur = journal.conn.cursor()
@@ -237,46 +328,58 @@ def query_upbit_listings(limit: int = 300) -> Dict[str, Any]:
                OR lower(raw_text) LIKE '%listing%'
                OR lower(raw_text) LIKE '%listeleme%'
             ORDER BY timestamp DESC
-            LIMIT ?
-            """,
-            (limit,),
+            """
         )
+        all_rows = cur.fetchall()
+
+        coin_first: Dict[str, str] = {}
+        coin_count: Dict[str, int] = {}
         items: List[Dict[str, Any]] = []
-        coin_latest: Dict[str, str] = {}
-        skip = {
-            "UPBIT", "LISTING", "LISTELEME", "THE", "AND", "FOR", "USD", "USDT",
-            "KRW", "BTC", "ETH", "API", "NEW", "NOW",
-        }
-        for row in cur.fetchall():
+
+        for row in all_rows:
             raw = row["raw_text"] or ""
             ts = row["timestamp"] or ""
             try:
                 coins_json = json.loads(row["coins_mentioned"] or "[]")
             except json.JSONDecodeError:
                 coins_json = []
-            extra = re.findall(r"\b([A-Z]{2,12})USDT\b", raw.upper())
-            extra += re.findall(r"\b([A-Z]{2,12})\b", raw.upper())
-            coins = list(dict.fromkeys(
-                [str(c).upper().replace("USDT", "") for c in coins_json]
-                + [c for c in extra if c not in skip and len(c) >= 2]
-            ))
-            coins = [c for c in coins if c not in skip][:8]
-            items.append({
-                "id": row["id"],
-                "timestamp": ts,
-                "coins": coins,
-                "summary": (row["analysis_summary"] or raw[:200]).strip(),
-                "snippet": raw[:280].replace("\n", " "),
-            })
+            coins = _extract_upbit_coins(raw, coins_json)
+
             for c in coins:
-                if c not in coin_latest:
-                    coin_latest[c] = ts
-        coins_sorted = sorted(
-            [{"coin": c, "listedAt": coin_latest[c]} for c in coin_latest],
-            key=lambda x: x["listedAt"] or "",
-            reverse=True,
-        )
-        return {"total": len(items), "items": items, "coins": coins_sorted}
+                coin_count[c] = coin_count.get(c, 0) + 1
+                if c not in coin_first or (ts and ts < coin_first[c]):
+                    coin_first[c] = ts
+
+            if len(items) < limit:
+                items.append({
+                    "id": row["id"],
+                    "timestamp": ts,
+                    "coins": coins,
+                    "summary": (row["analysis_summary"] or raw[:200]).strip(),
+                    "snippet": raw[:280].replace("\n", " "),
+                })
+
+        coins_out: List[Dict[str, Any]] = []
+        for coin, first_ts in sorted(coin_first.items(), key=lambda x: x[1] or "", reverse=True):
+            coins_out.append({
+                "coin": coin,
+                "firstMention": first_ts,
+                "listedAt": first_ts,
+                "mentionCount": coin_count.get(coin, 0),
+                "priceThen": None,
+                "priceNow": None,
+                "priceChangePct": None,
+            })
+
+        if client is None:
+            try:
+                from backend.config import BinanceConfig
+                client = BinanceConfig().get_client()
+            except Exception:
+                client = None
+        _attach_binance_price_changes(coins_out, client)
+
+        return {"total": len(all_rows), "items": items, "coins": coins_out}
     finally:
         journal.close()
 

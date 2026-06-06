@@ -73,6 +73,15 @@ def is_merter_dca_position(
     return mt.pos_key(symbol, side_u) in merter_dca_tracked_keys()
 
 
+def is_upbit_listing_managed(symbol: str, side: str) -> bool:
+    """Upbit listeleme SHORT — upbit_listing_trader yönetir, ana motor dokunmaz."""
+    try:
+        from signal_bot.upbit_listing_trader import is_upbit_listing_position
+        return is_upbit_listing_position(symbol, side)
+    except Exception:
+        return False
+
+
 def _position_side_key(p: Dict[str, Any]) -> str:
     sym = p.get("symbol", "")
     side = p.get("positionSide") or "BOTH"

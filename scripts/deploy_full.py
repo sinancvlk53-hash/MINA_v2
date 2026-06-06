@@ -23,6 +23,8 @@ FILES = [
     "main.py",
     "mina_dashboard_settings.py",
     "mina_position_manager.py",
+    "mina_signal_source.py",
+    "mina_motor_telegram.py",
     "mina_slot_policy.py",
     "mina_tracking.py",
     "mina_signal_source.py",
@@ -37,6 +39,11 @@ FILES = [
     "backend/position_manager.py",
     "signal_bot/listener.py",
     "signal_bot/haluk_message_store.py",
+    "signal_bot/binance_listings.py",
+    "signal_bot/binance_listings_watcher.py",
+    "signal_bot/upbit_listing_reporter.py",
+    "signal_bot/upbit_listing_watcher.py",
+    "signal_bot/upbit_listing_trader.py",
     "signal_bot/signal_parser.py",
     "signal_bot/haluk_pdf_parser.py",
     "signal_bot/haluk_pdf_visual.py",
@@ -63,6 +70,8 @@ SERVICES = [
     "mina-queue-watcher.service",
     "mina-dashboard-ws.service",
     "mina-dashboard-vite.service",
+    "mina-binance-listings.service",
+    "mina-upbit-listings.service",
 ]
 
 
@@ -112,6 +121,16 @@ def main() -> None:
         print("PUT ops/mina-dashboard-ws.service → /etc/systemd/system/")
         sftp.put(unit_local, "/etc/systemd/system/mina-dashboard-ws.service")
 
+    listings_unit = os.path.join(LOCAL, "ops", "mina-binance-listings.service")
+    if os.path.isfile(listings_unit):
+        print("PUT ops/mina-binance-listings.service → /etc/systemd/system/")
+        sftp.put(listings_unit, "/etc/systemd/system/mina-binance-listings.service")
+
+    upbit_unit = os.path.join(LOCAL, "ops", "mina-upbit-listings.service")
+    if os.path.isfile(upbit_unit):
+        print("PUT ops/mina-upbit-listings.service → /etc/systemd/system/")
+        sftp.put(upbit_unit, "/etc/systemd/system/mina-upbit-listings.service")
+
     backup_local = os.path.join(LOCAL, "ops", "backup_mina.sh")
     if os.path.isfile(backup_local):
         print("PUT ops/backup_mina.sh")
@@ -159,6 +178,10 @@ def main() -> None:
         "systemctl start mina-listener.service",
         "systemctl restart mina-dashboard-ws.service",
         "systemctl restart mina-dashboard-vite.service",
+        "systemctl enable mina-binance-listings.service 2>/dev/null || true",
+        "systemctl restart mina-binance-listings.service",
+        "systemctl enable mina-upbit-listings.service 2>/dev/null || true",
+        "systemctl restart mina-upbit-listings.service",
         f"{REMOTE}/venv/bin/python {REMOTE}/scripts/test_entry_orders.py 2>&1 | tail -8",
         f"{REMOTE}/venv/bin/python {REMOTE}/scripts/reconcile_derr_ghosts.py",
         "sleep 4",

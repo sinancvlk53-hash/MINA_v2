@@ -14,12 +14,14 @@ HT = "HT"
 MZ = "MZ"
 MANUEL = "MANUEL"
 YETIM = "yetim"
+UPBIT_LISTING = "UPBIT_LISTING"
 
 SOURCE_LABELS = {
     HT: "Haluk Hoca",
     MZ: "Merter",
     MANUEL: "Manuel",
     YETIM: "Yetim",
+    UPBIT_LISTING: "Upbit Listeleme",
 }
 
 

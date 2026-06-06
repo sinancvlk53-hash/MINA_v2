@@ -906,7 +906,7 @@ async def send_haluk_archive(websocket, msg: dict):
 async def send_upbit_listings(websocket, msg: dict):
     try:
         from signal_bot.haluk_message_store import query_upbit_listings
-        result = query_upbit_listings(limit=int(msg.get('limit') or 300))
+        result = query_upbit_listings(limit=int(msg.get('limit') or 300), client=get_client())
         await websocket.send(json.dumps({
             'action': 'upbit_listings',
             'total': result.get('total', 0),
@@ -915,6 +915,36 @@ async def send_upbit_listings(websocket, msg: dict):
         }))
     except Exception as e:
         log.error(f"upbit_listings: {e}")
+        await websocket.send(json.dumps({'action': 'error', 'message': str(e)}))
+
+
+async def send_binance_new_listings(websocket, msg: dict):
+    try:
+        from signal_bot.binance_listings import get_cached_listings
+        force = bool(msg.get('forceRefresh'))
+        result = get_cached_listings(force_refresh=force)
+        await websocket.send(json.dumps({
+            'action': 'binance_new_listings',
+            'total': result.get('total', 0),
+            'coins': result.get('coins', []),
+            'updatedAt': result.get('updatedAtDisplay') or result.get('updatedAt'),
+            'days': result.get('days', 50),
+        }))
+    except Exception as e:
+        log.error(f"binance_new_listings: {e}")
+        await websocket.send(json.dumps({'action': 'error', 'message': str(e)}))
+
+
+async def send_upbit_trader_status(websocket, msg: dict):
+    try:
+        from signal_bot.upbit_listing_trader import get_dashboard_status
+        result = get_dashboard_status()
+        await websocket.send(json.dumps({
+            'action': 'upbit_trader_status',
+            **result,
+        }))
+    except Exception as e:
+        log.error(f"upbit_trader_status: {e}")
         await websocket.send(json.dumps({'action': 'error', 'message': str(e)}))
 
 # ── WebSocket handler ────────────────────────────────────────────────────────
@@ -1014,6 +1044,10 @@ async def handler(websocket):
                     await send_haluk_archive(websocket, msg)
                 elif msg.get('action') == 'get_upbit_listings':
                     await send_upbit_listings(websocket, msg)
+                elif msg.get('action') == 'get_binance_new_listings':
+                    await send_binance_new_listings(websocket, msg)
+                elif msg.get('action') == 'get_upbit_trader_status':
+                    await send_upbit_trader_status(websocket, msg)
             except Exception as e:
                 log.error(f"handler msg: {e}")
     except websockets.exceptions.ConnectionClosed:

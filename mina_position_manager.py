@@ -670,9 +670,11 @@ class MinaPositionManager:
         entry_price = position.get('entry_price')
 
         try:
-            from ghost_positions import is_merter_dca_position
+            from ghost_positions import is_merter_dca_position, is_upbit_listing_managed
             if is_merter_dca_position(symbol, side, leverage):
                 return {'action': 'hold', 'reason': 'Merter DCA yönetiminde'}
+            if is_upbit_listing_managed(symbol, side):
+                return {'action': 'hold', 'reason': 'Upbit listing trader yönetiminde'}
         except ImportError:
             pass
 
@@ -962,6 +964,11 @@ class MinaPositionManager:
         )
 
         print(f"   🛡️  D1 gerçekleştirildi: yeni ağırlıklı ortalama {self._round_price(weighted_avg)}")
+        try:
+            from mina_motor_telegram import notify_d1
+            notify_d1(symbol)
+        except Exception:
+            pass
         return True
 
     def _execute_d2(self, position: Dict, current_price: float) -> bool:
@@ -1030,6 +1037,11 @@ class MinaPositionManager:
             )
             
             print(f"   🛡️  D2 yürütüldü: başa baş escape fiyatı {breakeven_price}")
+            try:
+                from mina_motor_telegram import notify_d2
+                notify_d2(symbol)
+            except Exception:
+                pass
             return True
         except Exception as e:
             self._notify_defense_order_failure("D2", symbol, side, str(e))
@@ -1106,6 +1118,11 @@ class MinaPositionManager:
                 f"   ⏱️  D2 zaman stopu: {symbol} market kapama "
                 f"avg={weighted_avg:.6f} mark={close_price:.6f}"
             )
+            try:
+                from mina_motor_telegram import notify_time_stop
+                notify_time_stop(symbol, pnl_usdt)
+            except Exception:
+                pass
             self.reset_position_state(symbol)
             return True
         except Exception as e:
@@ -1251,6 +1268,12 @@ class MinaPositionManager:
                 roe_percent=roe_percent,
             )
 
+            try:
+                from mina_motor_telegram import notify_hard_stop
+                notify_hard_stop(symbol, pnl_usdt)
+            except Exception:
+                pass
+
             self.reset_position_state(symbol)
             return True
         except Exception as e:
@@ -1391,6 +1414,11 @@ class MinaPositionManager:
             state['highest_price'] = position.get('entry_price')
             self._save_state()
             self._persist_tp_level(symbol, side, 1)
+            try:
+                from mina_motor_telegram import notify_tp1
+                notify_tp1(symbol, partial_pct, partial_pnl)
+            except Exception:
+                pass
             return True
 
         if level == 2:
@@ -1420,8 +1448,10 @@ class MinaPositionManager:
                     quantity=close_qty,
                     positionSide=side
                 )
-                
-                # TP2 kısmi kapama — journal tam kapanış trailing/stop'ta yazılır
+
+                entry_price = state.get('weighted_avg_price', position.get('entry_price', 0))
+                partial_pnl = (close_price - entry_price) * close_qty if side == 'LONG' else (entry_price - close_price) * close_qty
+                partial_pct = (partial_pnl / (entry_price * close_qty)) * 100 if entry_price > 0 else 0
             except Exception as e:
                 print(f"   ❌ TP2 market kapama hatası: {e}")
                 return False
@@ -1447,6 +1477,11 @@ class MinaPositionManager:
             self._persist_tp_level(symbol, side, 2)
             peak = self._update_max_price(symbol, side, close_price)
             print(f"   📈 max_prices seed after TP2: {peak}")
+            try:
+                from mina_motor_telegram import notify_tp2
+                notify_tp2(symbol, partial_pct, partial_pnl)
+            except Exception:
+                pass
             return True
 
         return False
@@ -1494,6 +1529,12 @@ class MinaPositionManager:
                 pnl_percent=pnl_percent,
                 roe_percent=roe_percent,
             )
+
+            try:
+                from mina_motor_telegram import notify_trailing_closed
+                notify_trailing_closed(symbol, pnl_usdt)
+            except Exception:
+                pass
             
             self.reset_position_state(symbol)
             return True
@@ -1821,6 +1862,12 @@ class MinaPositionManager:
             pass
 
         record_position_source(symbol, side, src)
+
+        try:
+            from mina_motor_telegram import notify_position_open
+            notify_position_open(symbol, side, leverage, entry_price, initial_margin, src)
+        except Exception:
+            pass
 
         if not self.journal:
             return
