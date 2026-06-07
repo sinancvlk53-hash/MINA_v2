@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Manuel pozisyon aç — slot limiti + anayasa marjini.
+Manuel pozisyon aç — otomatik slot + anayasa marjini.
 
-Örnek:
-  python scripts/manual_open.py --symbol BTCUSDT --side LONG
-  python scripts/manual_open.py --symbol ETHUSDT --side SHORT --leverage 4 --source haluk
+Kaldıraç yönlendirme:
+  1x  → ilk boş Merter DCA yuvası
+  2–10x → ilk boş motor slotu (4x dahil)
 """
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ from binance.enums import ORDER_TYPE_LIMIT, ORDER_TYPE_MARKET, SIDE_BUY, SIDE_SE
 from config import BinanceConfig, AccountManager
 from mina_position_manager import MinaPositionManager
 from mina_trading_journal import TradingJournal
-from mina_slot_policy import SLOTS_HALUK_MOTOR, SLOTS_MERTER_MOTOR, SLOT_TOTAL
+from mina_manual_slot import check_manual_slot, slot_target_for_leverage
 from mina_entry_orders import register_pending_limit, resolve_entry_order
 from mina_signal_source import MANUEL
 import mina_tracking as mt
@@ -43,42 +43,15 @@ def _api_error_text(exc: Exception) -> str:
     return f"{type(exc).__name__}: {message}"
 
 
-def _count_motor_slots(client) -> tuple[int, int, int]:
-    """haluk_used, merter_used, total_open."""
-    positions = client.futures_position_information()
-    haluk = merter = total = 0
-    merter_state_path = os.path.join(ROOT, "signal_bot", "merter_dca_state.json")
-    merter_syms = set()
-    if os.path.isfile(merter_state_path):
-        import json
-        st = json.load(open(merter_state_path, encoding="utf-8"))
-        for p in (st.get("positions") or {}).values():
-            if p.get("symbol"):
-                merter_syms.add(p["symbol"])
+def _open_merter_manual(symbol: str, yuva: str) -> None:
+    from signal_bot.merter_dca_manager import MerterDCAManager
 
-    for p in positions:
-        amt = float(p.get("positionAmt") or 0)
-        if amt == 0:
-            continue
-        lev = int(p.get("leverage") or 0)
-        sym = p["symbol"]
-        side = "LONG" if amt > 0 else "SHORT"
-        total += 1
-        if lev == 1 and side == "LONG" and sym in merter_syms:
-            continue  # Merter DCA ayrı slot
-        haluk += 1
-    return haluk, merter, total
-
-
-def slot_check(client, source: str) -> tuple[bool, str]:
-    haluk, _, total = _count_motor_slots(client)
-    if total >= SLOT_TOTAL:
-        return False, f"SLOT_TOTAL {total}/{SLOT_TOTAL}"
-    if source == "merter" and haluk >= SLOTS_MERTER_MOTOR:
-        return False, "Merter motor slot dolu"
-    if source == "haluk" and haluk >= SLOTS_HALUK_MOTOR:
-        return False, f"Haluk motor slot dolu ({SLOTS_HALUK_MOTOR})"
-    return True, "OK"
+    mgr = MerterDCAManager(data_root=ROOT)
+    ok = mgr.open_dca_position(symbol, yuva, initial_parts=1, skip_filters=True)
+    if not ok:
+        print(f"RED: Merter DCA açılışı başarısız ({yuva})")
+        sys.exit(1)
+    print(f"OK: Merter DCA {symbol} → {yuva} (1/10 parça)")
 
 
 def _prepare_symbol(client, symbol: str, leverage: int) -> None:
@@ -97,7 +70,6 @@ def main() -> None:
     ap.add_argument("--symbol", required=True)
     ap.add_argument("--side", required=True, choices=["LONG", "SHORT"])
     ap.add_argument("--leverage", type=int, default=LEVERAGE_DEFAULT)
-    ap.add_argument("--source", default="haluk", choices=["haluk", "merter"])
     ap.add_argument("--entry-price", type=float, default=None, help="Giriş fiyatı (limit)")
     ap.add_argument("--stop-price", type=float, default=None, help="Tetik fiyatı (stop market)")
     ap.add_argument(
@@ -127,10 +99,19 @@ def main() -> None:
         symbol += "USDT"
 
     client = BinanceConfig().get_client()
-    ok, reason = slot_check(client, args.source)
+    ok, slot_msg, slot_ref = check_manual_slot(client, args.leverage, side)
     if not ok:
-        print(f"RED: {reason}")
+        print(f"RED: {slot_msg}")
         sys.exit(1)
+
+    target = slot_target_for_leverage(args.leverage)
+    if target == "merter":
+        if args.order_type != "market":
+            print("RED: Merter DCA manuel açılış yalnızca Market emir destekler")
+            sys.exit(1)
+        print(f"SLOT: {slot_msg}")
+        _open_merter_manual(symbol, str(slot_ref))
+        return
 
     try:
         from mina_coin_lock import check_motor_can_open
@@ -148,6 +129,7 @@ def main() -> None:
     mina = MinaPositionManager(client, slot, journal=journal, data_root=ROOT)
 
     _prepare_symbol(client, symbol, args.leverage)
+    print(f"SLOT: {slot_msg}")
 
     try:
         mark = float(client.futures_mark_price(symbol=symbol)["markPrice"])
@@ -285,6 +267,7 @@ def main() -> None:
     st["initial_margin"] = margin
     mina._save_state()
     mina.log_position_open(symbol, side, args.leverage, mark, qty, margin, signal_source=MANUEL)
+    print(f"OK: Motor {symbol} {side} {args.leverage}x")
     print(f"orderId={order.get('orderId')} trade_id={mina.trade_ids.get(key)}")
 
 

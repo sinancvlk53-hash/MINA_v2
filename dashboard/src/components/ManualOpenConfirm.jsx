@@ -59,6 +59,10 @@ export default function ManualOpenConfirm({
             <strong>{leverage}x</strong>
           </div>
           <div className="manual-open-row">
+            <span>Hedef slot</span>
+            <strong>{leverage === 1 ? 'Merter DCA (otomatik)' : 'Motor (otomatik)'}</strong>
+          </div>
+          <div className="manual-open-row">
             <span>Emir tipi</span>
             <strong>{orderType}</strong>
           </div>

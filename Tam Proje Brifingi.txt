@@ -1,0 +1,50 @@
+MINA v2 — Otomatik Kripto Trading Sistemi — Tam Proje Brifingi
+Merhaba. Sana MINA v2 adlı, sıfırdan geliştirdiğim otomatik kripto vadeli işlem (futures) trading botunu anlatacağım. Sistemi bir yazılım geliştirme geçmişim olmadan, yapay zeka asistanları (Cursor içinde Claude) ile birlikte inşa ettim. Şu an Binance Futures Testnet üzerinde çalışıyor, gerçek paraya geçmeden önce test ediyorum. Senden bu sistemi anlamanı ve profesyonel bir trader/yazılımcı gözüyle değerlendirmeni istiyorum.
+TEMEL FELSEFE
+Sistem 7/24 kendi başına çalışıyor. İnsan müdahalesi olmadan sinyal alıyor, pozisyon açıyor, kâr alıyor, kapanıyor, yeni sinyal alıyor. Slotlar boş kalmamalı, para sürekli çalışmalı. Mantık şu: Coin kâr ederse al, sat, çık; başka coine geç. Düşerse kademeli alım yaparak ortalama maliyeti düşür.
+ALTYAPI
+Hetzner sunucusunda (Linux) çalışıyor. Python ile yazıldı. 6 ayrı servis sürekli çalışıyor: ana motor (30 saniyede bir döngü), Telegram dinleyici, Merter DCA motoru, sinyal kuyruğu izleyici, dashboard WebSocket sunucusu ve React tabanlı dashboard arayüzü. Veriler SQLite veritabanında (DERR adını verdik — her işlem buraya kaydediliyor, sistem bu kayıt olmadan kör).
+KASA YÖNETİMİ
+Kasa 10 eşit slota bölünüyor. Her slot = bakiye / 10. Bu dinamik, bakiye değişince slot da değişiyor. 5000 USDT örneğinde her slot 500 USDT.
+Slot dağılımı:
+
+7 slot: Haluk Hoca sinyalleri (4x kaldıraç)
+1 slot: Merter legacy (4x)
+2 slot: Merter bot sinyalleri (1x DCA)
+
+İKİ ANA STRATEJİ
+Strateji 1 — 4x Motor (ana strateji):
+Giriş marjini = slot / 5 (yani slotun %20'si). 4x kaldıraç. Stop-loss YOK; bunun yerine savunma sistemi var:
+
+D1: Fiyat girişten %5 düşünce ek alım (slot/5)
+D2: %12 düşünce ek alım, TP dondurulur
+D3: Dinamik 4H destek (SFP) noktasında büyük ek alım
+Hard Stop: %25 düşünce tam kapanış
+
+Kâr alma:
+
+TP1: +%3'te pozisyonun %50'si kapanır
+TP2: +%5'te kalanın %50'si kapanır
+Trailing Stop: %2 geri çekilme ile kalan kapanır
+
+Tüm savunma tetikleyicileri ROE değil, spot fiyat bazlı.
+Strateji 2 — Merter 1x DCA (laboratuvar/veri toplama):
+Likidasyon riski sıfır (1x kaldıraç). Slot 10 eşit parçaya bölünüyor. İlk giriş 1 parça (slotun %10'u, market emir). Kalan 9 parça %2 aralıklarla limit emir olarak borsaya diziliyor. Coin düştükçe limitler doluyor, ortalama maliyet aşağı çekiliyor. TP1 +%3, TP2 +%5, trailing %2. 4 saat içinde sonuç gelmezse breakeven moduna geçip sıfır zararla çıkıyor.
+SİNYAL KAYNAKLARI
+İki Telegram kanalı dinleniyor:
+
+Haluk Hoca (HT VIP): Günde birkaç kez PDF rapor atıyor. PDF'de grafik + giriş bölgesi varsa sistem işleme alıyor. Stop-loss aranmıyor (bizim savunma sistemimiz var). Hoca'nın PDF'lerindeki makro analizler (TOTAL piyasa değeri, OTHERS, BTC.D, ETH, altın, gümüş, BRENT) Claude Vision ile görsel olarak okunup dashboard'da destek/direnç seviyeleri olarak gösteriliyor.
+Merter (MZTRADING): İki bot var. Biri her 15 dakikada 10-15 coinlik tarama listesi atıyor (EI bot). Diğeri RSI bazlı sinyal veriyor (RSI < 20 aşırı satım). Bu kanal günde 400-500 ham sinyal üretiyor, çoğu gürültü. Filtrelerden geçiriyoruz: RVOL ≥ 2.0 (göreceli hacim), minimum 50M USD 24 saatlik hacim, pump koruması, RSI teyidi.
+
+SİNYAL FİLTRELEME (GİYOTİN)
+Gelen sinyaller K2/K3 adını verdiğimiz çok katmanlı filtreden geçiyor. Parlaklık skoru hesaplanıyor. En kaliteli sinyaller "ALTIN SİNYAL" oluyor. Sinyaller 30 dakika geçerli (TTL); eski sinyaller otomatik iptal.
+SLOT KÖPRÜSÜ
+Bir pozisyon kapanınca slot boşalıyor, köprü sistemi kuyruktan en kaliteli sinyali alıp otomatik yeni pozisyon açıyor. Böylece slotlar hiç boş kalmıyor.
+DASHBOARD
+React tabanlı, TradingView temasında (koyu renk). Açık pozisyonlar, savunma durumu, makro seviyeler (destek/direnç + güncel fiyat + uyarı renkleri), manuel al/sat paneli, ayarlar. Telefon ve PC'den erişilebiliyor.
+ŞU ANKİ DURUM
+5000 USDT ile başladık, şu an ~5015 USDT. Win rate yaklaşık %48. Sistem 8+ gündür kesintisiz çalışıyor. Çözülen 13+ kritik bug var. GitHub'da düzenli yedek, günlük otomatik yedek ve recovery prosedürü mevcut.
+HENÜZ EKSİK OLANLAR
+D3 savunması hiç gerçek tetiklenmedi (test edilmeli). Trailing algo endpoint canlıda test edilmedi (testnet'te -4120 hatası). RSI>70 LONG reddet ve EMA20 filtreleri henüz kodlanmadı. Global risk limiti yok. Backtest sistemi yok. Yeterli DERR verisi (50 işlem) henüz birikmedi.
+SENDEN İSTEDİĞİM
+Bu sistemi profesyonel bir algoritmik trading uzmanı gözüyle değerlendir. Mantık hataları, risk yönetimi açıkları, gözden kaçırdığımız tehlikeler neler? Gerçek paraya geçmeden önce mutlaka yapmamız gerekenler neler? Stratejinin matematiksel sağlamlığı hakkında ne düşünüyorsun? Dürüst ve acımasız ol.

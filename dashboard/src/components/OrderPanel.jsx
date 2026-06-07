@@ -31,13 +31,22 @@ export default function OrderPanel({
   const slotSummary = data?.slotSummary ?? {}
   const motorUsed = slotSummary.motorUsed ?? data?.motorCount ?? 0
   const merterUsed = slotSummary.merterUsed ?? data?.merterCount ?? 0
-  const motorMax = slotSummary.motorMax ?? 7
+  const motorMax = slotSummary.motorMax ?? 8
   const merterMax = slotSummary.merterMax ?? 3
+  const slotTarget = leverage === 1 ? 'Merter DCA' : 'Motor'
+  const merterLongOnly = leverage === 1 && side === 'SHORT'
   const posCount = data?.positionCount ?? 0
   const leverageStrategy = data?.settings?.leverageStrategy ?? {}
 
   const filtered = filterFuturesSymbols(futuresSymbols, query, 20)
   const markPrice = markPrices[symbol]
+
+  useEffect(() => {
+    if (leverage === 1) {
+      if (side === 'SHORT') setSide('LONG')
+      if (orderType !== 'Market') setOrderType('Market')
+    }
+  }, [leverage, side, orderType])
 
   useEffect(() => {
     if (status !== 'connected' || !sendMessage) return
@@ -106,6 +115,17 @@ export default function OrderPanel({
         </div>
 
         <div className="panel-body">
+          <div className="slot-status-line">
+            Motor: <strong>{motorUsed}/{motorMax}</strong> dolu
+            {' | '}
+            Merter DCA: <strong>{merterUsed}/{merterMax}</strong> dolu
+          </div>
+          <div className="field-hint slot-auto-hint">
+            {leverage === 1
+              ? '1x → otomatik boş Merter DCA slotu (LONG)'
+              : `${leverage}x → otomatik boş motor slotu`}
+          </div>
+
           <label className="field-label">Coin</label>
           <div className="search-wrap">
             <input
@@ -175,6 +195,9 @@ export default function OrderPanel({
           </div>
 
           <label className="field-label">Emir tipi</label>
+          {leverage === 1 ? (
+            <div className="field-hint">Merter DCA: yalnızca Market</div>
+          ) : (
           <div className="toggle-row three">
             {ENTRY_ORDER_TYPES.map((t) => (
               <button
@@ -187,6 +210,7 @@ export default function OrderPanel({
               </button>
             ))}
           </div>
+          )}
 
           {orderType === 'Limit' && (
             <>
@@ -227,13 +251,18 @@ export default function OrderPanel({
           <button
             type="button"
             className="btn btn-manual-open"
-            disabled={status !== 'connected' || !symbol}
+            disabled={status !== 'connected' || !symbol || merterLongOnly}
             onClick={openConfirm}
           >
             Manuel Aç
           </button>
+          {merterLongOnly && (
+            <div className="field-hint manual-open-footnote text-red">
+              Merter DCA (1x) yalnızca LONG destekler
+            </div>
+          )}
           <div className="field-hint manual-open-footnote">
-            Slot limiti + DERR kaydı zorunlu · Onay ekranında marjin slot/5
+            Otomatik slot: {slotTarget} · Marjin slot/5
           </div>
 
           <div className="slot-budget">
@@ -249,32 +278,6 @@ export default function OrderPanel({
               <span>Hacim ({leverage}x)</span>
               <strong>{(entryMargin * leverage).toFixed(2)} USDT</strong>
             </div>
-          </div>
-
-          <div className="slot-bar-section">
-            <div className="slot-bar-label-row">
-              <span className="slot-bar-label">Haluk 4x Motor</span>
-              <span className="field-hint">{motorUsed}/{motorMax}</span>
-            </div>
-            <div className="slot-bar">
-              {Array.from({ length: motorMax }, (_, i) => (
-                <div key={`m${i}`} className={`slot-cell slot-motor ${i < motorUsed ? 'used' : ''}`} />
-              ))}
-            </div>
-          </div>
-          <div className="slot-bar-section">
-            <div className="slot-bar-label-row">
-              <span className="slot-bar-label slot-bar-label-merter">Merter 1x DCA</span>
-              <span className="field-hint">{merterUsed}/{merterMax} (EI×2 + diğer×1)</span>
-            </div>
-            <div className="slot-bar">
-              {Array.from({ length: merterMax }, (_, i) => (
-                <div key={`r${i}`} className={`slot-cell slot-merter ${i < merterUsed ? 'used' : ''}`} />
-              ))}
-            </div>
-          </div>
-          <div className="field-hint" style={{ marginTop: 6 }}>
-            Toplam açık: {posCount} · Merter yuvaları sinyal ile dolar
           </div>
 
           <div className="rules-box">

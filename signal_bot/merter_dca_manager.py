@@ -553,6 +553,8 @@ class MerterDCAManager:
         symbol: str,
         signal_source: str,
         initial_parts: int = 1,
+        *,
+        skip_filters: bool = False,
     ) -> bool:
         if not _motor_entries_allowed():
             _log_reject(signal_source, symbol, "motor pasif (dashboard)")
@@ -568,7 +570,7 @@ class MerterDCAManager:
                 return False
         except ImportError:
             pass
-        if not self.passes_min_volume(symbol, signal_source):
+        if not skip_filters and not self.passes_min_volume(symbol, signal_source):
             return False
         if initial_parts < 1 or initial_parts > PARTS_PER_YUVA:
             initial_parts = 1
@@ -625,8 +627,8 @@ class MerterDCAManager:
         _log(open_msg)
         _log(f"AÇILDI {signal_source} {symbol} parts={initial_parts}/{PARTS_PER_YUVA} trade_id={trade_id}")
         try:
-            from mina_motor_telegram import notify_position_open
-            notify_position_open(symbol, "LONG", LEVERAGE, mark, cost, MZ)
+            from mina_motor_telegram import notify_merter_dca_open
+            notify_merter_dca_open(signal_source, symbol, initial_parts, PARTS_PER_YUVA)
         except Exception:
             pass
         return True
@@ -1045,8 +1047,8 @@ class MerterDCAManager:
                     pos["tp1_done"] = True
                     self._save_state()
                     try:
-                        from mina_motor_telegram import notify_tp1
-                        notify_tp1(symbol, tp1_pct, tp1_pnl)
+                        from mina_motor_telegram import notify_merter_tp1
+                        notify_merter_tp1(symbol, tp1_pct)
                     except Exception:
                         pass
                 continue
@@ -1099,6 +1101,11 @@ class MerterDCAManager:
                             f"avg={avg:.6f} be={avg * _breakeven_mult():.6f} mark={mark:.6f}"
                         )
                         self._save_state()
+                        try:
+                            from mina_motor_telegram import notify_merter_time_stop
+                            notify_merter_time_stop(symbol)
+                        except Exception:
+                            pass
             except Exception:
                 pass
 

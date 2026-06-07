@@ -1,0 +1,802 @@
+# Haluk Hoca — Video Listesi
+
+**Toplam:** 496 video
+**Güncelleme:** 2026-06-07 02:09 (TR)
+
+## Grup İstatistikleri
+
+| Grup | Adet |
+|------|------|
+| Tahmin Et Serisi | 24 |
+| Yayın Özeti | 169 |
+| Fib Serisi | 11 |
+| Upbit/Binance Listelemeleri | 1 |
+| Piyasa Videoları | 13 |
+| Teknik Analiz | 37 |
+| Eğitim Videoları | 12 |
+| Al Sat Kararları | 3 |
+| Diğer | 226 |
+
+## Tahmin Et Serisi (24)
+
+- **#9157** · 2026-04-14 13:39 · 7:07 · "Tahmin Et" Serisi 21. bölüm yayında 💵
+  - "Tahmin Et" Serisi 21. bölüm yayında 💵  Tahminlerinizi videoyu durdurup aşağı yazmayı unutmayın. Bakalım kaçta kaç yaptınız.  #tahminet
+- **#8245** · 2026-03-22 16:22 · 7:08 · "Tahmin Et" Serisi 20. bölüm yayında 💵
+  - "Tahmin Et" Serisi 20. bölüm yayında 💵  Tahminlerinizi videoyu durdurup aşağı yazmayı unutmayın. Bakalım kaçta kaç yaptınız.  #tahminet
+- **#8207** · 2026-03-20 18:50 · 7:47 · "Tahmin Et" Serisi 19. bölüm yayında 💵
+  - "Tahmin Et" Serisi 19. bölüm yayında 💵  Tahminlerinizi videoyu durdurup aşağı yazmayı unutmayın. Bakalım kaçta kaç yaptınız.  #tahminet
+- **#7671** · 2026-03-06 15:06 · 8:20 · "Tahmin Et" Serisi 18. bölüm yayında 💵
+  - "Tahmin Et" Serisi 18. bölüm yayında 💵  Tahminlerinizi videoyu durdurup aşağı yazmayı unutmayın. Bakalım kaçta kaç yaptınız.  #tahminet
+- **#7432** · 2026-03-02 16:28 · 9:04 · "Tahmin Ediyorum" Serisi 3. bölüm yayında 💵
+  - "Tahmin Ediyorum" Serisi 3. bölüm yayında 💵  Bu sefer ben tahmin edeyim, siz izleyin.  #tahminediyorum
+- **#4086** · 2025-12-16 10:21 · 7:11 · "Tahmin Et" Serisi 17. bölüm yayında 💵
+  - "Tahmin Et" Serisi 17. bölüm yayında 💵  Tahminlerinizi videoyu durdurup aşağı yazmayı unutmayın. Bakalım kaçta kaç yaptınız.  #tahminet
+- **#3895** · 2025-12-11 12:08 · 8:58 · "Tahmin Et" Serisi 16. bölüm yayında 💵
+  - "Tahmin Et" Serisi 16. bölüm yayında 💵  Tahminlerinizi videoyu durdurup aşağı yazmayı unutmayın. Bakalım kaçta kaç yaptınız.  #tahminet
+- **#3832** · 2025-12-10 11:22 · 15:16 · "Tahmin Et" Serisi 15. bölüm yayında 💵
+  - "Tahmin Et" Serisi 15. bölüm yayında 💵  Bu bölüm Pro'lara özel. Tahminlerinizi videoyu durdurup aşağı yazmayı unutmayın. Bakalım kaçta kaç yaptınız.  #tahminet
+- **#3714** · 2025-12-08 11:55 · 9:20 · "Tahmin Et" Serisi 14. bölüm yayında 💵
+  - "Tahmin Et" Serisi 14. bölüm yayında 💵  Tahminlerinizi videoyu durdurup aşağı yazmayı unutmayın. Bakalım kaçta kaç yaptınız.  #tahminet
+- **#3680** · 2025-12-07 17:12 · 5:07 · "Tahmin Et" Serisi 13. bölüm yayında 💵
+  - "Tahmin Et" Serisi 13. bölüm yayında 💵  Piyasa sıkıcıysa dert yok, video var!  Tahminlerinizi videoyu durdurup aşağı yazmayı unutmayın. Bakalım kaçta kaç yaptınız.  #tahminet
+- **#2118** · 2025-11-06 14:16 · 6:02 · "Tahmin Et" Serisi 12. bölüm yayında 💵
+  - "Tahmin Et" Serisi 12. bölüm yayında 💵  Tahminlerinizi videoyu durdurup aşağı yazmayı unutmayın. Bakalım kaçta kaç yaptınız.  #tahminet
+- **#1457** · 2025-10-18 12:33 · 5:28 · "Tahmin Et" Serisi 11. bölüm yayında 💵
+  - "Tahmin Et" Serisi 11. bölüm yayında 💵  Tahminlerinizi videoyu durdurup aşağı yazmayı unutmayın. Bakalım kaçta kaç yaptınız.  #tahminet
+- **#1364** · 2025-10-16 12:23 · 11:20 · "Tahmin Ediyorum" Serisi 2. bölüm yayında 💵
+  - "Tahmin Ediyorum" Serisi 2. bölüm yayında 💵  Bu sefer ben tahmin edeyim, siz izleyin.  #tahminediyorum
+- **#1363** · 2025-10-16 12:11 · 13:21 · "Tahmin Et" Serisi 10. bölüm yayında 💵
+  - "Tahmin Et" Serisi 10. bölüm yayında 💵  Tahminlerinizi videoyu durdurup aşağı yazmayı unutmayın. Bakalım kaçta kaç yaptınız.  #tahminet
+- **#1278** · 2025-10-14 13:50 · 11:21 · "Tahmin Ediyorum" Serisi ilk bölüm yayında 💵
+  - "Tahmin Ediyorum" Serisi ilk bölüm yayında 💵  Bu sefer ben tahmin edeyim, siz izleyin.  #tahminediyorum
+- **#1271** · 2025-10-14 10:45 · 7:00 · "Tahmin Et" Serisi 9. bölüm yayında 💵
+  - "Tahmin Et" Serisi 9. bölüm yayında 💵  Tahminlerinizi videoyu durdurup aşağı yazmayı unutmayın. Bakalım kaçta kaç yaptınız.  #tahminet
+- **#1215** · 2025-10-12 16:14 · 4:32 · "Tahmin Et" Serisi 8. bölüm yayında 💵
+  - "Tahmin Et" Serisi 8. bölüm yayında 💵  Tahminlerinizi videoyu durdurup aşağı yazmayı unutmayın. Bakalım kaçta kaç yaptınız.  #tahminet
+- **#1126** · 2025-10-10 14:31 · 9:35 · "Tahmin Et" Serisi 7. bölüm yayında 💵
+  - "Tahmin Et" Serisi 7. bölüm yayında 💵  Tahminlerinizi videoyu durdurup aşağı yazmayı unutmayın. Bakalım kaçta kaç yaptınız.  #tahminet
+- **#1066** · 2025-10-08 19:50 · 6:21 · "Tahmin Et" Serisi 6. bölüm yayında 💵
+  - "Tahmin Et" Serisi 6. bölüm yayında 💵  Tahminlerinizi videoyu durdurup aşağı yazmayı unutmayın. Bakalım kaçta kaç yaptınız.  #tahminet
+- **#1007** · 2025-10-07 13:51 · 8:58 · "Tahmin Et" Serisi 5. bölüm yayında 💵
+  - "Tahmin Et" Serisi 5. bölüm yayında 💵  Tahminlerinizi videoyu durdurup aşağı yazmayı unutmayın. Bakalım kaçta kaç yaptınız.  #tahminet
+- **#964** · 2025-10-06 13:26 · 3:54 · "Tahmin Et" Serisi 4. bölüm yayında 💵
+  - "Tahmin Et" Serisi 4. bölüm yayında 💵  Tahminlerinizi videoyu durdurup aşağı yazmayı unutmayın. Bakalım kaçta kaç yaptınız.  #tahminet
+- **#926** · 2025-10-05 13:00 · 3:54 · "Tahmin Et" Serisi 3. bölüm yayında 💵
+  - "Tahmin Et" Serisi 3. bölüm yayında 💵  Tahminlerinizi videoyu durdurup aşağı yazmayı unutmayın. Bakalım kaçta kaç yaptınız.  #tahminet
+- **#883** · 2025-10-04 13:29 · 5:47 · "Tahmin Et" Serisi 2. bölüm yayında 💵
+  - "Tahmin Et" Serisi 2. bölüm yayında 💵  Tahminlerinizi videoyu durdurup aşağı yazmayı unutmayın. Bakalım kaçta kaç yaptınız.  #tahminet
+- **#833** · 2025-10-03 17:44 · 8:33 · "Tahmin Et" Serisi ilk bölüm yayında 💵
+  - "Tahmin Et" Serisi ilk bölüm yayında 💵  Tahminlerinizi videoyu durdurup aşağı yazmayı unutmayın. Bakalım kaçta kaç yaptınız.  #tahminet
+
+## Yayın Özeti (169)
+
+- **#11424** · 2026-06-04 11:29 · 7:26 · 4 Haziran Perşembe Yayın Özeti ♥️
+- **#11385** · 2026-06-03 12:27 · 9:09 · 3 Haziran Çarşamba Yayın Özeti ♥️
+- **#11259** · 2026-06-01 12:26 · 9:02 · 1 Haziran Pazartesi Yayın Özeti ♥️
+- **#11199** · 2026-05-30 11:00 · 7:23 · 30 Mayıs Cumartesi Yayın Özeti ♥️
+- **#11151** · 2026-05-29 10:34 · 4:53 · 29 Mayıs Cuma Yayın Özeti ♥️
+- **#10980** · 2026-05-25 11:19 · 7:41 · 25 Mayıs Pazartesi Yayın Özeti ♥️
+- **#10864** · 2026-05-22 10:29 · 6:09 · 22 Mayıs Cuma - Yayın Özeti ♥️
+- **#10814** · 2026-05-21 11:57 · 8:35 · 21 Mayıs Perşembe - Yayın Özeti ♥️
+- **#10779** · 2026-05-20 11:55 · 6:38 · 20 Mayıs Çarşamba Yayın Özeti ♥️
+- **#10752** · 2026-05-19 12:04 · 7:21 · 19 Mayıs Salı Yayın Özeti ❤️🤍
+- **#10594** · 2026-05-15 11:43 · 8:18 · 15 Mayıs Cuma Yayın Özeti ♥️
+- **#10532** · 2026-05-14 11:12 · 7:23 · 14 Mayıs Perşembe Yayın Özeti ♥️
+- **#10497** · 2026-05-13 11:17 · 8:33 · 13 Mayıs Çarşamba Yayın Özeti ♥️
+- **#10394** · 2026-05-11 11:52 · 8:22 · 11 Mayıs Pazartesi Yayın Özeti ♥️
+- **#10265** · 2026-05-08 11:59 · 8:47 · 8 Mayıs Cuma Yayın Özeti ♥️
+- **#10005** · 2026-05-01 11:10 · 4:40 · 1 Mayıs Cuma Yayın Özeti ♥️
+- **#9964** · 2026-04-30 11:45 · 9:54 · 30 Nisan Perşembe Yayın Özeti ♥️
+- **#9848** · 2026-04-28 11:49 · 8:56 · 28 Nisan Salı Yayın Özeti ♥️
+- **#9804** · 2026-04-27 11:17 · 8:41 · 27 Nisan Pazartesi Yayın Özeti ♥️
+- **#9714** · 2026-04-25 11:30 · 8:02 · 25 Nisan Cumartesi Yayın Özeti ♥️
+- **#9676** · 2026-04-24 11:09 · 5:08 · 24 Nisan Cuma Yayın Özeti ♥️
+- **#9627** · 2026-04-23 10:36 · 5:48 · 23 Nisan Perşembe Yayın Özeti ♥️
+- **#9462** · 2026-04-20 11:50 · 10:57 · 20 Nisan Pazartesi Yayın Özeti ♥️
+- **#9362** · 2026-04-18 11:01 · 7:09 · 18 Nisan Cumartesi Yayın Özeti ♥️
+- **#9298** · 2026-04-17 11:39 · 6:40 · 17 Nisan Cuma Yayın Özeti ♥️
+- **#9196** · 2026-04-15 12:02 · 8:38 · 15 Nisan Çarşamba Yayın Özeti ♥️
+- **#9148** · 2026-04-14 11:28 · 8:36 · 14 Nisan Salı Yayın Özeti ♥️
+- **#9098** · 2026-04-13 11:38 · 5:40 · 13 Nisan Pazartesi yayın özeti ♥️
+- **#8990** · 2026-04-10 12:20 · 8:07 · 10 Nisan Cuma Yayın Özeti <3
+- **#8943** · 2026-04-09 11:37 · 7:49 · 9 Nisan Perşembe Yayın Özeti ♥️
+- **#8906** · 2026-04-08 10:29 · 5:48 · 8 Nisan Çarşamba Yayın Özeti ♥️
+- **#8843** · 2026-04-07 11:04 · 6:20 · 7 Nisan Salı Yayın Özeti ♥️
+- **#8788** · 2026-04-06 11:40 · 6:57 · 6 Nisan Pazartesi Yayın Özeti ♥️
+- **#8749** · 2026-04-04 12:05 · 7:03 · 4 Nisan Cumartesi Yayın Özeti ♥️
+- **#8714** · 2026-04-03 11:45 · 6:44 · 3 Nisan Cuma Yayın Özeti ♥️
+- **#8672** · 2026-04-02 11:49 · 6:47 · 2 Nisan Perşembe Yayın Özeti ♥️
+- **#8624** · 2026-04-01 11:36 · 7:46 · 1 Nisan Çarşamba yayın özeti ♥️
+- **#8521** · 2026-03-30 11:46 · 5:57 · 30 Mart Pazartesi Yayın Özeti ♥️
+- **#8460** · 2026-03-28 11:55 · 7:09 · 28 Mart Cumartesi Yayın Özeti ♥️
+- **#8416** · 2026-03-27 11:56 · 7:14 · 27 Mart Cuma Yayın Özeti <3
+- **#8371** · 2026-03-26 11:44 · 7:08 · 26 Mart Perşembe Yayın Özeti ♥️
+- **#8337** · 2026-03-25 12:23 · 9:23 · 25 Mart Çarşamba Yayın Özeti ♥️
+- **#8302** · 2026-03-24 10:29 · 5:13 · 24 Mart Salı Yayın Özeti ♥️
+- **#8260** · 2026-03-23 12:06 · 5:55 · 23 Mart Pazartesi Yayın Özeti ♥️
+- **#8167** · 2026-03-19 11:25 · 6:23 · 19 Mart Perşembe Yayın Özeti ♥️
+- **#8041** · 2026-03-17 12:21 · 7:12 · 17 Mart Salı Yayın Özeti ♥️
+- **#8005** · 2026-03-16 11:36 · 6:28 · 16 Mart Pazartesi Yayın Özeti ♥️
+- **#7955** · 2026-03-14 12:03 · 6:27 · 14 Mart Cumartesi Yayın Özeti ♥️
+- **#7926** · 2026-03-13 11:42 · 6:03 · 13 Mart Cuma yayın özeti ♥️
+- **#7893** · 2026-03-12 11:27 · 5:37 · 12 Mart Perşembe yayın özeti ♥️
+- **#7846** · 2026-03-11 11:21 · 7:04 · 11 Mart Çarşamba Yayın Özeti ♥️
+- **#7767** · 2026-03-09 11:45 · 5:34 · 9 Mart Pazartesi Yayın Özeti ♥️
+- **#7712** · 2026-03-07 10:56 · 4:38 · 7 Mart Cumartesi yayın özeti
+- **#7663** · 2026-03-06 11:46 · 4:36 · 6 mart yayın özeti
+- **#7610** · 2026-03-05 11:41 · 5:12 · 5 Mart Perşembe yayın özeti ❤️
+- **#7553** · 2026-03-04 11:19 · 5:16 · 4 Mart çarşamba yayın özeti ♥️
+- **#7481** · 2026-03-03 11:30 · 6:06 · 3 Mart salı yayın özeti ♥️
+- **#7408** · 2026-03-02 11:26 · 4:20 · 2 Mart Pazartesi Yayın Özeti ♥️
+- **#7105** · 2026-02-26 11:40 · 5:36 · 26 Şubat Perşembe Yayın Özeti ♥️
+- **#7070** · 2026-02-25 12:04 · 5:14 · 25 Şubat Çarşamba Yayın Özeti ♥️
+- **#7002** · 2026-02-24 11:36 · 7:32 · 24 şubat salı yayın özeti ♥️
+- **#6914** · 2026-02-23 11:16 · 7:54 · 23 şubat pazartesi yayın özeti ♥️
+- **#6840** · 2026-02-21 12:29 · 5:53 · 21 Şubat cumartesi yayın özeti ♥️
+- **#6726** · 2026-02-19 11:27 · 6:09 · 19 Şubat perşembe yayın özeti ♥️
+- **#6677** · 2026-02-18 11:38 · 5:44 · 18 şubat çarşamba yayın özeti ♥️
+- **#6632** · 2026-02-17 12:03 · 5:15 · 17 Şubat Salı Yayın Özeti ♥️
+- **#6604** · 2026-02-16 11:44 · 5:13 · 16 Şubat pazartesi yayın özeti ♥️
+- **#6040** · 2026-01-31 10:59 · 5:46 · 31.01 cumartesi yayın özeti ♥️
+- **#5999** · 2026-01-30 11:22 · 8:01 · 30.01 cuma yayın özeti ♥️
+- **#5870** · 2026-01-28 10:45 · 3:56 · 28.01 çarşamba yayın özeti ♥️
+  - 28.01 çarşamba yayın özeti ♥️ **FED günü** __bugün haberler kısa__
+- **#5821** · 2026-01-27 11:39 · 6:14 · 27.01 salı yayın özeti ♥️
+- **#5782** · 2026-01-26 11:37 · 6:52 · 26.01 pazartesi yayın özeti ♥️
+- **#5734** · 2026-01-25 17:25 · 0:29 · ABD'de işler git gide gerginleşiyor.
+  - ABD'de işler git gide gerginleşiyor.  Minnesota Valisi, Trump'a bağlı ICE polislerine karşı eyalette asayişi sağlaması için Ulusal Muhafızları göreve çağırdı.  Bilmeyenler için kısa özet: ICE dedikler…
+- **#5697** · 2026-01-24 10:46 · 5:29 · 24 Ocak cumartesi yayın özeti
+  - 24 Ocak cumartesi yayın özeti  özledim ♥️
+- **#5502** · 2026-01-19 11:17 · 8:31 · 19.01 Pazartesi yayın özeti♥️
+  - 19.01 Pazartesi yayın özeti♥️ __Dünkü düşüşün nedenlerini de detaylıca anlattım yayını kaçırdıysanız haberiniz olsun.__
+- **#5426** · 2026-01-17 11:24 · 6:58 · 17 Ocak Cumartesi yayın özeti ♥️
+- **#5385** · 2026-01-16 10:56 · 5:22 · 16.01 cuma yayın özeti ♥️
+- **#5328** · 2026-01-15 11:25 · 7:34 · 15.01 perşembe yayın özeti ♥️
+- **#5253** · 2026-01-14 11:53 · 9:39 · 14 Ocak çarşamba yayın özeti ♥️
+- **#5187** · 2026-01-13 11:06 · 8:26 · 13 Ocak Salı Yayın Özeti ♥️
+- **#5137** · 2026-01-12 12:00 · 11:25 · 12 Ocak Pazartesi Yayın Özeti ♥️
+- **#5067** · 2026-01-10 10:57 · 8:04 · 10 ocak cumartesi yayın özeti ♥️
+- **#5016** · 2026-01-09 10:37 · 7:59 · 9 ocak cuma yayın özeti ♥️
+- **#4962** · 2026-01-08 11:03 · 7:09 · 8 ocak perşembe yayın özeti ♥️
+- **#4907** · 2026-01-07 10:35 · 4:04 · 7 Ocak Çarşamba yayın özeti ♥️
+- **#4863** · 2026-01-06 11:03 · 6:54 · 6 Ocak Salı yayın özeti ♥️
+- **#4822** · 2026-01-05 10:33 · 5:13 · 5 Ocak pazartesi yayın özeti ♥️
+- **#4733** · 2026-01-03 10:42 · 5:55 · 3 Ocak cumartesi yayın özeti ♥️
+- **#4688** · 2026-01-02 11:13 · 7:06 · Yılın ilk yayın özeti ♥️
+  - Yılın ilk yayın özeti ♥️  2 Ocak Cuma Yayın Özeti
+- **#4603** · 2025-12-30 11:27 · 5:55 · 30 Aralık Salı yayın özeti ♥️
+- **#4561** · 2025-12-29 11:15 · 6:41 · 29 Aralık Yayın Özeti ♥️
+- **#4509** · 2025-12-27 10:13 · 5:08 · 27 Aralık Cumartesi Yayın Özeti ♥️
+- **#4485** · 2025-12-26 10:34 · 6:32 · 26 Aralık Cuma yayın özeti ♥️
+- **#4441** · 2025-12-25 10:27 · 5:40 · 25 Aralık Perşembe yayın özeti ♥️
+- **#4403** · 2025-12-24 11:34 · 8:32 · 24 Aralık Çarşamba Yayın Özeti ♥️
+- **#4359** · 2025-12-23 11:10 · 7:38 · 23 Aralık salı yayın özeti ❤️
+- **#4324** · 2025-12-22 11:25 · 8:05 · 22 Aralık yayın özeti ♥️
+- **#4269** · 2025-12-20 10:34 · 7:06 · 20 Aralık Cumartesi Yayın Özeti <3
+- **#4181** · 2025-12-18 10:40 · 8:34 · 18 Aralık Perşembe yayın özeti
+  - 18 Aralık Perşembe yayın özeti  Yarın sabah Boj var. BOJ VAR !! yayınları takip edemiyorsan da görmedim duymadım olmasın buna bak.
+- **#4125** · 2025-12-17 11:18 · 10:04 · 17.12 çarşamba yayın özeti ♥️
+- **#4088** · 2025-12-16 10:37 · 9:21 · 16 Aralık Salı yayın özeti ♥️
+- **#4045** · 2025-12-15 11:09 · 7:12 · 15 Aralık pazartesi yayın özeti ♥️
+- **#3935** · 2025-12-12 10:22 · 5:34 · 12.12 cuma yayın özeti ♥️
+- **#3892** · 2025-12-11 08:57 · 5:49 · 11.12.2025 Yayın özeti
+- **#3828** · 2025-12-10 10:38 · 8:27 · 10 Aralık Çarşamba Yayın Özeti ♥️
+- **#3770** · 2025-12-09 10:38 · 9:02 · 9 Aralık Salı Yayın Özeti ♥️
+- **#3712** · 2025-12-08 10:21 · 5:01 · 8.12 pazartesi yayın özeti ♥️
+- **#3621** · 2025-12-06 11:18 · 8:09 · 6.12 cumartesi yayın özeti ♥️
+- **#3570** · 2025-12-05 10:45 · 6:56 · 5 aralık cuma yayın özeti ♥️
+- **#3511** · 2025-12-04 11:44 · 12:22 · 4 aralık perşembe yayın özeti ♥️
+- **#3461** · 2025-12-03 11:20 · 8:39 · 3 Aralık Yayın Özeti ♥️
+  - 3 Aralık Yayın Özeti ♥️ yayın özetlerinin 1. yıldönümü bugün 🥰🥳
+- **#3386** · 2025-12-02 09:13 · 11:01 · 02.12.2025
+  - 02.12.2025  Yayın Özeti
+- **#3347** · 2025-12-01 11:13 · 8:33 · 1 Aralık yayın özeti
+- **#3228** · 2025-11-29 11:31 · 7:59 · 29.11 cumartesi yayın özeti ♥️
+- **#3177** · 2025-11-28 11:55 · 10:03 · 28.11 cuma yayın özeti ♥️
+- **#3130** · 2025-11-27 09:45 · 11:07 · 27.11.2025 yayın özeti
+- **#3065** · 2025-11-26 11:08 · 7:16 · 26 Kasım Çarşamba Yayın Özeti ♥️
+- **#3017** · 2025-11-25 11:39 · 8:16 · 25 Kasım Salı Yayın Özeti
+- **#2951** · 2025-11-24 10:19 · 6:13 · 24 kasım yayın özeti
+- **#2879** · 2025-11-22 12:18 · 9:58 · 22 Kasım Cumartesi Yayın Özeti
+- **#2755** · 2025-11-20 10:43 · 8:19 · 20.11 perşembe yayın özeti ♥️
+- **#2700** · 2025-11-19 11:26 · 9:38 · 19.11 çarşamba yayın özeti ❤️
+- **#2649** · 2025-11-18 11:17 · 12:08 · 18 Kasım Salı Yayın Özeti
+  - 18 Kasım Salı Yayın Özeti   Eğer yayını izleyemediyseniz bunu kesin izleyin baya önemli ♥️
+- **#2598** · 2025-11-17 10:44 · 8:23 · 17 Kasım yayın özeti ♥️
+- **#2542** · 2025-11-15 09:45 · 15:15 · Yayın Özeti 15.11.2025
+  - Yayın Özeti 15.11.2025 #YN
+- **#2507** · 2025-11-14 10:56 · 6:52 · 14 Kasım Cuma yayın özeti ♥️
+- **#2451** · 2025-11-13 11:19 · 10:24 · 13 kasım perşembe yayın özeti ♥️
+- **#2404** · 2025-11-12 11:06 · 7:13 · 12 Kasım Çarşamba Yayın Özeti ♥️
+- **#2372** · 2025-11-11 11:02 · 5:46 · 11.11 salı yayın özeti ♥️
+- **#2307** · 2025-11-10 10:25 · 5:13 · 10 Kasım pazartesi yayın özeti 🖤
+- **#2206** · 2025-11-08 10:16 · 4:55 · 8 Kasım cumartesi yayın özeti ♥️
+- **#2160** · 2025-11-07 11:24 · 7:38 · 7 Kasım Cuma yayın özeti ♥️
+- **#2117** · 2025-11-06 11:11 · 8:45 · 6 Kasım Perşembe yayın özeti ♥️
+- **#2078** · 2025-11-05 10:57 · 7:27 · 5 Kasım Çarşamba Yayın Özeti ♥️
+- **#2031** · 2025-11-04 11:44 · 11:55 · 4 Kasım Salı Yayın Özeti ♥️
+- **#1986** · 2025-11-03 09:26 · 8:13 · Pazartesi yayın özeti
+  - Pazartesi yayın özeti 03.11.2025
+- **#1922** · 2025-11-01 10:41 · 5:38 · 1 Kasım Cumartesi Yayın Özeti ♥️
+- **#1899** · 2025-10-31 11:16 · 6:32 · 31 Ekim Cuma Yayın Özeti ♥️
+- **#1808** · 2025-10-29 11:05 · 6:46 · 29 Ekim Çarşamba Yayın Özeti ❤️🤍
+  - 29 Ekim Çarşamba Yayın Özeti ❤️🤍  Bu akşam FED, yarın sabah BOJ var.
+- **#1781** · 2025-10-28 10:39 · 7:32 · 28 Ekim Salı Yayın Özeti ♥️
+- **#1746** · 2025-10-27 10:51 · 8:08 · 27 Ekim Pazartesi Yayın Özeti ♥️
+- **#1668** · 2025-10-25 11:46 · 6:38 · 25.10 cumartesi yayın özeti ♥️
+- **#1632** · 2025-10-24 10:55 · 8:22 · 24 Ekim Cuma Yayın Özeti ♥️
+- **#1593** · 2025-10-23 11:00 · 7:10 · 23 Ekim perşembe yayın özeti ♥️
+- **#1532** · 2025-10-21 11:07 · 7:43 · 21.10 salı yayın özeti ♥️
+- **#1456** · 2025-10-18 11:28 · 7:17 · 18 Ekim cumartesi yayın özeti ♥️
+- **#1362** · 2025-10-16 11:19 · 10:30 · 16 Ekim Perşembe Yayın Özeti ♥️
+- **#1318** · 2025-10-15 10:44 · 8:40 · 15 Ekim Çarşamba Yayın Özeti ♥️
+- **#1272** · 2025-10-14 11:19 · 7:31 · 14.10 salı yayın özeti <3
+- **#1240** · 2025-10-13 12:10 · 10:49 · 13.10 pazartesi yayın özeti <3
+- **#1120** · 2025-10-10 09:08 · 9:54 · 10.10.2025
+  - 10.10.2025 Yayın Özeti (Kalpsiz olan evet) #YN
+- **#1079** · 2025-10-09 11:37 · 7:48 · 9 Ekim Perşembe Yayın Özeti ❤️
+- **#1045** · 2025-10-08 10:46 · 6:32 · 8 Ekim Çarşamba Yayın Özeti ❤️
+- **#1006** · 2025-10-07 10:57 · 5:56 · 7 Ekim Salı Yayın Özeti ❤️
+- **#961** · 2025-10-06 11:55 · 11:09 · 6 Ekim pazartesi yayın özeti ❤️
+  - 6 Ekim pazartesi yayın özeti ❤️  __önemli bak yayını kaçırdıysan kesin izle bunu__
+- **#881** · 2025-10-04 11:39 · 5:27 · 4 Ekim Cumartesi Yayın Özeti 💚
+- **#813** · 2025-10-03 10:52 · 5:31 · 3 Ekim Cuma Yayın Özeti ❤️
+- **#774** · 2025-10-02 10:38 · 6:34 · 2 Ekim perşembe yayın özeti ❤️
+- **#711** · 2025-10-01 11:45 · 7:53 · 1 Ekim çarşamba yayın özeti ❤️
+  - 1 Ekim çarşamba yayın özeti ❤️ **Elinizdekileri bi kontrol edin**
+- **#649** · 2025-09-30 11:01 · 7:23 · 30.09 salı yayın özeti ❤️
+- **#609** · 2025-09-29 11:18 · 8:06 · 29.09 Pazartesi Yayın Özeti ❤️
+- **#566** · 2025-09-27 11:27 · 7:09 · 27.09 cumartesi yayın özeti ❤️
+- **#534** · 2025-09-26 11:32 · 5:57 · 26.09 cuma yayın özeti ❤️
+- **#460** · 2025-09-25 10:50 · 6:19 · 25.09 perşembe yayın özeti ❤️
+- **#392** · 2025-09-24 10:30 · 7:59 · 24.09 çarşamba yayın özeti ❤️
+- **#338** · 2025-09-23 10:43 · 7:05 · 23.09 Salı yayın özeti ❤️
+- **#302** · 2025-09-22 10:56 · 6:22 · 22 Eylül Pazartesi Yayın Özeti ❤️
+- **#218** · 2025-09-20 10:53 · 5:01 · 20.09 cumartesi yayın özeti ❤️
+- **#190** · 2025-09-19 10:38 · 4:27 · 19 Eylül Cuma Yayın Özeti ❤️
+
+## Fib Serisi (11)
+
+- **#11508** · 2026-06-05 23:06 · 18:43 · Teknik Analiz Advance
+  - Teknik Analiz Advance Fib Serisi  (uzun bir aradan sonra) Fib Extension Bölüm 4  #fib
+- **#11507** · 2026-06-05 23:05 · 12:16 · Teknik Analiz Advance
+  - Teknik Analiz Advance Fib Serisi  Fib Extension Bölüm 3  #fib
+- **#11506** · 2026-06-05 23:04 · 9:13 · Teknik Analiz Advance
+  - Teknik Analiz Advance Fib Serisi  (uzun bir aradan sonra) Fib Extension Bölüm 2  #fib
+- **#6863** · 2026-02-21 19:01 · 26:40 · Teknik Analiz Advance Elliott Wave
+  - Teknik Analiz Advance Elliott Wave Bölüm 15: "Fib Channel ve Elliott"  Bu seri en ileri seviye kişiler içindir. Bir çok konsepti birlikte kullanmanız gerekir. Diğer konseptleri bitirmeden buna giriş y…
+- **#128** · 2025-09-15 00:31 · 26:12 · Teknik Analiz Advance
+  - Teknik Analiz Advance Fib Serisi  Fib Extension Bölüm 1  #fib
+- **#127** · 2025-09-15 00:29 · 3:20 · Teknik Analiz Advance
+  - Teknik Analiz Advance Fib Serisi  Fib Extension Giriş  #fib
+- **#112** · 2025-09-14 16:55 · 16:42 · Teknik Analiz Advance
+  - Teknik Analiz Advance Fib Serisi  Fib Retracement Bölüm 4  #fib
+- **#111** · 2025-09-14 16:54 · 19:44 · Teknik Analiz Advance
+  - Teknik Analiz Advance Fib Serisi  Fib Retracement Bölüm 3  #fib
+- **#110** · 2025-09-14 16:53 · 23:55 · Teknik Analiz Advance
+  - Teknik Analiz Advance Fib Serisi  Fib Retracement Bölüm 2  #fib
+- **#109** · 2025-09-14 16:52 · 27:29 · Teknik Analiz Advance
+  - Teknik Analiz Advance Fib Serisi  Fib Retracement Bölüm 1  #fib
+- **#108** · 2025-09-14 16:51 · 7:26 · Teknik Analiz Advance
+  - Teknik Analiz Advance Fib Serisi Giriş Bölümü: "Fib Retracement"  #fib
+
+## Upbit/Binance Listelemeleri (1)
+
+- **#6941** · 2026-02-23 17:20 · 15:08 · "Upbit Listelemesinden Nasıl Para Kazanılıyor?"
+  - "Upbit Listelemesinden Nasıl Para Kazanılıyor?"  (Ağır derecede risk içeren bir videodur, bu videoda izledikleriniz ve uyguladıklarınız bireyseldir.)
+
+## Piyasa Videoları (13)
+
+- **#10873** · 2026-05-22 15:12 · 0:21 · Bugün, 16 yıl önce, Laszlo Hanyecz iki Papa John's pizzası için 10,000 Bitcoin ödedi.
+  - Bugün, 16 yıl önce, Laszlo Hanyecz iki Papa John's pizzası için 10,000 Bitcoin ödedi.   Bugün, 10k $BTC 775,000,000$'dan fazla değerinde.
+- **#7742** · 2026-03-08 13:25 · 0:22 · 2018'den yana ETH ve BTC
+- **#7325** · 2026-02-28 21:32 · 9:27 · BTC mini delux pro
+- **#6794** · 2026-02-20 16:06 · 0:21 · Yüzü maskeli bir adam, canlı yayında kendi çıkardığı coin’i 1 milyon dolar piyasa değerine ulaşmazsa bir balığı silahla öldürmekle tehdit etti.
+- **#6778** · 2026-02-20 11:40 · 5:58 · Coinglass Serisi Bölüm 7
+  - Coinglass Serisi Bölüm 7  "Bitcoin Realized Price"
+- **#6633** · 2026-02-17 12:18 · 8:20 · Temel Analiz Advance
+  - Temel Analiz Advance  Bölüm 6: USDT Basımı Ne işe yarar?  Keywords:  "Usdt basılması iyi mi kötü mü" "bununla short açıyorlar mı" "bir sürü milyar dolar usdt bastılar niye çıkmıyor piyasa" "usdt'den b…
+- **#5893** · 2026-01-28 16:34 · 0:09 · Millet iyice delirdi, şimdi de bakırı bu şekilde satmaya başladılar. Altın ve gümüşü kaçıranlar gözleri bakıra dikti. Bakkal amcadan bakır kelimesini duyunca Market Top sinyali gelir
+- **#3542** · 2025-12-04 18:43 · 0:41 · CZ adlı zararlı cemiyet, Bitcoin düşmanı Peter Schiff'i maymun etti.
+- **#3064** · 2025-11-26 10:03 · 0:48 · "2018'den beri her hafta 50 dolar yatırım yapan birisi altın ya da BTC'ye yatırım yapsaydı eline ne geçerdi"
+  - "2018'den beri her hafta 50 dolar yatırım yapan birisi altın ya da BTC'ye yatırım yapsaydı eline ne geçerdi"  Total harcanan para: 19200 $ Altın ile gelinen nokta: 35821 $ Bitcoin ile gelinen nokta: 1…
+- **#3008** · 2025-11-25 07:07 · 0:50 · İzleyin bakalım, bu kim ve ne diyor?
+  - İzleyin bakalım, bu kim ve ne diyor? Bitcoin düşecek diyenlere günaydın 😊
+- **#1556** · 2025-10-22 00:04 · 0:22 · Trump: Gaz, market ve enerji fiyatları düştü.
+  - Trump: Gaz, market ve  enerji fiyatları düştü. Fed konusunda bir şey yapamıyorum, orada uyuzun biri var ve elimden bir şey gelmiyor.
+- **#228** · 2025-09-20 16:00 · 17:36 · BTC Promsu video
+  - BTC Promsu video (Market genel bakış)
+- **#60** · 2025-09-12 17:47 · 30:37 · Temel Analiz Serisi Bölüm 3: "Kilit Açılımları ve Market Cap"
+  - Temel Analiz Serisi Bölüm 3: "Kilit Açılımları ve Market Cap"  #FA
+
+## Teknik Analiz (37)
+
+- **#9990** · 2026-04-30 22:20 · 24:42 · Data Analizi Serisi Yeni Bölüm: Yaklaşan Tehlike, "JAPONYA"
+  - Data Analizi Serisi Yeni Bölüm: Yaklaşan Tehlike, "JAPONYA"  Bu video sadece kriptoyla ilgili değildir. Küresel finansla ilgilidir.
+- **#9205** · 2026-04-15 14:28 · 21:41 · "Nasıl Yanlış Analiz Yapılır"
+  - "Nasıl Yanlış Analiz Yapılır"  Bu videoda sizinle bile isteye yanlış analiz yapıyoruz.
+- **#7811** · 2026-03-10 12:05 · 57:46 · Teknik Analiz Metodlarını puanlıyorum ve evet, 1 saat boyunca!
+- **#7787** · 2026-03-09 18:02 · 18:44 · Teknik Analiz Advance Elliott Wave
+  - Teknik Analiz Advance Elliott Wave Bölüm 17:   "SKEWED TRIANGLE"  Bu seri en ileri seviye kişiler içindir. Bir çok konsepti birlikte kullanmanız gerekir. Diğer konseptleri bitirmeden buna giriş yapmay…
+- **#7769** · 2026-03-09 12:14 · 18:28 · Teknik Analiz Advance Elliott Wave
+  - Teknik Analiz Advance Elliott Wave Bölüm 16:   "HORIZONTAL TRIANGLE"  Bu seri en ileri seviye kişiler içindir. Bir çok konsepti birlikte kullanmanız gerekir. Diğer konseptleri bitirmeden buna giriş ya…
+- **#6740** · 2026-02-19 14:36 · 21:01 · Temel Analiz Advance
+  - Temel Analiz Advance  Bölüm 7: Ekonomik Veriler ve FED  #FAadvance
+- **#4363** · 2025-12-23 12:07 · 9:18 · Teknik Analiz Advance Elliott Wave
+  - Teknik Analiz Advance Elliott Wave Bölüm 14:  "Triple Three"  Bu seri en ileri seviye kişiler içindir. Bir çok konsepti birlikte kullanmanız gerekir. Diğer konseptleri bitirmeden buna giriş yapmayın. …
+- **#4271** · 2025-12-20 11:24 · 13:03 · Teknik Analiz Advance Elliott Wave
+  - Teknik Analiz Advance Elliott Wave Bölüm 13:  "Double Three"  Bu seri en ileri seviye kişiler içindir. Bir çok konsepti birlikte kullanmanız gerekir. Diğer konseptleri bitirmeden buna giriş yapmayın. …
+- **#4241** · 2025-12-19 16:12 · 20:41 · Teknik Analiz Advance Elliott Wave
+  - Teknik Analiz Advance Elliott Wave Bölüm 12:  "Triple Zig-Zag"  Bu seri en ileri seviye kişiler içindir. Bir çok konsepti birlikte kullanmanız gerekir. Diğer konseptleri bitirmeden buna giriş yapmayın…
+- **#4237** · 2025-12-19 15:16 · 13:01 · Teknik Analiz Advance Elliott Wave
+  - Teknik Analiz Advance Elliott Wave Bölüm 11:  "Double Zig-Zag"  Bu seri en ileri seviye kişiler içindir. Bir çok konsepti birlikte kullanmanız gerekir. Diğer konseptleri bitirmeden buna giriş yapmayın…
+- **#3941** · 2025-12-12 11:03 · 6:30 · Teknik Analiz Advance Elliott Wave
+  - Teknik Analiz Advance Elliott Wave Bölüm 10:  "Running Flat"  Bu seri en ileri seviye kişiler içindir. Bir çok konsepti birlikte kullanmanız gerekir. Diğer konseptleri bitirmeden buna giriş yapmayın. …
+- **#3940** · 2025-12-12 11:02 · 7:59 · Teknik Analiz Advance Elliott Wave
+  - Teknik Analiz Advance Elliott Wave Bölüm 9:  "Irregular Flat"  Bu seri en ileri seviye kişiler içindir. Bir çok konsepti birlikte kullanmanız gerekir. Diğer konseptleri bitirmeden buna giriş yapmayın.…
+- **#3939** · 2025-12-12 11:01 · 6:05 · Teknik Analiz Advance Elliott Wave
+  - Teknik Analiz Advance Elliott Wave Bölüm 8:  "Regular Flat"  Bu seri en ileri seviye kişiler içindir. Bir çok konsepti birlikte kullanmanız gerekir. Diğer konseptleri bitirmeden buna giriş yapmayın.  …
+- **#3894** · 2025-12-11 11:18 · 16:42 · Teknik Analiz Advance Elliott Wave
+  - Teknik Analiz Advance Elliott Wave Bölüm 7:  "Zig-Zag"  Bu seri en ileri seviye kişiler içindir. Bir çok konsepti birlikte kullanmanız gerekir. Diğer konseptleri bitirmeden buna giriş yapmayın.  #elli…
+- **#3850** · 2025-12-10 21:19 · 10:20 · Teknik Analiz Advance Elliott Wave
+  - Teknik Analiz Advance Elliott Wave Bölüm 6: "Karar" Bu bölümde eğitim serisi hali hazırda devam eden Elliot Teorisini gerçekten öğrenmek isteyip istemeyeceğinize karar vereceksiniz.   Bu seri en ileri…
+- **#3772** · 2025-12-09 11:25 · 6:23 · Teknik Analiz Advance Elliott Wave
+  - Teknik Analiz Advance Elliott Wave Bölüm 5: Leading&Ending Diagonels Part 3 (Dalga 1-5-A-C özellikleri)  Bu seri en ileri seviye kişiler içindir. Bir çok konsepti birlikte kullanmanız gerekir. Diğer k…
+- **#3771** · 2025-12-09 10:57 · 18:13 · Teknik Analiz Advance Elliott Wave
+  - Teknik Analiz Advance Elliott Wave Bölüm 4: Leading&Ending Diagonels Part 2 (Dalga 1-5-A-C özellikleri)  Bu seri en ileri seviye kişiler içindir. Bir çok konsepti birlikte kullanmanız gerekir. Diğer k…
+- **#2702** · 2025-11-19 12:01 · 25:11 · Teknik Analiz Advance Elliott Wave
+  - Teknik Analiz Advance Elliott Wave Bölüm 3: Leading&Ending Diagonels (Dalga 1-5-A-C özellikleri)  Bu seri en ileri seviye kişiler içindir. Bir çok konsepti birlikte kullanmanız gerekir. Diğer konseptl…
+- **#2508** · 2025-11-14 11:30 · 12:20 · Data Analizi Serisi Yeni Bölüm:
+  - Data Analizi Serisi Yeni Bölüm: "A-M-D"  Bu bölümde borsa açılışı sırasında karşılaşılan ve neredeyse her gün gerçekleşen, A-M-D olarak da bilinen patterni size anlattım.  #data
+- **#2161** · 2025-11-07 11:46 · 17:35 · Teknik Analiz Advance
+  - Teknik Analiz Advance  OrderFlow 7. Bölümü: Fixed Volume Profile  Bu seri ileri seviye bir eğitimdir. Öncekileri bitirmediyseniz buraya daha sonra gelin.  #orderflow
+- **#1333** · 2025-10-15 13:51 · 0:16 · Senin haysiyetini onurunu s…
+  - Senin haysiyetini onurunu s… Benden çaldığın analiz yetmemiş, bir de pozlarımı millete kendi almış gibi atıyor.  Kimsin lan sen  o evladı!  Ben seni bulup dava etmez miyim!  Şu profili şikayet edin. H…
+- **#781** · 2025-10-02 13:30 · 17:19 · Teknik Analiz Advance
+  - Teknik Analiz Advance  OrderFlow 6. Bölümü: Volume Footprint (En önemli video)  Bu seri ileri seviye bir eğitimdir. Öncekileri bitirmediyseniz buraya daha sonra gelin.  #orderflow
+- **#675** · 2025-09-30 19:08 · 14:06 · Teknik Analiz Advance
+  - Teknik Analiz Advance  OrderFlow 5. Bölümü: Orderbook  Bu seri ileri seviye bir eğitimdir. Öncekileri bitirmediyseniz buraya daha sonra gelin.  #orderflow
+- **#463** · 2025-09-25 12:03 · 27:33 · Teknik Analiz Advance Elliott Wave
+  - Teknik Analiz Advance Elliott Wave Bölüm 2: 5'li dalgalara giriş ve Elliot Teorisine dair bilgiler.  Bu seri en ileri seviye kişiler içindir. Bir çok konsepti birlikte kullanmanız gerekir. Diğer konse…
+- **#305** · 2025-09-22 11:53 · 17:07 · Data Analizi Serisi Yeni Bölüm:
+  - Data Analizi Serisi Yeni Bölüm: "FlashCrash 🔥"  Bu bölümde flashcrash nasıl oluşur, detayları nelerdir ve genel olarak sonrasında oluşabilecek senaryolar nedir onları anlattım. İyi seyirler. #data
+- **#104** · 2025-09-12 18:24 · 49:22 · Teknik Analiz Advance Elliott Wave
+  - Teknik Analiz Advance Elliott Wave Bölüm 1:  Bu seri en ileri seviye kişiler içindir. Bir çok konsepti birlikte kullanmanız gerekir. Diğer konseptleri bitirmeden buna giriş yapmayın.  #elliott
+- **#67** · 2025-09-12 17:53 · 21:34 · Temel Analiz Advance
+  - Temel Analiz Advance  Bölüm 5: Stake Nedir, Ne işe yarar, Neden Yapılır.  #FAadvance
+- **#66** · 2025-09-12 17:52 · 48:48 · Temel Analiz Advance
+  - Temel Analiz Advance  Bölüm 4: Ürün Seçme (Ne alak, ne satak)  #FAadvance
+- **#63** · 2025-09-12 17:48 · 22:40 · Temel Analiz Advance
+  - Temel Analiz Advance  Bölüm 3: Korelasyon.  #FAadvance
+- **#62** · 2025-09-12 17:47 · 27:41 · Temel Analiz Advance
+  - Temel Analiz Advance  Bölüm 2: Arz ve Talep, Enflasyon.  #FAadvance
+- **#61** · 2025-09-12 17:47 · 20:46 · Temel Analiz Advance
+  - Temel Analiz Advance  Bölüm 1: Basic konular.  #FAadvance
+- **#59** · 2025-09-12 17:46 · 22:45 · Temel Analiz Serisi Bölüm 2: "Döner Sermaye"
+  - Temel Analiz Serisi Bölüm 2: "Döner Sermaye"  #FA
+- **#58** · 2025-09-12 17:45 · 26:05 · Temel Analiz Serisi Bölüm 1: "Şirketler"
+  - Temel Analiz Serisi Bölüm 1: "Şirketler"  #FA
+- **#57** · 2025-09-12 17:44 · 22:33 · Teknik Analiz Advance
+  - Teknik Analiz Advance  OrderFlow 4. Bölümü: TPO  Bu seri ileri seviye bir eğitimdir. Öncekileri bitirmediyseniz buraya daha sonra gelin.  #orderflow
+- **#56** · 2025-09-12 17:44 · 38:20 · Teknik Analiz Advance
+  - Teknik Analiz Advance  OrderFlow 3.Bölümü: Liquidity  Bu seri ileri seviye bir eğitimdir. Öncekileri bitirmediyseniz buraya daha sonra gelin.  #orderflow
+- **#55** · 2025-09-12 17:42 · 41:16 · Teknik Analiz Advance
+  - Teknik Analiz Advance  OrderFlow 2. Bölümü: Imbalance  Bu seri ileri seviye bir eğitimdir. Öncekileri bitirmediyseniz buraya daha sonra gelin.  #orderflow
+- **#54** · 2025-09-12 17:41 · 10:25 · Teknik Analiz Advance
+  - Teknik Analiz Advance  OrderFlow Giriş Bölümü.  Bu seri ileri seviye bir eğitimdir. Öncekileri bitirmediyseniz buraya daha sonra gelin.  #orderflow
+
+## Eğitim Videoları (12)
+
+- **#11264** · 2026-06-01 13:06 · 24:02 · Vur kaç (Scalp) serisi Bölüm 5 (3/3): Session Trading
+  - Vur kaç (Scalp) serisi Bölüm 5 (3/3):  Session Trading  Bu seride düşük zaman dilimlerinde nasıl işlem yapılacağına dair bazı stratejilerden bahsedilmiştir. İleri Seviyedir.   #scalp
+- **#11215** · 2026-05-31 00:48 · 29:52 · Vur kaç (Scalp) serisi Bölüm 5 (2/3): Session Trading
+  - Vur kaç (Scalp) serisi Bölüm 5 (2/3):  Session Trading  Bu seride düşük zaman dilimlerinde nasıl işlem yapılacağına dair bazı stratejilerden bahsedilmiştir. İleri Seviyedir.   #scalp
+- **#11214** · 2026-05-31 00:47 · 14:26 · Vur kaç (Scalp) serisi Bölüm 5 (1/3): Session Trading
+  - Vur kaç (Scalp) serisi Bölüm 5 (1/3):  Session Trading  Bu seride düşük zaman dilimlerinde nasıl işlem yapılacağına dair bazı stratejilerden bahsedilmiştir. İleri Seviyedir.   #scalp
+- **#9629** · 2026-04-23 12:39 · 27:07 · Vur kaç (Scalp) serisi Bölüm 4: Bollinger + OBV
+  - Vur kaç (Scalp) serisi Bölüm 4:  Bollinger + OBV  Bu seride düşük zaman dilimlerinde nasıl işlem yapılacağına dair bazı stratejilerden bahsedilmiştir. İleri Seviyedir.   #scalp
+- **#7928** · 2026-03-13 12:23 · 21:59 · Vur kaç (Scalp) serisi Bölüm 3: Ultimate RSI
+  - Vur kaç (Scalp) serisi Bölüm 3: Ultimate RSI   Bu seride düşük zaman dilimlerinde nasıl işlem yapılacağına dair bazı stratejilerden bahsedilmiştir. İleri Seviyedir.   #scalp
+- **#3897** · 2025-12-11 14:43 · 0:05 · Nasıl ama? Ateşşşş
+- **#340** · 2025-09-23 12:20 · 24:14 · Vur kaç (Scalp) serisi Bölüm 2: Liqudation Hunt
+  - Vur kaç (Scalp) serisi Bölüm 2: Liqudation Hunt  Bu seride düşük zaman dilimlerinde nasıl işlem yapılacağına dair bazı stratejilerden bahsedilmiştir. İleri Seviyedir.   #scalp
+- **#107** · 2025-09-13 17:50 · 12:45 · Kaldıraç Eğitim Serisi Bölüm 4
+  - Kaldıraç Eğitim Serisi Bölüm 4  Kaldıraç Hakkındaki diğer detaylar.  #kaldıraç101
+- **#105** · 2025-09-12 18:25 · 33:53 · Vur kaç (Scalp) serisi Bölüm 1
+  - Vur kaç (Scalp) serisi Bölüm 1  Bu seride düşük zaman dilimlerinde nasıl işlem yapılacağına dair bazı stratejilerden bahsedilmiştir. İleri Seviyedir.   #scalp
+- **#39** · 2025-09-12 17:34 · 12:35 · Kaldıraç Eğitim Serisi Bölüm 3
+  - Kaldıraç Eğitim Serisi Bölüm 3  Kaldıraç Hakkındaki diğer detaylar.  #kaldıraç101
+- **#38** · 2025-09-12 17:34 · 20:51 · Kaldıraç Eğitim Serisi Bölüm 2
+  - Kaldıraç Eğitim Serisi Bölüm 2  Kaldıraç Hakkındaki diğer detaylar.  #kaldıraç101
+- **#37** · 2025-09-12 17:33 · 12:03 · Kaldıraç Eğitim Serisi Bölüm 1
+  - Kaldıraç Eğitim Serisi Bölüm 1 Kaldıraca giriş. Bu video mobil ekran da eklenerek borsa arayüzünün de eğitimi verilmiştir.  #kaldıraç101
+
+## Al Sat Kararları (3)
+
+- **#6365** · 2026-02-09 06:52 · 0:13 · Günaydınlar canlarım
+  - Günaydınlar canlarım  Sesi tamamen kaybettim. Dün hiç yoktu. Bugün fısıltı var. Ama konuşmak istemiyorum. Yarına en azından konuşma ihtimalim olsun.   Tüm bu süreçte Selim’in de taşınma olayı olunca (…
+- **#908** · 2025-10-05 07:54 · 0:04 · Bu al sat grafiğim 1 dklık
+- **#329** · 2025-09-23 06:17 · 0:10 · Günaydın canlarım
+  - Günaydın canlarım  Asteri 1,4-,16 aralığında al sat yapmak kazançlı  Bunun gibi 3 coin daha anlatacağım size
+
+## Diğer (226)
+
+- **#11458** · 2026-06-04 22:17 · 0:13 · (başlıksız)
+- **#11050** · 2026-05-27 07:12 · 0:06 · (başlıksız)
+- **#10640** · 2026-05-16 15:13 · 0:09 · (başlıksız)
+- **#10556** · 2026-05-14 18:22 · 0:04 · (başlıksız)
+- **#9957** · 2026-04-30 06:59 · 0:16 · (başlıksız)
+- **#9875** · 2026-04-28 20:27 · 0:35 · ABD ordusu, Hürmüz Boğazı'nda ablukayı ihlal ettiğini bildirdiği ticari gemiye deniz piyadeleri indirerek operasyon düzenledi.
+- **#9808** · 2026-04-27 11:40 · 0:22 · ABD ordusu, BAE ve Katar'daki üslerine gece boyunca askeri sevkiyat gerçekleştirdi.
+- **#9684** · 2026-04-24 14:11 · 23:00 · Yeni İndikatör Serisi Bölüm 11: VWAP Serisi
+  - Yeni İndikatör Serisi Bölüm 11: VWAP Serisi  Bu seri bir çok videodan oluşmaktadır (3/3)  #indikatörserisi
+- **#9635** · 2026-04-23 14:49 · 14:11 · Yeni İndikatör Serisi Bölüm 11: VWAP Serisi
+  - Yeni İndikatör Serisi Bölüm 11: VWAP Serisi  Bu seri bir çok videodan oluşmaktadır (2/3)  #indikatörserisi
+- **#9634** · 2026-04-23 14:31 · 16:05 · Yeni İndikatör Serisi Bölüm 11: VWAP Serisi
+  - Yeni İndikatör Serisi Bölüm 11: VWAP Serisi  Bu seri bir çok videodan oluşmaktadır (1/3)  #indikatörserisi
+- **#9580** · 2026-04-22 13:34 · 32:05 · Breakout & Fakeout
+  - Breakout & Fakeout  İleri Seviye bir videodur.
+- **#9406** · 2026-04-19 09:46 · 0:12 · (başlıksız)
+- **#9405** · 2026-04-19 09:40 · 0:15 · (başlıksız)
+- **#9404** · 2026-04-19 09:30 · 0:16 · (başlıksız)
+- **#9199** · 2026-04-15 12:34 · 0:39 · Sabah haberlerde bahsettiğim, X'in yeni getireceği kripto özelleştirmelerine dair bir fragman
+- **#9004** · 2026-04-10 18:03 · 0:30 · Son 24 saatte Hormuz Trafiği:
+- **#8967** · 2026-04-09 17:47 · 23:22 · VIP Kütüphanesi tanıtım ve kullanımına dair rehber video.
+  - VIP Kütüphanesi tanıtım ve kullanımına dair rehber video. Kütüphaneyle ilgili bir çok soru geldiği için bu video her gruba atılacaktır.  Hangi sırayla hangi video izlenir onu da anlatıyorum merak eden…
+- **#8541** · 2026-03-30 17:48 · 0:12 · ABD Hazine bakanı, ABD'nin Hormuz Boğazı'nın kontrolünü illa ki bir şekilde ele alacağını söyledi.
+- **#8499** · 2026-03-29 16:55 · 0:30 · Şu an bu iki ihtimal de konuşuluyor globalde.
+  - Şu an bu iki ihtimal de konuşuluyor globalde. Bence ikincisi geliyor. Teknik ikincisi için uygun.
+- **#8409** · 2026-03-27 06:58 · 0:08 · (başlıksız)
+- **#8063** · 2026-03-17 23:56 · 52:57 · Advanced Price Action Serisi: Supply & Demand (Baştan Sona ve Tüm detaylarıyla)
+  - Advanced Price Action Serisi: Supply & Demand (Baştan Sona ve Tüm detaylarıyla)  Fake bloklar, çalışanlar ve neden çalıştıkları, kısaca "bloklara" ait her şey bu videoda. İyi seyirler.
+- **#7971** · 2026-03-15 07:30 · 0:24 · (başlıksız)
+- **#7897** · 2026-03-12 14:10 · 9:10 · Yeni İndikatör Serisi Bölüm 10: Ultimate Oscilliator (3/3)
+  - Yeni İndikatör Serisi Bölüm 10: Ultimate Oscilliator (3/3)  Bu bölüme daha sonra yeni partlar eklenecektir.  #indikatörserisi
+- **#7896** · 2026-03-12 14:08 · 10:16 · Yeni İndikatör Serisi Bölüm 10: Ultimate Oscilliator (2/3)
+  - Yeni İndikatör Serisi Bölüm 10: Ultimate Oscilliator (2/3)  Bu bölüme daha sonra yeni partlar eklenecektir.  #indikatörserisi
+- **#7895** · 2026-03-12 14:06 · 12:16 · Yeni İndikatör Serisi Bölüm 10: Ultimate Oscilliator (1/3)
+  - Yeni İndikatör Serisi Bölüm 10: Ultimate Oscilliator (1/3)  Bu bölüme daha sonra yeni partlar eklenecektir.  #indikatörserisi
+- **#7855** · 2026-03-11 13:49 · 6:19 · Tradingview Rehberi Bölüm 4
+  - Tradingview Rehberi Bölüm 4  Bu seride Tradingview'deki bazı gizli ve hoş özellikleri gösteriyorum
+- **#7854** · 2026-03-11 13:48 · 5:53 · Tradingview Rehberi Bölüm 3
+  - Tradingview Rehberi Bölüm 3  Bu seride Tradingview'deki bazı gizli ve hoş özellikleri gösteriyorum
+- **#7853** · 2026-03-11 13:48 · 4:50 · Tradingview Rehberi Bölüm 2
+  - Tradingview Rehberi Bölüm 2  Bu seride Tradingview'deki bazı gizli ve hoş özellikleri gösteriyorum
+- **#7852** · 2026-03-11 13:47 · 10:03 · Tradingview Rehberi Bölüm 1
+  - Tradingview Rehberi Bölüm 1  Bu seride Tradingview'deki bazı gizli ve hoş özellikleri gösteriyorum
+- **#7799** · 2026-03-10 07:05 · 0:32 · (başlıksız)
+- **#7632** · 2026-03-05 17:21 · 35:38 · Trade Stratejileri Serisi Bölüm 4
+  - Trade Stratejileri Serisi Bölüm 4  Multi Time Frame Analysis  Bu seride trade atarken kendine plan yapmakta zorlanan kişiler için yeni stratejiler bulacağız. Şu ana kadar öğrendiğiniz indikatörler ve …
+- **#7543** · 2026-03-03 21:55 · 0:06 · İngiltere, Katar'ı hedef almaya çalışan İran İHA'sını Eurofighter ile vurdu.
+- **#7531** · 2026-03-03 19:54 · 1:38 · ABD ve İsrail, Tahran'daki Azadi meydanını vurdu.
+- **#7445** · 2026-03-02 18:11 · 0:03 · (başlıksız)
+- **#7416** · 2026-03-02 14:24 · 0:09 · İran, İsrail'in Beerşeba şehrini vurdu.
+- **#7407** · 2026-03-02 10:33 · 0:14 · (başlıksız)
+- **#7385** · 2026-03-01 18:23 · 0:16 · İran'dan görüntüler
+- **#7358** · 2026-03-01 11:35 · 0:09 · İsrail, Tahran'ı vurmaya devam ediyor.
+- **#7355** · 2026-03-01 09:17 · 0:06 · Evin hemen üzerinde 2 füze imha edildi
+- **#7340** · 2026-03-01 00:34 · 0:29 · Hava savunma sistemi ıskalarsa bakın ne oluyor
+  - Hava savunma sistemi ıskalarsa bakın ne oluyor  (Tel Aviv)
+- **#7337** · 2026-03-01 00:11 · 0:47 · Tel Aviv ciddi şekilde vuruldu
+- **#7336** · 2026-03-01 00:02 · 0:33 · Katar, İran'dan gelen füzelerle boğuşuyor
+- **#7234** · 2026-02-28 09:44 · 0:10 · Bu görüntü 2. dalga gelen hava saldırısından
+- **#7221** · 2026-02-28 09:25 · 0:05 · (başlıksız)
+- **#7089** · 2026-02-25 18:25 · 0:24 · Aha 5x ve cross kaldıraççılar
+- **#6885** · 2026-02-22 14:11 · 0:19 · (başlıksız)
+- **#6779** · 2026-02-20 11:54 · 6:51 · Coinglass Serisi Bölüm 8
+  - Coinglass Serisi Bölüm 8  "Wallet Inflow/Outflow"
+- **#6686** · 2026-02-18 14:09 · 6:04 · Coinglass Serisi Bölüm 6
+  - Coinglass Serisi Bölüm 6  "The Golden Ratio Multiplier"
+- **#6685** · 2026-02-18 13:55 · 6:23 · Coinglass Serisi Bölüm 5
+  - Coinglass Serisi Bölüm 5  "RSI Heatmap"
+- **#6641** · 2026-02-17 14:26 · 7:43 · Coinglass Serisi Bölüm 4
+  - Coinglass Serisi Bölüm 4  "Funding Fee Panosu"
+- **#6637** · 2026-02-17 13:03 · 8:48 · Coinglass Serisi Bölüm 3
+  - Coinglass Serisi Bölüm 3  "Max Pain"
+- **#6635** · 2026-02-17 12:51 · 5:46 · Coinglass Serisi Bölüm 2
+  - Coinglass Serisi Bölüm 2  "Liqudation Heatmap for Scalpers"
+- **#6634** · 2026-02-17 12:41 · 11:04 · Coinglass Serisi Bölüm 1
+  - Coinglass Serisi Bölüm 1  "Liqudation Heatmap"
+- **#6534** · 2026-02-13 19:56 · 0:12 · Demek ki size hep güzel bilgi vermek lazım
+  - Demek ki size hep güzel bilgi vermek lazım 4 saat önce 💰
+- **#6303** · 2026-02-06 13:41 · 0:15 · (başlıksız)
+- **#6292** · 2026-02-06 06:49 · 1:02 · (başlıksız)
+- **#6155** · 2026-02-02 16:52 · 0:01 · (başlıksız)
+- **#6148** · 2026-02-02 11:33 · 0:25 · (başlıksız)
+- **#6120** · 2026-02-01 21:10 · 0:09 · Aha biz
+  - Aha biz  https://video.twimg.com/amplify_video/2017969671241117696/vid/avc1/480x270/prQb00waULG0Acmj.mp4
+- **#6112** · 2026-02-01 16:49 · 0:04 · (başlıksız)
+- **#6110** · 2026-02-01 15:42 · 0:23 · (başlıksız)
+- **#6091** · 2026-02-01 11:16 · 0:07 · (başlıksız)
+- **#6090** · 2026-02-01 09:29 · 0:14 · (başlıksız)
+- **#6036** · 2026-01-31 06:42 · 0:24 · (başlıksız)
+- **#5232** · 2026-01-13 23:24 · 0:15 · Bu da ekstra komik versiyonu
+- **#5170** · 2026-01-12 19:46 · 1:00 · 12 Ocak Pazartesi - Gün ortası ♥️
+  - 12 Ocak Pazartesi - Gün ortası ♥️   #günortası
+- **#4998** · 2026-01-08 20:42 · 0:34 · 8 Ocak Perşembe - Gün ortası ♥️
+  - 8 Ocak Perşembe - Gün ortası ♥️  __(akşam oldu ama çaktırmayın)__ #günortası
+- **#4939** · 2026-01-07 20:07 · 0:36 · 7 Ocak Çarşamba - Gün ortası ♥️
+  - 7 Ocak Çarşamba - Gün ortası ♥️  #günortası
+- **#4844** · 2026-01-05 19:48 · 0:42 · 05.01.2026 - Gün ortası ♥️
+  - 05.01.2026 - Gün ortası ♥️  #günortası
+- **#4787** · 2026-01-04 13:28 · 0:12 · (başlıksız)
+- **#4761** · 2026-01-03 19:00 · 0:49 · 3.01.2026 - Gün ortası ♥️
+  - 3.01.2026 - Gün ortası ♥️  #günortası
+- **#4702** · 2026-01-02 17:16 · 0:57 · Gün ortası haberleriyle geldiim <3
+  - Gün ortası haberleriyle geldiim <3  #günortası
+- **#4655** · 2025-12-31 20:50 · 0:12 · Hep beraber bol yeşilli güzel mutlu yıllara canlar sizi seviyorum 🥳 ❤️
+- **#4640** · 2025-12-31 12:11 · 40:43 · Psikoloji Yönetimi Serisi
+  - Psikoloji Yönetimi Serisi  Trader Günahları Bölüm 5: "Hırs"   #tradergünahları
+- **#4451** · 2025-12-25 12:18 · 17:56 · Trade Stratejileri Serisi Bölüm 3
+  - Trade Stratejileri Serisi Bölüm 3   Bu seride trade atarken kendine plan yapmakta zorlanan kişiler için yeni stratejiler bulacağız. Şu ana kadar öğrendiğiniz indikatörler ve PA bilgisiyle karmaşık olm…
+- **#4395** · 2025-12-23 22:37 · 0:02 · Aslında şu an olduğumuz yere göre haberler gayet iyi. Japonya bile sorun değil. Altın ve gümüş çok güvenilir çıkıyor ve düşük risk sevenleri bizden uzak tutuyor.
+  - Aslında şu an olduğumuz yere göre haberler gayet iyi. Japonya bile sorun değil. Altın ve gümüş çok güvenilir çıkıyor ve düşük risk sevenleri bizden uzak tutuyor.  Bu konu dışında size bir sorum var.  …
+- **#4214** · 2025-12-19 07:03 · 0:14 · (başlıksız)
+- **#4018** · 2025-12-14 10:55 · 0:28 · (başlıksız)
+- **#3999** · 2025-12-13 13:41 · 22:46 · Trade Stratejileri Serisi Bölüm 2
+  - Trade Stratejileri Serisi Bölüm 2   Bu seride trade atarken kendine plan yapmakta zorlanan kişiler için yeni stratejiler bulacağız. Şu ana kadar öğrendiğiniz indikatörler ve PA bilgisiyle karmaşık olm…
+- **#3734** · 2025-12-08 16:08 · 0:01 · (başlıksız)
+- **#3713** · 2025-12-08 11:20 · 24:17 · Price Action Serisi (İleri) Bölüm 15
+  - Price Action Serisi (İleri) Bölüm 15  "Gann Box ve Elliott"  #PA
+- **#3624** · 2025-12-06 12:07 · 15:41 · Price Action Serisi (İleri) Bölüm 14
+  - Price Action Serisi (İleri) Bölüm 14  "Gann Box ve S/D"  #PA
+- **#3623** · 2025-12-06 11:54 · 17:45 · Price Action Serisi (İleri) Bölüm 13
+  - Price Action Serisi (İleri) Bölüm 13  "Gann Box ve PD"  #PA
+- **#3273** · 2025-11-30 12:32 · 0:09 · Vat iz dis?
+- **#3271** · 2025-11-30 12:15 · 0:16 · (başlıksız)
+- **#3263** · 2025-11-30 11:42 · 0:14 · (başlıksız)
+- **#3216** · 2025-11-29 06:45 · 0:49 · (başlıksız)
+- **#2922** · 2025-11-23 14:34 · 0:24 · (başlıksız)
+- **#2673** · 2025-11-18 17:59 · 0:07 · (başlıksız)
+- **#2656** · 2025-11-18 14:26 · 0:11 · (başlıksız)
+- **#2602** · 2025-11-17 12:28 · 40:26 · Psikoloji Yönetim Serisi Yeni Bölüm
+  - Psikoloji Yönetim Serisi Yeni Bölüm  "Trader" Neyi trade ediyorsun ?
+- **#2600** · 2025-11-17 12:06 · 2:40 · **Ekonomik Takvim - 17 Kasım Haftası **
+  - **Ekonomik Takvim - 17 Kasım Haftası **  ABD Hükümeti artık açıldı veriler artık gelir.  #ET
+- **#2572** · 2025-11-16 13:18 · 0:12 · Haksız mıyım
+- **#2571** · 2025-11-16 13:14 · 0:08 · Çok güzel değil mi?
+- **#2378** · 2025-11-11 13:18 · 18:25 · Trade Stratejileri Serisi Bölüm 1
+  - Trade Stratejileri Serisi Bölüm 1   Bu seride trade atarken kendine plan yapmakta zorlanan kişiler için yeni stratejiler bulacağız. Şu ana kadar öğrendiğiniz indikatörler ve PA bilgisiyle karmaşık olm…
+- **#2313** · 2025-11-10 12:17 · 45:57 · Kasa Yönetimi Serisi Bölüm 3: RR sistemi ve Kasa yönetimi
+  - Kasa Yönetimi Serisi Bölüm 3: RR sistemi ve Kasa yönetimi "Hocam ben Kaç X açayım" İzle bunu pls   #FAadvance
+- **#2046** · 2025-11-04 16:44 · 13:12 · Sabah yayında Hocanın anlattığı kısmı istemiştiniz:
+- **#2032** · 2025-11-04 12:12 · 15:30 · Price Action Serisi (İleri) Bölüm 12
+  - Price Action Serisi (İleri) Bölüm 12  Demand + Elliott Waves  #PA
+- **#1988** · 2025-11-03 11:45 · 9:53 · Price Action Serisi (İleri) Bölüm 11
+  - Price Action Serisi (İleri) Bölüm 11  Demand + Formasyon Kullanımı  #PA
+- **#1955** · 2025-11-02 10:47 · 0:15 · (başlıksız)
+- **#1941** · 2025-11-02 07:26 · 0:34 · (başlıksız)
+- **#1923** · 2025-11-01 13:06 · 27:34 · Price Action Serisi (İleri) Bölüm 10
+  - Price Action Serisi (İleri) Bölüm 10  Demand + Engulfing Strategy  #PA
+- **#1856** · 2025-10-30 15:00 · 24:56 · Psikoloji Yönetimi Serisi
+  - Psikoloji Yönetimi Serisi  Trader Günahları Bölüm 4:  #tradergünahları
+- **#1683** · 2025-10-25 17:49 · 0:16 · (başlıksız)
+- **#1682** · 2025-10-25 17:49 · 0:26 · (başlıksız)
+- **#1681** · 2025-10-25 17:48 · 0:18 · (başlıksız)
+- **#1680** · 2025-10-25 17:45 · 0:40 · (başlıksız)
+- **#1679** · 2025-10-25 17:42 · 0:11 · (başlıksız)
+- **#1678** · 2025-10-25 17:41 · 0:43 · (başlıksız)
+- **#1677** · 2025-10-25 17:40 · 0:19 · (başlıksız)
+- **#1676** · 2025-10-25 17:39 · 0:32 · (başlıksız)
+- **#1674** · 2025-10-25 17:35 · 0:21 · (başlıksız)
+- **#1669** · 2025-10-25 12:00 · 32:00 · Psikoloji Yönetimi Serisi
+  - Psikoloji Yönetimi Serisi  Trader Günahları Bölüm 3:  #tradergünahları
+- **#1524** · 2025-10-21 06:35 · 0:04 · (başlıksız)
+- **#1503** · 2025-10-20 14:44 · 0:19 · Trump'ın dün paylaştığı video:
+- **#1499** · 2025-10-20 11:51 · 0:03 · Kırktırdım koyunu
+- **#1435** · 2025-10-17 15:48 · 0:44 · Trump Sabah size anlattığım Tomahawk hakkında konuşuyor.
+  - Trump Sabah size anlattığım Tomahawk hakkında konuşuyor.  Trump: "Putin’e “Ukrayna’ya birkaç bin Tomahawk vermeme itirazınız olur mu?” dedim. Bu fikri pek sevmedi." Ek olarak muhabirle de dalga geçmey…
+- **#1336** · 2025-10-15 14:00 · 15:50 · Price Action Serisi (Advanced Formasyonlar) Bölüm 1
+  - Price Action Serisi (Advanced Formasyonlar) Bölüm 1  "Three Drive Pattern (River)"  #formasyonlar
+- **#1049** · 2025-10-08 13:11 · 16:59 · Price Action Serisi (İleri) Bölüm 9
+  - Price Action Serisi (İleri) Bölüm 9  Fake Trend kırılımları  Part: 2/2  #PA
+- **#1029** · 2025-10-07 20:22 · 0:07 · “Ulan aslında var ya…” diye cümle kuranları bekleyen gece eğlencesi
+- **#966** · 2025-10-06 14:39 · 11:09 · Price Action Serisi (İleri) Bölüm 9
+  - Price Action Serisi (İleri) Bölüm 9  Fake Trend kırılımları  Part: 1/2  #PA
+- **#568** · 2025-09-27 14:28 · 11:15 · Price Action Serisi (İleri) Bölüm 8
+  - Price Action Serisi (İleri) Bölüm 8  Fair Value Gap (FVG/Imbalance) Part 4 Bu seri 4 ayrı videodan oluşacaktır.  #PA
+- **#567** · 2025-09-27 14:18 · 9:14 · Price Action Serisi (İleri) Bölüm 8
+  - Price Action Serisi (İleri) Bölüm 8  Fair Value Gap (FVG/Imbalance) Part 3 Bu seri 4 ayrı videodan oluşacaktır.  #PA
+- **#543** · 2025-09-26 14:53 · 11:44 · Price Action Serisi (İleri) Bölüm 8
+  - Price Action Serisi (İleri) Bölüm 8  Fair Value Gap (FVG/Imbalance) Part 2 Bu seri 4 ayrı videodan oluşacaktır.  #PA
+- **#538** · 2025-09-26 13:13 · 9:08 · Price Action Serisi (İleri) Bölüm 8
+  - Price Action Serisi (İleri) Bölüm 8  Fair Value Gap (FVG/Imbalance) Part 1 Bu seri 4 ayrı videodan oluşacaktır.  #PA
+- **#465** · 2025-09-25 13:02 · 14:14 · Price Action Serisi (Giriş) Bölüm 3
+  - Price Action Serisi (Giriş) Bölüm 3  Supply&Demand - Fake Blocklar part 1  #PA
+- **#452** · 2025-09-25 07:04 · 0:15 · (başlıksız)
+- **#356** · 2025-09-23 17:19 · 0:08 · Bir aster bir avent
+  - Bir aster bir avent Acımadan vurun yiğitlerim
+- **#303** · 2025-09-22 11:16 · 18:37 · Price Action Serisi (Giriş) Bölüm 7
+  - Price Action Serisi (Giriş) Bölüm 7  Premium & Discount  Bu bölümde "ucuz ve pahalı" nedir onu anlattım. İyi seyirler.   #PA
+- **#244** · 2025-09-21 07:10 · 3:16 · (başlıksız)
+- **#243** · 2025-09-21 07:03 · 0:30 · (başlıksız)
+- **#133** · 2025-09-15 03:57 · 1:43 · Kripto 101:
+  - Kripto 101:  Grafik üzerinde örnek giriş tp ve stop gösterimi   #kripto101
+- **#132** · 2025-09-15 03:53 · 2:54 · Kripto 101:
+  - Kripto 101:  ETF Nedir, ETF şirketleri   #kripto101
+- **#131** · 2025-09-15 03:52 · 4:51 · Kripto 101:
+  - Kripto 101:  Ekonomik Takvim (arşiv)  https://tr.investing.com/economic-calendar/  #kripto101
+- **#130** · 2025-09-15 03:51 · 2:36 · Kripto 101:
+  - Kripto 101:  Kripto Paraların Arz Miktarı (arşiv)   #kripto101
+- **#129** · 2025-09-15 03:51 · 1:37 · Kripto 101:
+  - Kripto 101:  Blockchain  #kripto101
+- **#126** · 2025-09-15 00:29 · 25:23 · Yeni İndikatör Serisi Bölüm 9: Ichimoku Cloud
+  - Yeni İndikatör Serisi Bölüm 9: Ichimoku Cloud  Bu bölüme daha sonra yeni partlar eklenecektir.  #indikatörserisi
+- **#125** · 2025-09-15 00:26 · 4:57 · Kripto 101:
+  - Kripto 101:  Stable Coinler - USDT   #kripto101
+- **#124** · 2025-09-14 23:53 · 12:55 · Kripto 101:
+  - Kripto 101: Terimler part-2   #kripto101
+- **#123** · 2025-09-14 23:52 · 8:47 · Kripto 101:
+  - Kripto 101: Terimler part-1   #kripto101
+- **#122** · 2025-09-14 23:50 · 6:06 · Kripto 101:
+  - Kripto 101:  Kriptoya Giriş Part-2   #kripto101
+- **#121** · 2025-09-14 23:49 · 9:51 · Kripto 101:
+  - Kripto 101: Kriptoya Giriş Part-1   #kripto101
+- **#103** · 2025-09-12 18:16 · 17:07 · Yeni İndikatör Serisi "Custom Indicators" Bölüm 1: High Volume Points
+  - Yeni İndikatör Serisi "Custom Indicators" Bölüm 1: High Volume Points  Serinin bu bölümü bonustur. Burada Community indikatörleri incelenmektedir. Bunlar isteğe bağlı öğrenilebilir.   #indikatörserisi
+- **#102** · 2025-09-12 18:16 · 10:53 · Yeni İndikatör Serisi Bölüm 8: ADX ve DMI
+  - Yeni İndikatör Serisi Bölüm 8: ADX ve DMI Bu bölüm 2 farklı parttan oluşmaktadır. (2/2)  #indikatörserisi
+- **#101** · 2025-09-12 18:15 · 14:28 · Yeni İndikatör Serisi Bölüm 8: ADX ve DMI
+  - Yeni İndikatör Serisi Bölüm 8: ADX ve DMI Bu bölüm 2 farklı parttan oluşmaktadır. (1/2)  #indikatörserisi
+- **#100** · 2025-09-12 18:15 · 12:38 · Yeni İndikatör Serisi Bölüm 7: ATR (Avarage True Range)
+  - Yeni İndikatör Serisi Bölüm 7:  ATR (Avarage True Range)   #indikatörserisi
+- **#99** · 2025-09-12 18:14 · 14:40 · Yeni İndikatör Serisi Bölüm 6: Bollinger Bantları
+  - Yeni İndikatör Serisi Bölüm 6: Bollinger Bantları Bu bölüm 6 farklı parttan oluşmaktadır. (6/6)  #indikatörserisi
+- **#98** · 2025-09-12 18:14 · 12:39 · Yeni İndikatör Serisi Bölüm 6: Bollinger Bantları
+  - Yeni İndikatör Serisi Bölüm 6: Bollinger Bantları Bu bölüm 6 farklı parttan oluşmaktadır. (5/6)  #indikatörserisi
+- **#97** · 2025-09-12 18:13 · 10:22 · Yeni İndikatör Serisi Bölüm 6: Bollinger Bantları
+  - Yeni İndikatör Serisi Bölüm 6: Bollinger Bantları Bu bölüm 6 farklı parttan oluşmaktadır. (4/6)  #indikatörserisi
+- **#96** · 2025-09-12 18:13 · 9:29 · Yeni İndikatör Serisi Bölüm 6: Bollinger Bantları
+  - Yeni İndikatör Serisi Bölüm 6: Bollinger Bantları Bu bölüm 6 farklı parttan oluşmaktadır. (3/6)  #indikatörserisi
+- **#95** · 2025-09-12 18:12 · 9:54 · Yeni İndikatör Serisi Bölüm 6: Bollinger Bantları
+  - Yeni İndikatör Serisi Bölüm 6: Bollinger Bantları Bu bölüm 6 farklı parttan oluşmaktadır. (2/6)  #indikatörserisi
+- **#94** · 2025-09-12 18:12 · 18:35 · Yeni İndikatör Serisi Bölüm 6: Bollinger Bantları
+  - Yeni İndikatör Serisi Bölüm 6: Bollinger Bantları Bu bölüm 6 farklı parttan oluşmaktadır. (1/6)  #indikatörserisi
+- **#93** · 2025-09-12 18:11 · 19:25 · Yeni İndikatör Serisi Bölüm 5: Stochastic ve Stoch
+  - Yeni İndikatör Serisi Bölüm 5: Stochastic ve Stoch  #indikatörserisi
+- **#92** · 2025-09-12 18:10 · 14:43 · Yeni İndikatör Serisi Bölüm 4: Hacim
+  - Yeni İndikatör Serisi Bölüm 4: Hacim Bu bölüm 6 farklı parttan oluşmaktadır. (6/6)  #indikatörserisi
+- **#91** · 2025-09-12 18:10 · 7:28 · Yeni İndikatör Serisi Bölüm 4: Hacim
+  - Yeni İndikatör Serisi Bölüm 4: Hacim Bu bölüm 6 farklı parttan oluşmaktadır. (5/6)  #indikatörserisi
+- **#90** · 2025-09-12 18:10 · 13:17 · Yeni İndikatör Serisi Bölüm 4: Hacim
+  - Yeni İndikatör Serisi Bölüm 4: Hacim Bu bölüm 6 farklı parttan oluşmaktadır. (4/6)  #indikatörserisi
+- **#89** · 2025-09-12 18:09 · 21:51 · Yeni İndikatör Serisi Bölüm 4: Hacim
+  - Yeni İndikatör Serisi Bölüm 4: Hacim Bu bölüm 6 farklı parttan oluşmaktadır. (3/6)  #indikatörserisi
+- **#88** · 2025-09-12 18:08 · 15:02 · Yeni İndikatör Serisi Bölüm 4: Hacim
+  - Yeni İndikatör Serisi Bölüm 4: Hacim Bu bölüm 6 farklı parttan oluşmaktadır. (2/6)  #indikatörserisi
+- **#87** · 2025-09-12 18:08 · 19:33 · Yeni İndikatör Serisi Bölüm 4: Hacim
+  - Yeni İndikatör Serisi Bölüm 4: Hacim Bu bölüm 6 farklı parttan oluşmaktadır. (1/6)  #indikatörserisi
+- **#86** · 2025-09-12 18:07 · 12:35 · Yeni İndikatör Serisi Bölüm 3: Hareketli Ortalamalar
+  - Yeni İndikatör Serisi Bölüm 3: Hareketli Ortalamalar  Bu bölüm EMA-SMA ve Daha fazlası olmak üzere ayrı partlardan oluşmaktadır.  BONUS  #indikatörserisi
+- **#85** · 2025-09-12 18:06 · 12:21 · Yeni İndikatör Serisi Bölüm 3: Hareketli Ortalamalar
+  - Yeni İndikatör Serisi Bölüm 3: Hareketli Ortalamalar  Bu bölüm EMA-SMA ve Daha fazlası olmak üzere ayrı partlardan oluşmaktadır.  LSMA (1/1)  #indikatörserisi
+- **#84** · 2025-09-12 18:06 · 10:38 · Yeni İndikatör Serisi Bölüm 3: Hareketli Ortalamalar
+  - Yeni İndikatör Serisi Bölüm 3: Hareketli Ortalamalar  Bu bölüm EMA-SMA ve Daha fazlası olmak üzere ayrı partlardan oluşmaktadır.  SMA (3/3)  #indikatörserisi
+- **#83** · 2025-09-12 18:05 · 17:16 · Yeni İndikatör Serisi Bölüm 3: Hareketli Ortalamalar
+  - Yeni İndikatör Serisi Bölüm 3: Hareketli Ortalamalar  Bu bölüm EMA-SMA ve Daha fazlası olmak üzere ayrı partlardan oluşmaktadır.  SMA (2/3)  #indikatörserisi
+- **#82** · 2025-09-12 18:05 · 11:45 · Yeni İndikatör Serisi Bölüm 3: Hareketli Ortalamalar
+  - Yeni İndikatör Serisi Bölüm 3: Hareketli Ortalamalar  Bu bölüm EMA-SMA ve Daha fazlası olmak üzere ayrı partlardan oluşmaktadır.  SMA (1/3)  #indikatörserisi
+- **#81** · 2025-09-12 18:04 · 13:07 · Yeni İndikatör Serisi Bölüm 3: Hareketli Ortalamalar
+  - Yeni İndikatör Serisi Bölüm 3: Hareketli Ortalamalar  Bu bölüm EMA-SMA ve Daha fazlası olmak üzere ayrı partlardan oluşmaktadır.  EMA (3/3)  #indikatörserisi
+- **#80** · 2025-09-12 18:04 · 16:06 · Yeni İndikatör Serisi Bölüm 3: Hareketli Ortalamalar
+  - Yeni İndikatör Serisi Bölüm 3: Hareketli Ortalamalar  Bu bölüm EMA-SMA ve Daha fazlası olmak üzere ayrı partlardan oluşmaktadır.  EMA (2/3)  #indikatörserisi
+- **#79** · 2025-09-12 18:03 · 15:44 · Yeni İndikatör Serisi Bölüm 3: Hareketli Ortalamalar
+  - Yeni İndikatör Serisi Bölüm 3: Hareketli Ortalamalar  Bu bölüm EMA-SMA ve Daha fazlası olmak üzere ayrı partlardan oluşmaktadır.  EMA (1/3)  #indikatörserisi
+- **#78** · 2025-09-12 18:02 · 18:34 · Yeni İndikatör Serisi Bölüm 2: MACD
+  - Yeni İndikatör Serisi Bölüm 2: MACD  Bu bölüm 4 parttan oluşmaktadır (4/4)  #indikatörserisi
+- **#77** · 2025-09-12 18:01 · 21:53 · Yeni İndikatör Serisi Bölüm 2: MACD
+  - Yeni İndikatör Serisi Bölüm 2: MACD  Bu bölüm 4 parttan oluşmaktadır (3/4)  #indikatörserisi
+- **#76** · 2025-09-12 18:00 · 24:57 · Yeni İndikatör Serisi Bölüm 2: MACD
+  - Yeni İndikatör Serisi Bölüm 2: MACD  Bu bölüm 4 parttan oluşmaktadır (2/4)  #indikatörserisi
+- **#75** · 2025-09-12 17:59 · 18:30 · Yeni İndikatör Serisi Bölüm 2: MACD
+  - Yeni İndikatör Serisi Bölüm 2: MACD  Bu bölüm 4 parttan oluşmaktadır (1/4)  #indikatörserisi
+- **#74** · 2025-09-12 17:58 · 35:12 · Yeni İndikatör Serisi Bölüm 1: RSI
+  - Yeni İndikatör Serisi Bölüm 1: RSI  Bu bölüm 4 parttan oluşmaktadır (4/4)  #indikatörserisi
+- **#73** · 2025-09-12 17:57 · 11:44 · Yeni İndikatör Serisi Bölüm 1: RSI
+  - Yeni İndikatör Serisi Bölüm 1: RSI  Bu bölüm 4 parttan oluşmaktadır (3/4)  #indikatörserisi
+- **#72** · 2025-09-12 17:56 · 17:35 · Yeni İndikatör Serisi Bölüm 1: RSI
+  - Yeni İndikatör Serisi Bölüm 1: RSI  Bu bölüm 4 parttan oluşmaktadır (2/4)  #indikatörserisi
+- **#71** · 2025-09-12 17:55 · 11:04 · Yeni İndikatör Serisi Bölüm 1: RSI
+  - Yeni İndikatör Serisi Bölüm 1: RSI  Bu bölüm 4 parttan oluşmaktadır (1/4)  #indikatörserisi
+- **#70** · 2025-09-12 17:54 · 8:17 · Yeni İndikatör Serisi Giriş ve Tanıtım
+  - Yeni İndikatör Serisi Giriş ve Tanıtım  #indikatörserisi
+- **#69** · 2025-09-12 17:53 · 17:33 · Psikoloji Yönetimi Serisi
+  - Psikoloji Yönetimi Serisi  Trader Günahları Bölüm 2:  #tradergünahları
+- **#68** · 2025-09-12 17:53 · 16:15 · Psikoloji Yönetimi Serisi
+  - Psikoloji Yönetimi Serisi  Trader Günahları Bölüm 1:  #tradergünahları
+- **#65** · 2025-09-12 17:50 · 27:33 · Kasa Yönetimi Serisi Bölüm 2: Kazanılan Bütçeyi Yönetme
+  - Kasa Yönetimi Serisi Bölüm 2: Kazanılan Bütçeyi Yönetme  #FAadvance
+- **#64** · 2025-09-12 17:50 · 37:34 · Kasa Yönetimi Serisi Bölüm 1: Basic Konular
+  - Kasa Yönetimi Serisi Bölüm 1: Basic Konular  #FAadvance
+- **#53** · 2025-09-12 17:39 · 2:13 · Tradingwiev Bar Tipleri Giriş
+  - Tradingwiev Bar Tipleri Giriş (Bölüm 0)  #bartipleri
+- **#52** · 2025-09-12 17:39 · 9:03 · Tradingwiev Bar Tipleri Bölüm 13: Volume Footprint
+  - Tradingwiev Bar Tipleri Bölüm 13: Volume Footprint  Advanced.  #bartipleri
+- **#51** · 2025-09-12 17:38 · 2:25 · Tradingwiev Bar Tipleri Bölüm 12: Volume Candles
+  - Tradingwiev Bar Tipleri Bölüm 12: Volume Candles  Advanced.  #bartipleri
+- **#50** · 2025-09-12 17:38 · 5:43 · Tradingwiev Bar Tipleri Bölüm 11: TPO ve SVP
+  - Tradingwiev Bar Tipleri Bölüm 11: TPO ve SVP  Advanced.  #bartipleri
+- **#49** · 2025-09-12 17:38 · 1:42 · Tradingwiev Bar Tipleri Bölüm 10: Step-Line
+  - Tradingwiev Bar Tipleri Bölüm 10: Step-Line  #bartipleri
+- **#48** · 2025-09-12 17:38 · 14:28 · Tradingwiev Bar Tipleri Bölüm 9: Renko
+  - Tradingwiev Bar Tipleri Bölüm 9: Renko  Bunu izlemeniz şiddetle önerilir.  #bartipleri
+- **#47** · 2025-09-12 17:37 · 5:01 · Tradingwiev Bar Tipleri Bölüm 8: Line
+  - Tradingwiev Bar Tipleri Bölüm 8: Line  #bartipleri
+- **#46** · 2025-09-12 17:37 · 4:51 · Tradingwiev Bar Tipleri Bölüm 7: Line with Marker + Bonus
+  - Tradingwiev Bar Tipleri Bölüm 7: Line with Marker + Bonus  #bartipleri
+- **#45** · 2025-09-12 17:36 · 2:03 · Tradingwiev Bar Tipleri Bölüm 6: HLC AREA
+  - Tradingwiev Bar Tipleri Bölüm 6: HLC AREA  #bartipleri
+- **#44** · 2025-09-12 17:36 · 2:02 · Tradingwiev Bar Tipleri Bölüm 5: High-Low
+  - Tradingwiev Bar Tipleri Bölüm 5: High-Low  #bartipleri
+- **#43** · 2025-09-12 17:35 · 7:22 · Tradingwiev Bar Tipleri Bölüm 4: Haiken Ashi
+  - Tradingwiev Bar Tipleri Bölüm 4: Haiken Ashi  #bartipleri
+- **#42** · 2025-09-12 17:35 · 1:31 · Tradingwiev Bar Tipleri Bölüm 3: Collums
+  - Tradingwiev Bar Tipleri Bölüm 3: Collums  #bartipleri
+- **#41** · 2025-09-12 17:35 · 4:49 · Tradingwiev Bar Tipleri Bölüm 2: Baseline
+  - Tradingwiev Bar Tipleri Bölüm 2: Baseline  #bartipleri
+- **#40** · 2025-09-12 17:35 · 2:20 · Tradingwiev Bar Tipleri Bölüm 1: Area
+  - Tradingwiev Bar Tipleri Bölüm 1: Area  #bartipleri
+- **#36** · 2025-09-12 17:32 · 27:47 · Price Action Serisi (Giriş) Bölüm 6
+  - Price Action Serisi (Giriş) Bölüm 6  Change of Character (Karakter Değişimi) * İzlenmesi şiddetle tavsiye edilir. Sonraki seviyeye geçiş için bu kısmı iyice öğrenin.  #PA
+- **#35** · 2025-09-12 17:31 · 16:18 · Price Action Serisi (Giriş) Bölüm 5
+  - Price Action Serisi (Giriş) Bölüm 5  Paralel Kanallar  #PA
+- **#34** · 2025-09-12 17:31 · 11:07 · Price Action Serisi (Giriş) Bölüm 4
+  - Price Action Serisi (Giriş) Bölüm 4  Trendline  #PA
+- **#33** · 2025-09-12 17:30 · 27:34 · Price Action Serisi (Giriş) Bölüm 3
+  - Price Action Serisi (Giriş) Bölüm 3  Supply&Demand (Basitleştirilmiş versiyon)  #PA
+- **#32** · 2025-09-12 17:29 · 11:52 · Price Action Serisi (Giriş) Bölüm 2
+  - Price Action Serisi (Giriş) Bölüm 2  Destek Direnç (S/R) (2/2) Bu bölüm 2 videodan oluşmaktadır.  #PA
+- **#31** · 2025-09-12 17:29 · 16:24 · Price Action Serisi (Giriş) Bölüm 2
+  - Price Action Serisi (Giriş) Bölüm 2  Destek Direnç (S/R) (1/2) Bu bölüm 2 videodan oluşmaktadır.  #PA
+- **#30** · 2025-09-12 17:28 · 8:05 · Price Action Serisi (Giriş) Bölüm 1
+  - Price Action Serisi (Giriş) Bölüm 1  Trend Belirleme  #PA
+- **#29** · 2025-09-12 17:24 · 25:13 · Price Action Serisi (Formasyonlar) Bölüm 9
+  - Price Action Serisi (Formasyonlar) Bölüm 9  Rectangle (Kutu)  #formasyonlar
+- **#28** · 2025-09-12 17:23 · 20:05 · Price Action Serisi (Formasyonlar) Bölüm 8
+  - Price Action Serisi (Formasyonlar) Bölüm 8  Adam & Eve  #formasyonlar
+- **#27** · 2025-09-12 17:23 · 22:49 · Price Action Serisi (Formasyonlar) Bölüm 7
+  - Price Action Serisi (Formasyonlar) Bölüm 7  Çanak ve Kulp .  #formasyonlar
+- **#26** · 2025-09-12 17:22 · 21:10 · Price Action Serisi (Formasyonlar) Bölüm 6
+  - Price Action Serisi (Formasyonlar) Bölüm 6  Alçalan ve Yükselen Kama.  #formasyonlar
+- **#25** · 2025-09-12 17:21 · 16:36 · Price Action Serisi (Formasyonlar) Bölüm 5
+  - Price Action Serisi (Formasyonlar) Bölüm 5  OBO ve TOBO (2/2) Bu bölüm 2 videodan oluşmaktadır.  #formasyonlar
+- **#24** · 2025-09-12 17:20 · 22:10 · Price Action Serisi (Formasyonlar) Bölüm 5
+  - Price Action Serisi (Formasyonlar) Bölüm 5  OBO ve TOBO (1/2) Bu bölüm 2 videodan oluşmaktadır.  #formasyonlar
+- **#23** · 2025-09-12 17:19 · 23:07 · Price Action Serisi (Formasyonlar) Bölüm 4
+  - Price Action Serisi (Formasyonlar) Bölüm 4  Bayrak ve Flama  #formasyonlar
+- **#22** · 2025-09-12 17:18 · 13:44 · Price Action Serisi (Formasyonlar) Bölüm 3
+  - Price Action Serisi (Formasyonlar) Bölüm 3  Üçgenler (3/3) Yükselen Üçgen Bu bölüm 3 videodan oluşmaktadır.  #formasyonlar
+- **#21** · 2025-09-12 17:18 · 13:50 · Price Action Serisi (Formasyonlar) Bölüm 3
+  - Price Action Serisi (Formasyonlar) Bölüm 3  Üçgenler (2/3): Alçalan Üçgen Bu bölüm 3 videodan oluşmaktadır.  #formasyonlar
+- **#20** · 2025-09-12 17:18 · 15:17 · Price Action Serisi (Formasyonlar) Bölüm 3
+  - Price Action Serisi (Formasyonlar) Bölüm 3  Üçgenler (1/3) Simetrik Üçgen Bu bölüm 3 videodan oluşmaktadır.  #formasyonlar
+- **#19** · 2025-09-12 17:17 · 19:33 · Price Action Serisi (Formasyonlar) Bölüm 2
+  - Price Action Serisi (Formasyonlar) Bölüm 2  Üçlü Dip ve Tepe.  #formasyonlar
+- **#18** · 2025-09-12 17:16 · 25:21 · Price Action Serisi (Formasyonlar) Bölüm 1
+  - Price Action Serisi (Formasyonlar) Bölüm 1  İkili Dip ve Tepe.  #formasyonlar
+- **#17** · 2025-09-12 17:12 · 18:06 · ARŞİV (Eski Video)
+  - ARŞİV (Eski Video)  İndikatör Serisi Bölüm: 6  Hacim  Hacim indikatörü ile ilgili çekilmiş eski indikatör serisine ait video.
+- **#16** · 2025-09-12 17:11 · 17:42 · ARŞİV (Eski Video)
+  - ARŞİV (Eski Video)  İndikatör Serisi Bölüm: 5  RSI  RSI ile ilgili çekilmiş eski indikatör serisine ait video.
+- **#15** · 2025-09-12 17:10 · 28:26 · ARŞİV (Eski Video)
+  - ARŞİV (Eski Video)  İndikatör Serisi Bölüm: 4  MACD   MACD ile ilgili çekilmiş eski indikatör serisine ait video.
+- **#14** · 2025-09-12 17:04 · 13:13 · ARŞİV (Eski Video)
+  - ARŞİV (Eski Video)  İndikatör Serisi Bölüm: 3  Ichimoku Bulutu ile ilgili çekilmiş ilk indikatör serisine ait eski video.
+- **#13** · 2025-09-12 17:04 · 29:09 · ARŞİV (Eski Video)
+  - ARŞİV (Eski Video)  İndikatör Serisi Bölüm: 2  Bollinger Bantları  Bollinger bantları ile ilgili ilk çekilen indikatör serisine ait video.
+- **#12** · 2025-09-12 16:58 · 43:16 · ARŞİV (Eski Video)
+  - ARŞİV (Eski Video)  İndikatör Serisi Bölüm: 1  ADX-DMI  ADX ve DMI indikatörüne ait çekilmiş eski kullanım kılavuzu niteliğinde video.
+- **#11** · 2025-09-12 16:44 · 19:42 · ARŞİV (Eski Video)
+  - ARŞİV (Eski Video)  "Breaker Blocklar Nedir"  Bu seride OrderBlockların devam konusu olarak görülen Breaker blocklar işlenmiştir.  #ICT #SMC
+- **#10** · 2025-09-12 16:44 · 12:51 · ARŞİV (Eski Video)
+  - ARŞİV (Eski Video)  "OrderBlock Nedir"  Bu bölümde ICT-SMC serilerinde geçen emir blokları anlatılmıştır.  Supply ve Demand olarak da bilinen Orderblock konusu önemlidir.  #ICT #SMC
+- **#9** · 2025-09-12 16:43 · 10:05 · ARŞİV (Eski Video)
+  - ARŞİV (Eski Video)  "FVG (IMBALANCE) NEDİR"  Bu videoda ICT ve SMC ilkelerinde bahsedilen bileşenlerden FVG olarak da bilinen "Imbalance" etkeni anlatılmıştır.  #ICT #SMC
+- **#8** · 2025-09-12 16:43 · 48:56 · ARŞİV (Eski Video)
+  - ARŞİV (Eski Video)  ICT-SMC İlkeleri ve Açıklamalarının Bulunduğu Genel video.  #ICT  #SMC
+- **#7** · 2025-09-12 16:39 · 7:35 · ARŞİV (Eski Video)
+  - ARŞİV (Eski Video)  CVD Serisi Bölüm 3:  Bu bölümde CVD'nin son bölümüne gelindi ve artık final.   #CVD
+- **#6** · 2025-09-12 16:39 · 10:16 · ARŞİV (Eski Video)
+  - ARŞİV (Eski Video)  CVD Serisi Bölüm 2:  Bu bölümde CVD'nin diğer önemli unsurlarından bahsedildi.  #CVD
+- **#5** · 2025-09-12 16:38 · 14:31 · ARŞİV (Eski Video)
+  - ARŞİV (Eski Video)  CVD Serisi Bölüm 1:  Bu bölümde CVD'nin ilk serisine girildi ve CVD'nin ne olduğuna dair basic bilgiler verildi.  #CVD

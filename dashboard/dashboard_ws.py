@@ -45,6 +45,8 @@ def read_json(path):
         return {}
 
 # ── Engine durumu ────────────────────────────────────────────────────────────
+_last_engine_up: bool | None = None
+
 def engine_running():
     try:
         with open(os.path.join(ROOT, 'engine.lock')) as f:
@@ -505,18 +507,26 @@ async def get_data():
             SOURCE_LABELS = {"HT": "Haluk Hoca", "MZ": "Merter", "MANUEL": "Manuel"}
             position_sources = read_json(os.path.join(ROOT, 'position_sources.json'))
         try:
-            from mina_slot_policy import SLOTS_HALUK_MOTOR, SLOTS_MERTER_MOTOR, SLOT_TOTAL
-            from mina_slot_policy import SLOTS_EI_DCA, SLOTS_MERTER_OTHER_DCA
+            from mina_slot_policy import (
+                SLOTS_HALUK_MOTOR, SLOTS_MERTER_MOTOR, SLOT_TOTAL,
+                SLOTS_EI_DCA, SLOTS_MERTER_OTHER_DCA, MOTOR_SLOT_MAX,
+            )
         except ImportError:
             SLOTS_HALUK_MOTOR, SLOTS_MERTER_MOTOR = 7, 1
             SLOTS_EI_DCA, SLOTS_MERTER_OTHER_DCA = 2, 1
             SLOT_TOTAL = 10
+            MOTOR_SLOT_MAX = 8
 
         merter_by_sym  = {
             s['symbol']: yuva
             for yuva, s in merter_slots.items()
             if s.get('occupied') and s.get('symbol')
         }
+        try:
+            from mina_manual_override import load_all as load_manual_overrides
+            manual_overrides = load_manual_overrides(ROOT)
+        except ImportError:
+            manual_overrides = {}
 
         positions = []
         for p in raw:
@@ -544,6 +554,7 @@ async def get_data():
             if is_merter and not src_code:
                 src_code = 'MZ'
 
+            mo = manual_overrides.get(pos_key) or {}
             positions.append({
                 'symbol':       sym,
                 'side':         side,
@@ -563,6 +574,11 @@ async def get_data():
                 'rvol':         rvol,
                 'signalSource': src_code,
                 'signalSourceLabel': SOURCE_LABELS.get(src_code, src_code) if src_code else None,
+                'manualOverride': {
+                    'active': bool(mo.get('active')),
+                    'stop': mo.get('stop'),
+                    'tp': mo.get('tp'),
+                },
             })
 
         motor_positions  = [p for p in positions if p['slotType'] == 'motor']
@@ -614,6 +630,17 @@ async def get_data():
         except Exception as exc:
             log.debug(f"risk_status: {exc}")
 
+        followers = []
+        try:
+            from mina_copy_trading import get_copy_engine
+            eng = get_copy_engine()
+            if eng is None:
+                from mina_copy_trading import init_copy_engine, CopyTradingEngine
+                eng = CopyTradingEngine(lambda: balance)
+            followers = eng.dashboard_snapshot()
+        except Exception as exc:
+            log.debug(f"followers: {exc}")
+
         return {
             'balance':         balance,
             'balanceBreakdown': balance_breakdown,
@@ -635,8 +662,8 @@ async def get_data():
             'halukPdfTimestamp': read_json(os.path.join(ROOT, 'signal_bot/raw_signal_queue.json')).get('haluk_pdf_timestamp'),
             'slotSummary': {
                 'motorUsed':  len(motor_positions),
-                'motorMax':   SLOTS_HALUK_MOTOR,
-                'merterMotorUsed': len(motor_positions),  # 4x motor subset
+                'motorMax':   MOTOR_SLOT_MAX,
+                'merterMotorUsed': len(motor_positions),
                 'merterMotorMax': SLOTS_MERTER_MOTOR,
                 'merterUsed': merter_used,
                 'merterMax':  SLOTS_EI_DCA + SLOTS_MERTER_OTHER_DCA,
@@ -649,6 +676,7 @@ async def get_data():
             'winRate':         derr.get('winRate'),
             'totalTrades':     derr.get('totalTrades'),
             'winningTrades':   derr.get('winningTrades'),
+            'followers':       followers,
         }
     except Exception as e:
         log.error(f"get_data: {e}")
@@ -662,6 +690,47 @@ async def get_data():
             'engineRunning': engine_running(),
             'motorPaused': not get_dashboard_settings().get('motorActive', True),
         }
+
+async def update_manual_override(websocket, msg: dict):
+    """Manuel yönetim modu — stop/TP kaydet veya kapat."""
+    try:
+        symbol = (msg.get('symbol') or '').upper()
+        side = (msg.get('side') or '').upper()
+        if not symbol or side not in ('LONG', 'SHORT'):
+            raise ValueError('symbol ve side gerekli')
+        active = bool(msg.get('active'))
+        stop = msg.get('stop')
+        tp = msg.get('tp')
+        stop_f = float(stop) if stop not in (None, '', 0) else None
+        tp_f = float(tp) if tp not in (None, '', 0) else None
+        if active and stop_f is None and tp_f is None:
+            pass  # mod açık — fiyatlar sonra Uygula ile gelebilir
+
+        from mina_manual_override import set_override
+        pos_key = f"{symbol}_{side}"
+        saved = set_override(
+            pos_key,
+            active=active,
+            stop=stop_f,
+            tp=tp_f,
+            data_root=ROOT,
+        )
+        log.info(
+            "MANUAL_OVERRIDE %s active=%s stop=%s tp=%s",
+            pos_key, saved.get('active'), saved.get('stop'), saved.get('tp'),
+        )
+        await websocket.send(json.dumps({
+            'action': 'manual_override_saved',
+            'posKey': pos_key,
+            'symbol': symbol,
+            'side': side,
+            'manualOverride': saved,
+        }))
+        await push_broadcast()
+    except Exception as e:
+        log.error("MANUAL_OVERRIDE_FAIL: %s", e)
+        await websocket.send(json.dumps({'action': 'error', 'message': str(e)}))
+
 
 async def update_dashboard_settings(websocket, settings):
     try:
@@ -829,7 +898,6 @@ async def manual_open_position(
             '--symbol', sym,
             '--side', sd,
             '--leverage', str(lev),
-            '--source', 'haluk',
         ]
         ot = (order_type or 'market').lower().replace(' ', '_')
         if ot in ('stop_market', 'stop'):
@@ -1040,6 +1108,8 @@ async def handler(websocket):
                     )
                 elif msg.get('action') == 'update_settings':
                     await update_dashboard_settings(websocket, msg.get('settings'))
+                elif msg.get('action') == 'set_manual_override':
+                    await update_manual_override(websocket, msg)
                 elif msg.get('action') == 'get_haluk_archive':
                     await send_haluk_archive(websocket, msg)
                 elif msg.get('action') == 'get_upbit_listings':
@@ -1058,11 +1128,19 @@ async def handler(websocket):
 
 # ── Broadcast döngüsü ───────────────────────────────────────────────────────
 async def broadcast_loop():
-    global CONNECTED
+    global CONNECTED, _last_engine_up
     while True:
         await asyncio.sleep(BROADCAST_SEC)
         if not CONNECTED: continue
         try:
+            running = engine_running()
+            if _last_engine_up is True and not running:
+                try:
+                    from mina_system_alerts import alert_service_down
+                    alert_service_down("mina-engine", "Motor process yanıt vermiyor")
+                except Exception:
+                    pass
+            _last_engine_up = running
             data = await get_data()
             msg  = json.dumps(data)
             dead = set()

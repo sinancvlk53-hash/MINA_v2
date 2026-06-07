@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import LogStream from './LogStream.jsx'
+import FollowersPanel from './FollowersPanel.jsx'
 
 const DEFAULT_LEVERAGE_STRATEGY = {
   '1': 'defense',
@@ -21,7 +21,7 @@ const DEFAULTS = {
 
 const STRATEGY_LEVERS = [1, 2, 3, 5, 10]
 
-export default function SettingsPanel({ data, sendMessage, status, actionMsg, logs = [], testLogs = [] }) {
+export default function SettingsPanel({ data, sendMessage, status, actionMsg }) {
   const server = data?.settings ?? {}
   const slotSummary = data?.slotSummary ?? {}
 
@@ -218,6 +218,11 @@ export default function SettingsPanel({ data, sendMessage, status, actionMsg, lo
           </label>
         </section>
 
+        <section className="settings-section">
+          <h3 className="settings-section-title">Takipçiler</h3>
+          <FollowersPanel data={data} embedded />
+        </section>
+
         <button
           type="button"
           className="btn btn-settings-save"
@@ -230,11 +235,6 @@ export default function SettingsPanel({ data, sendMessage, status, actionMsg, lo
         <div className={`field-hint settings-save-note ${saveNote.includes('hata') ? 'err' : saveNote ? 'ok' : ''}`}>
           {saveNote || (status === 'connected' ? (dirty ? 'Kaydedilmemiş değişiklikler var' : 'Sunucu ile senkron') : 'Bağlantı bekleniyor…')}
         </div>
-
-        <section className="settings-section settings-log-section">
-          <h3 className="settings-section-title">Log Akışı</h3>
-          <LogStream logs={logs} testLogs={testLogs} compact />
-        </section>
       </div>
     </div>
   )

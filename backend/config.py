@@ -250,3 +250,26 @@ if __name__ == "__main__":
     print("\n" + "=" * 50)
     print("✅ TÜM TESTLER BAŞARILI!")
     print("=" * 50)
+
+
+# =====================================================
+# COPY TRADING — Follower hesapları (.env)
+# =====================================================
+
+class FollowerConfig:
+    """
+    Follower hesapları .env üzerinden yüklenir:
+      FOLLOWER_1_API_KEY, FOLLOWER_1_SECRET, FOLLOWER_1_NAME, FOLLOWER_1_KASA
+      FOLLOWER_2_... (isteğe bağlı, en fazla 9)
+    Kasa oranı: follower_kasa / master_kasa → lot çarpanı.
+    """
+
+    @staticmethod
+    def configured_count() -> int:
+        n = 0
+        for i in range(1, 10):
+            if os.getenv(f"FOLLOWER_{i}_API_KEY") and (
+                os.getenv(f"FOLLOWER_{i}_SECRET") or os.getenv(f"FOLLOWER_{i}_API_SECRET")
+            ):
+                n += 1
+        return n

@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react'
 import { fmt, defenseStageLabel, calcDefense } from '../utils/trading.js'
 import ChartFullscreenModal from './ChartFullscreenModal.jsx'
 import ClosePositionConfirm from './ClosePositionConfirm.jsx'
+import ManualOverrideControls from './ManualOverrideControls.jsx'
 import useMediaQuery from '../hooks/useMediaQuery.js'
 
 function SideBadge({ side }) {
@@ -174,11 +175,12 @@ function PositionCards({
           (selected?.posKey && selected.posKey === p.posKey) ||
           (selected?.symbol === p.symbol && selected?.side === p.side)
         const slotMeta = p.merterYuva ? merterSlots?.[p.merterYuva] : null
+        const manualActive = p.manualOverride?.active
 
         return (
           <article
             key={p.posKey || `${p.symbol}_${p.side}`}
-            className={`pos-card ${isMerterSection ? 'pos-card-merter' : ''} ${isSelected ? 'pos-card-selected' : ''}`}
+            className={`pos-card ${isMerterSection ? 'pos-card-merter' : ''} ${isSelected ? 'pos-card-selected' : ''} ${manualActive ? 'pos-card-manual-active' : ''}`}
             onClick={() => onRowClick(p)}
             role="button"
             tabIndex={0}
@@ -228,6 +230,8 @@ function PositionCards({
             </div>
 
             <DefenseBars pos={p} slotSize={slotSize} />
+
+            <ManualOverrideControls pos={p} sendMessage={sendMessage} />
 
             <div className="pos-card-actions">
               <button type="button" className="btn btn-ghost touch-target" onClick={(e) => { e.stopPropagation(); onDetail?.(p) }}>
@@ -282,7 +286,7 @@ function PositionTableDesktop({
             return (
               <tr
                 key={p.posKey || `${p.symbol}_${p.side}`}
-                className={`${isSelected ? 'row-selected' : ''} ${p.slotType === 'merter' ? 'row-merter' : ''}`}
+                className={`${isSelected ? 'row-selected' : ''} ${p.slotType === 'merter' ? 'row-merter' : ''} ${p.manualOverride?.active ? 'row-manual-active' : ''}`}
                 onClick={() => onRowClick(p)}
               >
                 <td className="sym-cell">
@@ -306,6 +310,7 @@ function PositionTableDesktop({
                 </td>
                 <PnlCell value={p.pnlUSDT} />
                 <td className="actions-cell">
+                  <ManualOverrideControls pos={p} sendMessage={sendMessage} />
                   <button type="button" className="btn btn-sm btn-ghost" onClick={(e) => { e.stopPropagation(); onDetail?.(p) }}>Detay</button>
                   <button type="button" className="btn btn-sm btn-close" onClick={(e) => { e.stopPropagation(); onClose?.(p, e, sendMessage) }}>Kapat</button>
                   {p.leverage === 4 && <span className={`def-stage ${stage.cls}`}>{stage.text}</span>}

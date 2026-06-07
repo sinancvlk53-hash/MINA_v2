@@ -1,0 +1,16 @@
+[Unit]
+Description=MINA Haluk Yayin Ozeti Tahmin Hatirlatici
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/MINA_v2
+ExecStart=/root/MINA_v2/venv/bin/python -u /root/MINA_v2/signal_bot/haluk_yayin_watcher.py
+Restart=on-failure
+RestartSec=30
+StandardOutput=append:/root/MINA_v2/signal_bot/haluk_yayin_watcher.log
+StandardError=append:/root/MINA_v2/signal_bot/haluk_yayin_watcher.log
+
+[Install]
+WantedBy=multi-user.target

@@ -123,7 +123,7 @@ export default function Header({ data, status, onPanic, onLogout }) {
     <>
       {riskKill && (
         <div className="risk-alarm-banner" role="alert">
-          KRİTİK: Günlük zarar limiti aşıldı — yeni pozisyon açılmıyor. Mevcut pozisyonlar yönetiliyor.
+          KRİTİK: Günlük zarar limiti (%20) aşıldı — tüm pozisyonlar kapatıldı, motor durduruldu.
         </div>
       )}
       <header className="header header-v2">

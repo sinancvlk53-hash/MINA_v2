@@ -31,7 +31,8 @@ def merter_active_symbols(data_root: Optional[str] = None) -> Set[str]:
     db_path = _json_path(root, "mina_trading_journal.db")
     if os.path.isfile(db_path):
         try:
-            conn = sqlite3.connect(db_path)
+            conn = sqlite3.connect(db_path, timeout=30)
+            conn.execute("PRAGMA busy_timeout=30000")
             rows = conn.execute(
                 """
                 SELECT DISTINCT symbol FROM trades
@@ -75,7 +76,8 @@ def motor_active_symbols(data_root: Optional[str] = None) -> Set[str]:
     db_path = _json_path(root, "mina_trading_journal.db")
     if os.path.isfile(db_path):
         try:
-            conn = sqlite3.connect(db_path)
+            conn = sqlite3.connect(db_path, timeout=30)
+            conn.execute("PRAGMA busy_timeout=30000")
             rows = conn.execute(
                 """
                 SELECT DISTINCT symbol FROM trades

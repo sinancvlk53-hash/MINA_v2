@@ -1,17 +1,10 @@
 import React from 'react'
-
-const TABS = [
-  { id: 'order', label: 'Al/Sat', icon: '⇄' },
-  { id: 'positions', label: 'Pozisyon', icon: '▦' },
-  { id: 'defense', label: 'Savunma', icon: '🛡' },
-  { id: 'archive', label: 'Haber', icon: '📰' },
-  { id: 'settings', label: 'Ayarlar', icon: '⚙' },
-]
+import { APP_TABS } from '../navTabs.js'
 
 export default function MobileNav({ active, onChange }) {
   return (
-    <nav className="mobile-nav">
-      {TABS.map((t) => (
+    <nav className="mobile-nav" aria-label="Ana menü">
+      {APP_TABS.map((t) => (
         <button
           key={t.id}
           type="button"

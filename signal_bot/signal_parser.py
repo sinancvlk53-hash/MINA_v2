@@ -23,6 +23,8 @@ MERter_FILTER_LOG = os.path.join(SIGNAL_BOT_DIR, "merter_filter.log")
 
 EMA_PERIOD = 20
 ATR_PERIOD = 14
+RSI_PERIOD = 14
+RSI_OVERBOUGHT_LONG = 70.0  # Anayasa: RSI > 70 → LONG reddet
 SR_ATR_MULT = 1.0
 KLINES_15M_LIMIT = 80
 
@@ -421,6 +423,26 @@ def _calc_ema(values: List[float], period: int = EMA_PERIOD) -> Optional[float]:
     return ema
 
 
+def _calc_rsi(closes: List[float], period: int = RSI_PERIOD) -> Optional[float]:
+    """Wilder RSI — son `period` kapanışı üzerinden."""
+    if len(closes) < period + 1:
+        return None
+    gains = 0.0
+    losses = 0.0
+    for i in range(-period, 0):
+        diff = closes[i] - closes[i - 1]
+        if diff >= 0:
+            gains += diff
+        else:
+            losses -= diff
+    avg_gain = gains / period
+    avg_loss = losses / period
+    if avg_loss == 0:
+        return 100.0
+    rs = avg_gain / avg_loss
+    return 100.0 - (100.0 / (1.0 + rs))
+
+
 def _calc_atr(klines: List[list], period: int = ATR_PERIOD) -> Optional[float]:
     if len(klines) < period + 1:
         return None
@@ -577,6 +599,13 @@ def _filter_ei_candidate(
         return False, "Adım1: fiyat EMA20 altında", 0.0, {"mark": mark, "ema20": ema20}
     if direction == "SHORT" and mark >= ema20:
         return False, "Adım1: fiyat EMA20 üstünde (SHORT)", 0.0, {"mark": mark, "ema20": ema20}
+
+    if direction == "LONG":
+        rsi = _calc_rsi(closes, RSI_PERIOD)
+        if rsi is not None and rsi >= RSI_OVERBOUGHT_LONG:
+            return False, f"Adım1b: RSI {rsi:.1f} >= 70 (aşırı alım, LONG reddedildi)", 0.0, {
+                "mark": mark, "ema20": ema20, "rsi": round(rsi, 2),
+            }
 
     atr = _calc_atr(klines[:-1], ATR_PERIOD)
     in_zone, sr_dist = _near_sr_zone(klines[:-1], mark, direction, atr or 0.0)

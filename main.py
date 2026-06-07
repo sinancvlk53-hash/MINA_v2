@@ -54,6 +54,12 @@ def run() -> None:
     journal = TradingJournal(db_path=db_path)
     mina = MinaPositionManager(client, slot, journal=journal, data_root=ROOT)
 
+    try:
+        from mina_copy_trading import init_copy_engine
+        init_copy_engine(account.get_usdt_balance, journal=journal)
+    except Exception as exc:
+        print(f"⚠️  Copy trading init: {exc}")
+
     lock_path = os.path.join(ROOT, "engine.lock")
     with open(lock_path, "w", encoding="utf-8") as lf:
         lf.write(str(os.getpid()))
@@ -86,7 +92,14 @@ def run() -> None:
     while True:
         try:
             loop_n += 1
+            from mina_daily_summary import maybe_send_daily_summary, reset_daily_summary_if_new_day
+            reset_daily_summary_if_new_day(ROOT)
             risk = mina.check_daily_risk_limit()
+            maybe_send_daily_summary(
+                journal=journal,
+                balance=account.get_usdt_balance(),
+                data_root=ROOT,
+            )
             if risk.get("level") == "kill":
                 print(
                     f"  🚨 Kill-switch aktif — bugün PnL {risk.get('today_pnl')} USDT "

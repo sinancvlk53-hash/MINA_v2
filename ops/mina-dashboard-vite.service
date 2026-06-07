@@ -1,0 +1,17 @@
+[Unit]
+Description=MINA Dashboard (static dist)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/MINA_v2
+Environment=MINA_DATA_ROOT=/root/MINA_v2
+ExecStart=/root/MINA_v2/venv/bin/python -u /root/MINA_v2/dashboard/static_server.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=append:/root/MINA_v2/vite_dashboard.log
+StandardError=append:/root/MINA_v2/vite_dashboard.log
+
+[Install]
+WantedBy=multi-user.target

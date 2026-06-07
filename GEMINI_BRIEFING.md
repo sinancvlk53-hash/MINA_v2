@@ -477,4 +477,53 @@ systemctl is-active mina-engine mina-merter-dca mina-listener
 
 ---
 
+## 14. Birleştirilen Ek Bağlam (eski `yemiGEMINI_BRIEFING.md`'den)
+
+> 2026-06-05 ikinci briefing dosyası bu bölüme konsolide edildi; orijinal dosya silindi.
+
+### Düzeltilen ek buglar (#14–18)
+
+| # | Sorun | Çözüm |
+|---|-------|-------|
+| 14 | Kısmi TP sonrası DERR qty eski | `reconcile_open_qty()` + script |
+| 15 | ATOM tracking eksik (Merter ei_2) | `reconcile_atom_derr.py` seed |
+| 16 | `signal_slot_bridge` syntax (`score_entry` / duplicate `_open_position_keys`) | Düzeltildi |
+| 17 | Manuel açılış 6–9x kaldıraç | Whitelist `[1,2,3,4,5,10]` CLI + WS |
+| 18 | `-1109 Invalid account` (eski testnet key) | Yeni `.env` API key |
+
+### Bilinen tutarsızlıklar (kodda — tarihsel not)
+
+| Konu | Durum |
+|------|-------|
+| Manuel vs köprü slot sayımı | Manuel: 7 Haluk + 10 total; köprü: 8 motor + marjin cap |
+| Manuel `--source merter` | Sayım hatası, pratikte kullanılmaz (artık kaldırıldı) |
+| `_execute_d1` `print()` logları | `mina_bot.log`'da görünmeyebilir |
+| OrderPanel "Stop" emir tipi | UI'da var, backend'de yok |
+| DERR eski `signal_source=null` | ~20 kayıt; istatistikleri kirletir |
+| Marjin tavanı %98 | Otomatik köprüde var, manuel açılışta yok |
+
+### Kaldıraç whitelist (manuel açılış)
+
+`[1, 2, 3, 4, 5, 10]` — CLI (`manual_open.py`) ve WS (`dashboard_ws.py`) ortak.
+
+### DERR istatistikleri (2026-06-05, testnet anlık)
+
+| Metrik | Değer |
+|--------|-------|
+| Toplam kayıt | 35 |
+| Kapalı | 31 |
+| Realized PnL | -312.15 USDT (çoğu eski reconcile) |
+| Win rate | 45.16% |
+| En iyi | MOVR +16.63 (Trailing) |
+| En kötü | LAB -224.57 (Reconcile) |
+
+### Slot bütçesi (5000 USDT kasa örneği)
+
+- Haluk 4x motor: 7 slot → 3500 USDT
+- Merter 4x legacy köprü: 1 slot → 500 USDT (motor toplam 8 → 4000 USDT)
+- Merter DCA: 3 slot → 1500 USDT (yuva başına slot/10 = 50 USDT/parça)
+- Max risk/slot (savunma tam dolduğunda): ~500 USDT
+
+---
+
 *Bu belge MINA v2 operasyon ve geliştirme oturumlarından derlenmiştir. Güncelleme: yeni mimari karar veya kritik bug fix sonrası `GEMINI_BRIEFING.md` revize edilmelidir.*

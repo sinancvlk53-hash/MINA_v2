@@ -36,8 +36,12 @@ class TradingJournal:
     def _init_db(self) -> None:
         """Veritabanı ve tabloları oluştur."""
         try:
-            self.conn = sqlite3.connect(self.db_path)
+            self.conn = sqlite3.connect(
+                self.db_path, timeout=30, check_same_thread=False,
+            )
             self.conn.row_factory = sqlite3.Row
+            self.conn.execute("PRAGMA journal_mode=WAL")
+            self.conn.execute("PRAGMA busy_timeout=30000")
             cursor = self.conn.cursor()
             
             # ─ İŞLEM TABLOSU ─────────────────────────────────────────────
@@ -150,6 +154,33 @@ class TradingJournal:
             cursor.execute('''
                 CREATE UNIQUE INDEX IF NOT EXISTS idx_haluk_message_id
                 ON haluk_messages(message_id) WHERE message_id IS NOT NULL
+            ''')
+
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS follower_trades (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    follower_id TEXT NOT NULL,
+                    follower_name TEXT NOT NULL,
+                    master_trade_id INTEGER,
+                    symbol TEXT NOT NULL,
+                    side TEXT NOT NULL,
+                    leverage INTEGER NOT NULL,
+                    open_time TIMESTAMP NOT NULL,
+                    open_price REAL NOT NULL,
+                    open_qty REAL NOT NULL,
+                    initial_margin REAL NOT NULL,
+                    close_time TIMESTAMP,
+                    close_price REAL,
+                    close_qty REAL,
+                    close_reason TEXT,
+                    pnl_usdt REAL,
+                    status TEXT NOT NULL DEFAULT 'open',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_follower_status
+                ON follower_trades(follower_id, status)
             ''')
             
             self.conn.commit()
@@ -589,8 +620,143 @@ class TradingJournal:
             row = cursor.fetchone()
             return float(row[0] if row else 0.0)
         except Exception as e:
+            if "locked" in str(e).lower():
+                try:
+                    from mina_system_alerts import alert_database_lock
+                    alert_database_lock(str(e))
+                except Exception:
+                    pass
             print(f"❌ get_today_realized_pnl hatası: {e}")
             return 0.0
+
+    def get_today_trade_stats(self) -> Dict[str, int]:
+        """Bugün kapanan işlem sayısı / kazanç / kayıp."""
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                """
+                SELECT
+                    COUNT(*) AS cnt,
+                    SUM(CASE WHEN pnl_usdt > 0 THEN 1 ELSE 0 END) AS wins,
+                    SUM(CASE WHEN pnl_usdt <= 0 THEN 1 ELSE 0 END) AS losses
+                FROM trades
+                WHERE status = 'closed'
+                  AND date(close_time) = date('now', 'localtime')
+                """
+            )
+            row = cursor.fetchone()
+            if not row:
+                return {"count": 0, "wins": 0, "losses": 0}
+            return {
+                "count": int(row[0] or 0),
+                "wins": int(row[1] or 0),
+                "losses": int(row[2] or 0),
+            }
+        except Exception as e:
+            if "locked" in str(e).lower():
+                try:
+                    from mina_system_alerts import alert_database_lock
+                    alert_database_lock(str(e))
+                except Exception:
+                    pass
+            print(f"❌ get_today_trade_stats hatası: {e}")
+            return {"count": 0, "wins": 0, "losses": 0}
+
+    def log_follower_trade_open(
+        self,
+        *,
+        follower_id: str,
+        follower_name: str,
+        master_trade_id: Optional[int],
+        symbol: str,
+        side: str,
+        leverage: int,
+        entry_price: float,
+        qty: float,
+        initial_margin: float,
+    ) -> int:
+        try:
+            cursor = self.conn.cursor()
+            notional = entry_price * qty
+            cursor.execute(
+                '''
+                INSERT INTO follower_trades (
+                    follower_id, follower_name, master_trade_id,
+                    symbol, side, leverage, open_time, open_price,
+                    open_qty, initial_margin, status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open')
+                ''',
+                (
+                    follower_id, follower_name, master_trade_id,
+                    symbol, side, leverage, datetime.now().isoformat(),
+                    entry_price, qty, initial_margin,
+                ),
+            )
+            self.conn.commit()
+            return int(cursor.lastrowid)
+        except Exception as e:
+            if "locked" in str(e).lower():
+                try:
+                    from mina_system_alerts import alert_database_lock
+                    alert_database_lock(str(e))
+                except Exception:
+                    pass
+            print(f"❌ log_follower_trade_open hatası: {e}")
+            return 0
+
+    def log_follower_trade_close(
+        self,
+        trade_id: int,
+        *,
+        close_price: float,
+        close_qty: float,
+        close_reason: str,
+        pnl_usdt: float,
+    ) -> bool:
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                '''
+                UPDATE follower_trades SET
+                    close_time = ?, close_price = ?, close_qty = ?,
+                    close_reason = ?, pnl_usdt = ?, status = 'closed'
+                WHERE id = ?
+                ''',
+                (
+                    datetime.now().isoformat(), close_price, close_qty,
+                    close_reason, pnl_usdt, trade_id,
+                ),
+            )
+            self.conn.commit()
+            return cursor.rowcount > 0
+        except Exception as e:
+            if "locked" in str(e).lower():
+                try:
+                    from mina_system_alerts import alert_database_lock
+                    alert_database_lock(str(e))
+                except Exception:
+                    pass
+            print(f"❌ log_follower_trade_close hatası: {e}")
+            return False
+
+    def get_open_follower_trade(
+        self, follower_id: str, symbol: str, side: str,
+    ) -> Optional[int]:
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                '''
+                SELECT id FROM follower_trades
+                WHERE follower_id = ? AND symbol = ? AND side = ?
+                  AND status = 'open'
+                ORDER BY id DESC LIMIT 1
+                ''',
+                (follower_id, symbol, side),
+            )
+            row = cursor.fetchone()
+            return int(row[0]) if row else None
+        except Exception:
+            return None
 
     def haluk_message_exists(self, message_id: Optional[int]) -> bool:
         if message_id is None:

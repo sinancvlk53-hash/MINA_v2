@@ -67,17 +67,48 @@ def _is_transient(exc: BaseException) -> bool:
     )
 
 
+def _service_name(func: Callable[..., Any]) -> str:
+    return getattr(func, "__name__", None) or "binance"
+
+
 def call_with_retry(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
-    """Max 3 deneme; -1003 ban süresi kadar bekle, diğer geçici hatalarda 2/4/8 sn."""
+    """Max 3 deneme; proaktif rate-limit throttle + -1003 ban bekleme + 2/4/8 sn backoff."""
     last_exc: BaseException | None = None
+    svc = _service_name(func)
     for attempt in range(_MAX_ATTEMPTS):
+        # Proaktif throttle: servisler arası minimum boşluk + aktif ban bekleme.
+        # wait_before_request kendi içinde record_request çağırır.
         try:
-            return func(*args, **kwargs)
+            from mina_rate_limit import wait_before_request
+            wait_before_request(svc)
+        except Exception:
+            pass
+        try:
+            result = func(*args, **kwargs)
+            try:
+                from mina_rate_limit import record_request
+                record_request(svc)
+            except Exception:
+                pass
+            return result
         except Exception as exc:
             last_exc = exc
-            if attempt >= _MAX_ATTEMPTS - 1:
-                break
             code = _exc_code(exc)
+            if code == -1003:
+                # Ban bilgisini paylaşılan state'e yaz: diğer servisler de beklesin.
+                try:
+                    from mina_rate_limit import register_rate_limit_hit
+                    register_rate_limit_hit(exc, attempt)
+                except Exception:
+                    pass
+            if attempt >= _MAX_ATTEMPTS - 1:
+                if code == -1003:
+                    try:
+                        from mina_system_alerts import alert_rate_limit
+                        alert_rate_limit(str(exc))
+                    except Exception:
+                        pass
+                break
             if code == -1003:
                 wait = _ban_wait_seconds(exc)
                 if wait is not None:

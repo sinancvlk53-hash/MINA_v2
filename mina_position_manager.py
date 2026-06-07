@@ -283,6 +283,13 @@ class MinaPositionManager:
         mt.save_json(mt.TP_FILE, tp_levels)
         mt.save_json(mt.MAX_PRICE_FILE, max_prices)
         self._save_state()
+        try:
+            from mina_manual_override import clear_stale
+            cleared = clear_stale(open_keys, self.data_root)
+            if cleared and verbose:
+                print(f"[SYNC] manual_override cleared: {cleared} stale")
+        except ImportError:
+            pass
 
         reconciled = self.reconcile_journal_closed(open_keys)
         if reconciled:
@@ -458,6 +465,12 @@ class MinaPositionManager:
         if symbol in self.position_states:
             del self.position_states[symbol]
             self._save_state()
+        try:
+            from mina_manual_override import clear_override
+            for side in ('LONG', 'SHORT'):
+                clear_override(self._pos_key(symbol, side), self.data_root)
+        except ImportError:
+            pass
 
     # ---------------------------------------------------------------------
     # Günlük zarar limiti / kill-switch
@@ -512,8 +525,8 @@ class MinaPositionManager:
 
         if level == "warn" and not state.get("half_alert_sent"):
             self._send_risk_telegram(
-                "⚠️ Uyarı: Günlük zarar %10'a ulaştı, devam mı?\n"
-                f"Bugünkü PnL: {today_pnl:+.2f} USDT | Yarı limit: {half_usdt:.2f} USDT"
+                f"⚠️ Uyarı: Günlük zarar %{limit_pct / 2:.0f}'e ulaştı\n"
+                f"Bugünkü PnL: {today_pnl:+.2f} USDT | Limit: {limit_usdt:.2f} USDT"
             )
             state["half_alert_sent"] = True
             print(f"   ⚠️  Günlük zarar yarı limit: {today_pnl:.2f} / {half_usdt:.2f} USDT")
@@ -521,16 +534,23 @@ class MinaPositionManager:
         if level == "kill":
             set_daily_loss_kill(True)
             if not state.get("kill_alert_sent"):
+                closed = 0
+                if not state.get("positions_closed_on_kill"):
+                    closed = self._close_all_positions_for_kill()
+                    state["positions_closed_on_kill"] = True
                 self._send_risk_telegram(
-                    "🚨 KRİTİK: Günlük zarar limiti aşıldı, sistem duraklatıldı!\n"
-                    f"Bugünkü PnL: {today_pnl:+.2f} USDT | Limit: {limit_usdt:.2f} USDT"
+                    "🚨 KRİTİK: Günlük zarar limiti aşıldı!\n"
+                    f"Bugünkü PnL: {today_pnl:+.2f} USDT | Limit: {limit_usdt:.2f} USDT\n"
+                    f"Tüm pozisyonlar kapatıldı ({closed} adet). Motor durduruldu."
                 )
                 state["kill_alert_sent"] = True
                 print(
-                    f"   🚨 Günlük zarar kill-switch: {today_pnl:.2f} <= {limit_usdt:.2f} USDT"
+                    f"   🚨 Günlük zarar kill-switch: {today_pnl:.2f} <= {limit_usdt:.2f} USDT "
+                    f"— {closed} pozisyon kapatıldı"
                 )
         elif is_daily_loss_kill_active() and today_pnl > limit_usdt:
             set_daily_loss_kill(False)
+            state["positions_closed_on_kill"] = False
 
         state.update(
             {
@@ -547,6 +567,35 @@ class MinaPositionManager:
         save_daily_risk_state(state)
         self._last_risk_level = level
         return state
+
+    def _close_all_positions_for_kill(self) -> int:
+        """Kill-switch: tüm açık pozisyonları MARKET ile kapat."""
+        closed = 0
+        try:
+            for p in self.client.futures_position_information():
+                amt = float(p.get("positionAmt") or 0)
+                if amt == 0:
+                    continue
+                sym = p["symbol"]
+                side = "LONG" if amt > 0 else "SHORT"
+                order_side = SIDE_SELL if amt > 0 else SIDE_BUY
+                qty = self._round_quantity(abs(amt), sym)
+                if qty <= 0:
+                    continue
+                order = self._futures_create_order(
+                    label="Daily Kill",
+                    symbol=sym,
+                    side=order_side,
+                    type=ORDER_TYPE_MARKET,
+                    quantity=qty,
+                    positionSide=side,
+                )
+                if order:
+                    closed += 1
+                    print(f"   🚨 Kill-switch kapama: {sym} {side} qty={qty}")
+        except Exception as e:
+            print(f"   ❌ Kill-switch toplu kapama hatası: {e}")
+        return closed
 
     def is_new_entry_allowed(self) -> bool:
         return self._last_risk_level != "kill"
@@ -678,6 +727,39 @@ class MinaPositionManager:
         except ImportError:
             pass
 
+        key = self._pos_key(symbol, side)
+        try:
+            from mina_manual_override import get_override
+            ov = get_override(key, self.data_root)
+            if ov.get('active'):
+                stop_px = ov.get('stop')
+                tp_px = ov.get('tp')
+                if side == 'LONG':
+                    if stop_px is not None and current_price <= float(stop_px):
+                        return {
+                            'action': 'manual_stop',
+                            'reason': f'Manuel stop tetiklendi ({stop_px})',
+                        }
+                    if tp_px is not None and current_price >= float(tp_px):
+                        return {
+                            'action': 'manual_tp',
+                            'reason': f'Manuel TP tetiklendi ({tp_px})',
+                        }
+                else:
+                    if stop_px is not None and current_price >= float(stop_px):
+                        return {
+                            'action': 'manual_stop',
+                            'reason': f'Manuel stop tetiklendi ({stop_px})',
+                        }
+                    if tp_px is not None and current_price <= float(tp_px):
+                        return {
+                            'action': 'manual_tp',
+                            'reason': f'Manuel TP tetiklendi ({tp_px})',
+                        }
+                return {'action': 'hold', 'reason': 'Manuel yönetim modu aktif'}
+        except ImportError:
+            pass
+
         rules = self._rules_for_leverage(leverage)
         if not rules:
             return {'action': 'hold', 'reason': f'Bilinmeyen kaldıraç: {leverage}x'}
@@ -745,6 +827,10 @@ class MinaPositionManager:
             return self.execute_take_profit(position, action['level'])
         if action_type == 'trailing_stop':
             return self.execute_trailing_stop(position)
+        if action_type == 'manual_stop':
+            return self.execute_manual_close(position, current_price, 'Manuel Stop')
+        if action_type == 'manual_tp':
+            return self.execute_manual_close(position, current_price, 'Manuel TP')
 
         return False
 
@@ -1202,6 +1288,11 @@ class MinaPositionManager:
             )
             
             print(f"   🛡️  D3 tamamlandı: yeni TP kaçış emri {breakeven_price} fiyatına gönderildi")
+            try:
+                from mina_motor_telegram import notify_d3
+                notify_d3(symbol)
+            except Exception:
+                pass
             return True
         except Exception as e:
             self._notify_defense_order_failure("D3", symbol, side, str(e))
@@ -1541,6 +1632,72 @@ class MinaPositionManager:
         except Exception as e:
             print(f"   ❌ Trailing stop kapatma hatası: {e}")
             return False
+
+    def execute_manual_close(
+        self, position: Dict, current_price: float, close_reason: str,
+    ) -> bool:
+        """Manuel stop/TP — tam MARKET kapama."""
+        symbol = position.get('symbol')
+        amount = float(position.get('amount', 0.0))
+        side = position.get('side')
+        state = self.position_states.get(symbol, {})
+        order_side = SIDE_SELL if side == 'LONG' else SIDE_BUY
+
+        if amount <= 0:
+            return False
+
+        close_price = current_price
+        try:
+            ticker = self.client.futures_mark_price(symbol=symbol)
+            close_price = float(ticker['markPrice'])
+        except Exception:
+            pass
+
+        order = self._futures_create_order(
+            label=close_reason,
+            symbol=symbol,
+            side=order_side,
+            type=ORDER_TYPE_MARKET,
+            quantity=self._round_quantity(amount, symbol),
+            positionSide=side,
+        )
+        if not order:
+            return False
+
+        entry_price = state.get('weighted_avg_price', position.get('entry_price', 0))
+        pnl_usdt = (
+            (close_price - entry_price) * amount
+            if side == 'LONG'
+            else (entry_price - close_price) * amount
+        )
+        pnl_percent = (pnl_usdt / (entry_price * amount)) * 100 if entry_price > 0 else 0
+        roe_percent = (
+            (pnl_usdt / state.get('initial_margin', 1)) * 100
+            if state.get('initial_margin', 0) > 0
+            else 0
+        )
+
+        self.log_position_close(
+            symbol=symbol,
+            side=side,
+            close_price=close_price,
+            qty=amount,
+            close_reason=close_reason,
+            pnl_usdt=pnl_usdt,
+            pnl_percent=pnl_percent,
+            roe_percent=roe_percent,
+        )
+        try:
+            from mina_motor_telegram import notify_manual_stop, notify_manual_tp
+            if close_reason == "Manuel Stop":
+                notify_manual_stop(symbol)
+            elif close_reason == "Manuel TP":
+                notify_manual_tp(symbol)
+        except Exception:
+            pass
+        self.reset_position_state(symbol)
+        print(f"   ✅ {close_reason}: {symbol} {side} @ {close_price}")
+        return True
 
     def execute_stop_loss(self, position: Dict) -> bool:
         symbol = position.get('symbol')
@@ -1885,6 +2042,21 @@ class MinaPositionManager:
             if trade_id > 0:
                 self.trade_ids[self._pos_key(symbol, side)] = trade_id
                 self._save_state()
+                try:
+                    from mina_copy_trading import get_copy_engine
+                    eng = get_copy_engine()
+                    if eng:
+                        eng.on_master_open(
+                            symbol=symbol,
+                            side=side,
+                            leverage=leverage,
+                            entry_price=entry_price,
+                            qty=qty,
+                            initial_margin=initial_margin,
+                            master_trade_id=trade_id,
+                        )
+                except Exception as copy_err:
+                    print(f"⚠️  Copy trade open: {copy_err}")
         except Exception as e:
             print(f"❌ Journal log_position_open hatası: {e}")
 
@@ -1954,6 +2126,20 @@ class MinaPositionManager:
                     f"📔 [Journal] Kısmi kapanış ({close_reason}): {symbol} "
                     f"kalan qty={remaining_open_qty}"
                 )
+                try:
+                    from mina_copy_trading import get_copy_engine
+                    eng = get_copy_engine()
+                    if eng:
+                        close_ratio = float(qty) / old_qty if old_qty > 0 else 0.5
+                        eng.on_master_partial_close(
+                            symbol=symbol,
+                            side=side,
+                            close_price=close_price,
+                            close_ratio=close_ratio,
+                            close_reason=close_reason,
+                        )
+                except Exception as copy_err:
+                    print(f"⚠️  Copy trade partial: {copy_err}")
             except Exception as e:
                 print(f"❌ Journal kısmi qty güncelleme hatası: {e}")
             return
@@ -1979,6 +2165,20 @@ class MinaPositionManager:
                 clear_position_source(symbol, side)
             except Exception:
                 pass
+
+            try:
+                from mina_copy_trading import get_copy_engine
+                eng = get_copy_engine()
+                if eng:
+                    eng.on_master_close(
+                        symbol=symbol,
+                        side=side,
+                        close_price=close_price,
+                        close_reason=close_reason,
+                        pnl_usdt=pnl_usdt,
+                    )
+            except Exception as copy_err:
+                print(f"⚠️  Copy trade close: {copy_err}")
 
             try:
                 from signal_bot.signal_slot_bridge import try_fill_freed_slot
