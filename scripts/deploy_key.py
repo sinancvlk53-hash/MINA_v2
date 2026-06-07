@@ -32,6 +32,7 @@ FILES = [
     "dashboard/dashboard_ws.py",
     "scripts/manual_open.py",
     "signal_bot/merter_dca_manager.py",
+    "signal_bot/signal_parser.py",
     "signal_bot/haluk_predictions.py",
     "mina_coin_lock.py",
     "scripts/system_health_audit.py",
