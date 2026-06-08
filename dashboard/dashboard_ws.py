@@ -119,6 +119,26 @@ _MACRO_FUNDING_SYMBOLS = (
 )
 
 
+def get_macro_watcher() -> dict:
+    """Makro izleyici snapshot — makro_watcher_state.json."""
+    try:
+        from mina_makro_core import load_dashboard_payload
+        return load_dashboard_payload()
+    except Exception as exc:
+        log.warning("macro_watcher: %s", exc)
+        return {
+            "metrics": {},
+            "riskScore": 0,
+            "macroScore": 0,
+            "tradePermission": "REDUCED_RISK",
+            "tradePermissionLabel": "🟡 REDUCED RISK",
+            "combinations": [],
+            "sources": {},
+            "updatedAt": None,
+            "stale": True,
+        }
+
+
 def get_macro_funding() -> dict:
     """Majör coinlerde 8s funding ortalaması — makro rejim paneli."""
     client = get_client()
@@ -559,6 +579,11 @@ async def get_data():
             manual_overrides = load_manual_overrides(ROOT)
         except ImportError:
             manual_overrides = {}
+        try:
+            from mina_dashboard_settings import leverage_strategy_mode
+        except ImportError:
+            def leverage_strategy_mode(lev):
+                return 'defense' if lev == 4 else 'defense'
 
         positions = []
         for p in raw:
@@ -587,6 +612,9 @@ async def get_data():
                 src_code = 'MZ'
 
             mo = manual_overrides.get(pos_key) or {}
+            merter_yuva = merter_by_sym.get(sym)
+            merter_slot = merter_slots.get(merter_yuva, {}) if merter_yuva else {}
+            strategy_mode = 'defense' if lev == 4 else leverage_strategy_mode(lev)
             positions.append({
                 'symbol':       sym,
                 'side':         side,
@@ -602,7 +630,10 @@ async def get_data():
                 'defenseLevel': defense_levels.get(pos_key, 0),
                 'posKey':       pos_key,
                 'slotType':     'merter' if is_merter else 'motor',
-                'merterYuva':   merter_by_sym.get(sym),
+                'merterYuva':   merter_yuva,
+                'partsFilled':  merter_slot.get('partsFilled') if is_merter else None,
+                'partsTotal':   merter_slot.get('partsTotal', 10) if is_merter else None,
+                'strategyMode': strategy_mode,
                 'rvol':         rvol,
                 'signalSource': src_code,
                 'signalSourceLabel': SOURCE_LABELS.get(src_code, src_code) if src_code else None,
@@ -697,6 +728,7 @@ async def get_data():
             'merterSlots':     merter_slots,
             'macroLevels':     get_macro_levels(),
             'macroFunding':    get_macro_funding(),
+            'macroWatcher':    get_macro_watcher(),
             'halukPdfTimestamp': read_json(os.path.join(ROOT, 'signal_bot/raw_signal_queue.json')).get('haluk_pdf_timestamp'),
             'slotSummary': {
                 'motorUsed':  len(motor_positions),
@@ -724,6 +756,7 @@ async def get_data():
             'logs': list(_log_buf),
             'macroLevels': get_macro_levels(),
             'macroFunding': get_macro_funding(),
+            'macroWatcher': get_macro_watcher(),
             'settings': get_dashboard_settings(),
             'slotSummary': get_slot_summary_defaults(),
             'engineRunning': engine_running(),

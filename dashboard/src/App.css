@@ -739,6 +739,20 @@ body {
 .btn-manual-open:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .manual-open-footnote { margin-top: 8px; }
+.text-amber { color: #f0ad4e; }
+.manual-open-warn {
+  margin: 8px 0 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(240, 173, 78, 0.12);
+  color: #f0ad4e;
+  font-size: 13px;
+}
+.badge-strategy-manual { background: rgba(240, 173, 78, 0.15); color: #f0ad4e; }
+.badge-strategy-ht { background: rgba(88, 166, 255, 0.15); color: #58a6ff; }
+.badge-strategy-defense { background: rgba(46, 160, 67, 0.15); color: #3fb950; }
+.badge-strategy-stop { background: rgba(248, 81, 73, 0.15); color: #f85149; }
+.merter-parts-inline { display: block; font-size: 0.72rem; margin-top: 2px; }
 
 .stop-market-info {
   margin-top: 14px;
@@ -1552,6 +1566,203 @@ body {
 
 .panel-macro {
   margin-bottom: 12px;
+}
+
+/* ── Makro İzleyici (watcher) ───────────────────────────────────────────── */
+.panel-makro-watcher {
+  margin-bottom: 16px;
+}
+
+.makro-score-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.makro-score-badge {
+  font-size: 12px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.macro-score-green {
+  background: rgba(46, 204, 113, 0.18);
+  color: #2ecc71;
+}
+
+.macro-score-yellow {
+  background: rgba(241, 196, 15, 0.18);
+  color: #f1c40f;
+}
+
+.macro-score-red {
+  background: rgba(231, 76, 60, 0.18);
+  color: #e74c3c;
+}
+
+.makro-permission-banner {
+  margin: 0 12px 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+
+.makro-perm-label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.makro-perm-value {
+  display: block;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 0.3px;
+}
+
+.makro-perm-hint {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
+.macro-perm-full {
+  background: rgba(46, 204, 113, 0.1);
+  border-color: rgba(46, 204, 113, 0.35);
+}
+
+.macro-perm-reduced {
+  background: rgba(241, 196, 15, 0.08);
+  border-color: rgba(241, 196, 15, 0.3);
+}
+
+.macro-perm-defensive {
+  background: rgba(231, 76, 60, 0.1);
+  border-color: rgba(231, 76, 60, 0.35);
+}
+
+.makro-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+
+.makro-metric-cell {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 72px;
+}
+
+.makro-metric-empty {
+  opacity: 0.5;
+}
+
+.makro-metric-stale {
+  border-color: rgba(241, 196, 15, 0.35);
+}
+
+.makro-metric-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 0.3px;
+}
+
+.makro-metric-value {
+  font-size: 14px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.makro-metric-arrow {
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.makro-dir-up { color: var(--green); }
+.makro-dir-down { color: var(--red); }
+.makro-dir-flat { color: var(--text-secondary); }
+
+.makro-metric-chg {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.makro-stale-tag {
+  font-size: 9px;
+  color: #f1c40f;
+  text-transform: uppercase;
+}
+
+.makro-combos,
+.makro-sources {
+  padding: 0 12px 12px;
+}
+
+.makro-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  letter-spacing: 0.4px;
+}
+
+.makro-combos ul {
+  margin: 0;
+  padding: 0 0 0 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #dfe6e9;
+}
+
+.makro-source-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.makro-source-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.makro-source-tag.ok {
+  color: #2ecc71;
+  background: rgba(46, 204, 113, 0.12);
+}
+
+.makro-source-tag.err {
+  color: #e74c3c;
+  background: rgba(231, 76, 60, 0.12);
+}
+
+.makro-source-tag.skip {
+  color: var(--text-secondary);
+}
+
+.makro-updated {
+  display: block;
+  margin-top: 2px;
 }
 
 .panel-settings .settings-body {

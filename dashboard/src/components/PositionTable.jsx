@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react'
-import { fmt, defenseStageLabel, calcDefense } from '../utils/trading.js'
+import { fmt, defenseStageLabel, calcDefense, resolveStrategyMode } from '../utils/trading.js'
 import ChartFullscreenModal from './ChartFullscreenModal.jsx'
 import ClosePositionConfirm from './ClosePositionConfirm.jsx'
 import ManualOverrideControls from './ManualOverrideControls.jsx'
@@ -99,6 +99,29 @@ function SourceBadge({ source, label }) {
   )
 }
 
+function StrategyBadge({ mode }) {
+  const stratMode = mode || 'defense'
+  const labels = {
+    defense: 'Savunma',
+    stop: 'Stop',
+    ht: 'HT',
+    full_manual: 'Manuel',
+  }
+  const clsMap = {
+    defense: 'badge-strategy-defense',
+    stop: 'badge-strategy-stop',
+    ht: 'badge-strategy-ht',
+    full_manual: 'badge-strategy-manual',
+  }
+  const label = labels[stratMode] || stratMode
+  const cls = clsMap[stratMode] || 'badge-strategy-defense'
+  return (
+    <span className={`badge-pill ${cls}`} title={`Strateji: ${label}`}>
+      {label}
+    </span>
+  )
+}
+
 function MerterEmptySlot({ slot }) {
   if (!slot) return null
   const filterBadge = slot.filterMode === 'unfiltered'
@@ -165,6 +188,7 @@ function PositionCards({
   sendMessage,
   merterSlots,
   isMerterSection,
+  leverageStrategy = {},
 }) {
   return (
     <div className="pos-cards">
@@ -176,6 +200,7 @@ function PositionCards({
           (selected?.symbol === p.symbol && selected?.side === p.side)
         const slotMeta = p.merterYuva ? merterSlots?.[p.merterYuva] : null
         const manualActive = p.manualOverride?.active
+        const stratMode = p.strategyMode || resolveStrategyMode(p.leverage, leverageStrategy)
 
         return (
           <article
@@ -195,6 +220,7 @@ function PositionCards({
                 <SourceBadge source={p.signalSource} label={p.signalSourceLabel} />
                 <span className="badge-lev">{p.leverage}x</span>
                 <RvolBadge rvol={p.rvol} />
+                <StrategyBadge mode={stratMode} />
                 {p.leverage === 4 && (
                   <span className={`def-stage ${stage.cls}`}>{stage.text}</span>
                 )}
@@ -256,6 +282,8 @@ function PositionTableDesktop({
   onDetail,
   onClose,
   sendMessage,
+  merterSlots,
+  leverageStrategy = {},
 }) {
   return (
     <div className="table-scroll">
@@ -282,6 +310,10 @@ function PositionTableDesktop({
             const isSelected =
               (selected?.posKey && selected.posKey === p.posKey) ||
               (selected?.symbol === p.symbol && selected?.side === p.side)
+            const stratMode = p.strategyMode || resolveStrategyMode(p.leverage, leverageStrategy)
+            const slotMeta = p.merterYuva ? merterSlots?.[p.merterYuva] : null
+            const partsFilled = slotMeta?.partsFilled ?? p.partsFilled
+            const partsTotal = slotMeta?.partsTotal ?? p.partsTotal ?? 10
 
             return (
               <tr
@@ -292,6 +324,9 @@ function PositionTableDesktop({
                 <td className="sym-cell">
                   <span className="sym-name">{p.symbol.replace(/USDT$/, '')}</span>
                   <span className="sym-pair">/USDT</span>
+                  {p.slotType === 'merter' && partsFilled != null && (
+                    <span className="field-hint merter-parts-inline">{partsFilled}/{partsTotal} parça</span>
+                  )}
                 </td>
                 <td>
                   <SourceBadge source={p.signalSource} label={p.signalSourceLabel} />
@@ -299,7 +334,10 @@ function PositionTableDesktop({
                 <td>
                   <SideBadge side={p.side} />
                 </td>
-                <td className="mono">{p.leverage}x</td>
+                <td className="mono">
+                  {p.leverage}x
+                  <StrategyBadge mode={stratMode} />
+                </td>
                 <td className={`mono ${p.rvol >= 2 ? 'text-green' : 'dim'}`}>
                   {p.rvol != null ? fmt(p.rvol, 2) : '—'}
                 </td>
@@ -340,6 +378,7 @@ function PositionSection({
   onClose,
   sendMessage,
   showTable,
+  leverageStrategy = {},
 }) {
   const emptyMerter = isMerterSection && merterSlots
     ? Object.keys(merterSlots).filter((k) => !merterSlots[k]?.occupied)
@@ -370,6 +409,7 @@ function PositionSection({
             sendMessage={sendMessage}
             merterSlots={merterSlots}
             isMerterSection={isMerterSection}
+            leverageStrategy={leverageStrategy}
           />
           {emptyMerter.map((k) => (
             <MerterEmptySlot key={k} slot={merterSlots[k]} />
@@ -389,6 +429,8 @@ function PositionSection({
               onDetail={onDetail}
               onClose={onClose}
               sendMessage={sendMessage}
+              merterSlots={merterSlots}
+              leverageStrategy={leverageStrategy}
             />
           )}
         </>
@@ -411,6 +453,7 @@ export default function PositionTable({
   selectedPos,
   chartSheetOpen = false,
   onChartSheetChange,
+  leverageStrategy = {},
 }) {
   const isMobile = useMediaQuery('(max-width: 768px)')
   const mobile = mobileMode || isMobile
@@ -480,6 +523,7 @@ export default function PositionTable({
     onDetail,
     onClose: handleClose,
     sendMessage,
+    leverageStrategy,
   }
 
   if (!allPositions.length && !Object.keys(merterSlots).length) {

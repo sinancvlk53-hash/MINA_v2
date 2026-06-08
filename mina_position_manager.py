@@ -94,7 +94,13 @@ class MinaPositionManager:
                 'tp1_multiplier': 1.02,
                 'tp2_multiplier': 1.04,
                 'trailing_callback_pct': None,
-            }
+            },
+            'ht': {
+                'stop_pct': 2.0,
+                'tp1_rr': 2.0,
+                'tp2_rr': 4.0,
+                'trailing_callback_pct': None,
+            },
         }
 
         self.defense_rules = {
@@ -113,12 +119,24 @@ class MinaPositionManager:
         if leverage == 4:
             base['has_defense'] = True
             base['stop_loss_pct'] = None
+            base['strategy_mode'] = 'defense'
             return base
         try:
             from mina_dashboard_settings import leverage_strategy_mode
             mode = leverage_strategy_mode(leverage)
         except ImportError:
             mode = 'defense'
+        base['strategy_mode'] = mode
+        if mode == 'full_manual':
+            base['has_defense'] = False
+            base['stop_loss_pct'] = None
+            base['tp_type'] = 'full_manual'
+            return base
+        if mode == 'ht':
+            base['has_defense'] = False
+            base['stop_loss_pct'] = 2.0
+            base['tp_type'] = 'ht'
+            return base
         if mode == 'defense':
             base['has_defense'] = True
             base['stop_loss_pct'] = None
@@ -790,6 +808,9 @@ class MinaPositionManager:
         if not rules:
             return {'action': 'hold', 'reason': f'Bilinmeyen kaldıraç: {leverage}x'}
 
+        if rules.get('strategy_mode') == 'full_manual':
+            return {'action': 'hold', 'reason': 'Full Manuel mod — motor müdahale etmez'}
+
         state = self.position_states.get(symbol)
         if state is None:
             self.init_position_state(symbol, entry_price, side=side)
@@ -827,16 +848,24 @@ class MinaPositionManager:
                     'reason': f'D{defense_level} spot fiyat tetiklendi'
                 }
 
-        if rules['stop_loss_pct'] is not None:
+        tp_type = rules.get('tp_type') or self._get_tp_type(position)
+        if tp_type == 'ht':
+            stop_price = self._calculate_ht_stop_price(position, state)
+            if stop_price is not None and self._is_stop_loss_hit(current_price, stop_price, side):
+                label = 'HT breakeven stop' if state.get('tp1_done') else 'HT stop (%2)'
+                return {
+                    'action': 'stop_loss',
+                    'reason': f'{label} tetiklendi ({stop_price})',
+                }
+        elif rules.get('stop_loss_pct') is not None:
             stop_price = self.calculate_stop_loss_price(entry_price, leverage, side)
             if self._is_stop_loss_hit(current_price, stop_price, side):
                 return {
                     'action': 'stop_loss',
-                    'reason': f'Stop-loss fiyatı aşıldı ({stop_price})'
+                    'reason': f'Stop-loss fiyatı aşıldı ({stop_price})',
                 }
 
-        tp_type = rules['tp_type']
-        tp_rules = self.tp_rules[tp_type]
+        tp_rules = self.tp_rules.get(tp_type) or self.tp_rules['standard']
 
         tp_action = self.check_take_profit(position, current_price, tp_rules)
         if tp_action is not None:
@@ -874,18 +903,52 @@ class MinaPositionManager:
     # ---------------------------------------------------------------------
 
     def calculate_tp_price(self, entry_price: float, level: int, tp_type: str) -> float:
+        if tp_type == 'ht':
+            return self._calculate_ht_tp_price(entry_price, level, 'LONG')
         key = 'tp1_multiplier' if level == 1 else 'tp2_multiplier'
         return entry_price * self.tp_rules[tp_type][key]
+
+    def _calculate_ht_tp_price(self, entry_price: float, level: int, side: str) -> float:
+        ht = self.tp_rules['ht']
+        dist = ht['stop_pct'] / 100.0
+        rr = ht['tp1_rr'] if level == 1 else ht['tp2_rr']
+        if side == 'LONG':
+            return entry_price * (1 + dist * rr)
+        return entry_price * (1 - dist * rr)
+
+    def _calculate_ht_stop_price(self, position: Dict, state: Dict) -> Optional[float]:
+        side = position.get('side')
+        entry = self._get_effective_entry_price(position)
+        if not entry:
+            return None
+        if state.get('tp1_done'):
+            return float(entry)
+        dist = self.tp_rules['ht']['stop_pct'] / 100.0
+        if side == 'LONG':
+            return entry * (1 - dist)
+        return entry * (1 + dist)
 
     def check_take_profit(self, position: Dict, current_price: float, tp_rules: Dict) -> Optional[Dict]:
         symbol = position.get('symbol')
         side = position.get('side')
         state = self.position_states.get(symbol, {})
+        tp_type = self._get_tp_type(position)
 
         if state.get('tp_disabled'):
             return None
 
         effective_entry = self._get_effective_entry_price(position)
+
+        if tp_type == 'ht':
+            if not state.get('tp1_done'):
+                tp1_price = self._calculate_ht_tp_price(effective_entry, 1, side)
+                if self._is_tp_hit(current_price, tp1_price, side):
+                    return {'action': 'take_profit', 'level': 1, 'reason': 'HT TP1 (1:2 R/R) tetiklendi'}
+            elif not state.get('tp2_done'):
+                tp2_price = self._calculate_ht_tp_price(effective_entry, 2, side)
+                if self._is_tp_hit(current_price, tp2_price, side):
+                    return {'action': 'take_profit', 'level': 2, 'reason': 'HT TP2 (1:4 R/R) tetiklendi'}
+            return None
 
         if not state.get('tp1_done'):
             tp1_price = self.calculate_tp_price(effective_entry, 1, self._get_tp_type(position))
@@ -900,6 +963,9 @@ class MinaPositionManager:
         return None
 
     def check_trailing_stop(self, position: Dict, current_price: float, tp_rules: Dict) -> Optional[Dict]:
+        tp_type = self._get_tp_type(position)
+        if tp_type in ('ht', 'full_manual'):
+            return None
         symbol = position.get('symbol')
         side = position.get('side')
         state = self.position_states.get(symbol, {})
@@ -1562,7 +1628,8 @@ class MinaPositionManager:
                 print(f"   ⚠️  TP2 atlandı çünkü TP sistemi D2 ile donduruldu")
                 return False
 
-            close_qty = self._round_quantity(amount * 0.50, symbol)
+            is_ht = self._get_tp_type(position) == 'ht'
+            close_qty = self._round_quantity(amount if is_ht else amount * 0.50, symbol)
             if close_qty <= 0:
                 return False
 
@@ -1854,7 +1921,8 @@ class MinaPositionManager:
 
     def _get_tp_type(self, position: Dict) -> str:
         leverage = position.get('leverage')
-        return self.leverage_rules.get(leverage, {}).get('tp_type', 'standard')
+        rules = self._rules_for_leverage(int(leverage or 0))
+        return rules.get('tp_type') or self.leverage_rules.get(leverage, {}).get('tp_type', 'standard')
 
     def _is_tp_hit(self, current_price: float, target_price: float, side: str) -> bool:
         if side == 'LONG':
@@ -2064,6 +2132,7 @@ class MinaPositionManager:
         qty: float,
         initial_margin: float,
         signal_source: Optional[str] = None,
+        send_telegram: bool = True,
     ) -> None:
         """Pozisyon açıldığında journal'a kaydet + kaynak logu."""
         from mina_signal_source import (
@@ -2084,11 +2153,12 @@ class MinaPositionManager:
 
         record_position_source(symbol, side, src)
 
-        try:
-            from mina_motor_telegram import notify_position_open
-            notify_position_open(symbol, side, leverage, entry_price, initial_margin, src)
-        except Exception:
-            pass
+        if send_telegram:
+            try:
+                from mina_motor_telegram import notify_position_open
+                notify_position_open(symbol, side, leverage, entry_price, initial_margin, src)
+            except Exception:
+                pass
 
         if not self.journal:
             return

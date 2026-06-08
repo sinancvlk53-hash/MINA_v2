@@ -1137,11 +1137,8 @@ class MerterDCAManager:
         pnl_pct = ((mark - avg) / avg) * 100 if avg else 0
         symbol = pos.get("symbol") or ""
         try:
-            from mina_motor_telegram import notify_trailing_closed, notify_time_stop
-            if "Trailing" in reason:
-                notify_trailing_closed(symbol, pnl_usdt)
-            elif "Zaman stopu" in reason or "Breakeven" in reason:
-                notify_time_stop(symbol, pnl_usdt)
+            from mina_motor_telegram import notify_merter_dca_closed
+            notify_merter_dca_closed(symbol, reason, pnl_usdt)
         except Exception:
             pass
         if trade_id and journal:

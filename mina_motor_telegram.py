@@ -116,6 +116,47 @@ def notify_merter_time_stop(symbol: str) -> None:
     _send(f"⏰ Merter {_sym(symbol)} zaman stopu | Breakeven modu")
 
 
+def notify_merter_dca_closed(symbol: str, reason: str, pnl_usdt: float = 0.0) -> None:
+    _send(
+        f"🔵 Merter DCA kapandı: {_sym(symbol)}\n"
+        f"Sebep: {reason}\n"
+        f"PnL: {_fmt_usdt(pnl_usdt)} USDT"
+    )
+
+
+def notify_haluk_signal_opened(
+    symbol: str,
+    side: str,
+    entry_price: float,
+    tp1: float,
+    tp2: float,
+    leverage: int = 4,
+) -> None:
+    coin = _sym(symbol).replace("USDT", "")
+    _send(
+        f"✅ Haluk sinyali açıldı: {coin} {side} {leverage}x\n"
+        f"Giriş: {entry_price:.4f}\n"
+        f"TP1: {tp1:.4f}\n"
+        f"TP2: {tp2:.4f}"
+    )
+
+
+def notify_haluk_slot_reject(symbol: str, reason: str = "slot dolu") -> None:
+    coin = _sym(symbol).replace("USDT", "")
+    r = str(reason or "").lower()
+    if "max_positions" in r or "slot" in r or "margin_cap" in r:
+        msg = f"⚠️ Haluk sinyali: {coin} — slot dolu, açılamadı"
+    elif "kill" in r:
+        msg = f"⚠️ Haluk sinyali: {coin} — kill-switch aktif, açılamadı"
+    elif "cooldown" in r or "coin_lock" in r or "kilit" in r:
+        msg = f"⚠️ Haluk sinyali: {coin} — coin kilitli, açılamadı"
+    elif "filtre" in r or "guillotine" in r or "reject" in r:
+        msg = f"⚠️ Haluk sinyali: {coin} — filtre reddi, açılamadı"
+    else:
+        msg = f"⚠️ Haluk sinyali: {coin} — açılamadı ({reason})"
+    _send(msg)
+
+
 def notify_time_stop(symbol: str, pnl_usdt: Optional[float] = None) -> None:
     extra = ""
     if pnl_usdt is not None:

@@ -11,6 +11,7 @@ from __future__ import annotations
 import os
 import sys
 import time
+import threading
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING
 
@@ -48,6 +49,92 @@ from mina_slot_policy import MOTOR_SLOT_MAX, SLOTS_HALUK_MOTOR, SLOTS_MERTER_MOT
 
 MAX_POSITIONS = MOTOR_SLOT_MAX
 QUEUE_TTL_SEC = 30 * 60  # Sinyal kuyrukta max 30 dakika
+
+
+def _is_haluk_entry(entry: Dict[str, Any]) -> bool:
+    return str(entry.get("source") or "").lower().startswith("haluk")
+
+
+def _haluk_reject(symbol: str, reason: str) -> None:
+    try:
+        from mina_motor_telegram import notify_haluk_slot_reject
+        notify_haluk_slot_reject(symbol, reason)
+    except Exception as exc:
+        print(f"[SLOT_BRIDGE] Haluk reddi Telegram: {exc}")
+
+
+def _haluk_reject_if(entry: Dict[str, Any], reason: str) -> None:
+    if _is_haluk_entry(entry):
+        _haluk_reject(str(entry.get("symbol") or ""), reason)
+
+
+def _haluk_tp_prices(entry_price: float, side: str) -> Tuple[float, float]:
+    if side == "LONG":
+        return entry_price * 1.03, entry_price * 1.05
+    return entry_price * 0.97, entry_price * 0.95
+
+
+def _get_bridge_manager() -> Optional["MinaPositionManager"]:
+    try:
+        from signal_bot.signal_parser import _get_binance_client
+        from config import AccountManager
+        from mina_position_manager import MinaPositionManager
+        from mina_trading_journal import TradingJournal
+
+        client = _get_binance_client()
+        account = AccountManager(client)
+        slot = account.calculate_slot_size()
+        root = os.environ.get("MINA_DATA_ROOT", _ROOT)
+        db_path = os.path.join(root, "mina_trading_journal.db")
+        journal = TradingJournal(db_path=db_path)
+        return MinaPositionManager(client, slot, journal=journal, data_root=root)
+    except Exception as exc:
+        print(f"[SLOT_BRIDGE] Manager oluşturulamadı: {exc}")
+        return None
+
+
+def try_open_haluk_entry(entry: Dict[str, Any]) -> None:
+    """Haluk onaylı AL sinyali gelince hemen 4x açmayı dene."""
+    if not _is_haluk_entry(entry) or entry.get("status") != "approved":
+        return
+    symbol = str(entry.get("symbol") or "")
+    side = str(entry.get("direction") or "").upper()
+    if not symbol or side not in ("LONG", "SHORT"):
+        return
+
+    queue = load_queue()
+    scored = score_entry(entry, queue)
+    if not scored:
+        _haluk_reject(symbol, "filtre veya guillotine reddi")
+        return
+
+    manager = _get_bridge_manager()
+    if not manager:
+        return
+
+    if mt.pos_key(symbol, side) in _open_position_keys(manager.client):
+        _haluk_reject(symbol, "zaten açık pozisyon")
+        return
+
+    open_signal_position(manager, scored, queue)
+
+
+def schedule_haluk_open_attempt(entry: Dict[str, Any]) -> None:
+    """Listener thread'inden Haluk açılışını arka planda tetikle."""
+    if not _is_haluk_entry(entry) or entry.get("status") != "approved":
+        return
+
+    def _run() -> None:
+        try:
+            try_open_haluk_entry(entry)
+        except Exception as exc:
+            print(f"[SLOT_BRIDGE] Haluk açılış hatası {entry.get('symbol')}: {exc}")
+
+    threading.Thread(
+        target=_run,
+        daemon=True,
+        name=f"haluk-open-{entry.get('symbol')}",
+    ).start()
 
 
 def _parse_entry_ts(entry: Dict[str, Any]) -> Optional[float]:
@@ -305,9 +392,11 @@ def open_signal_position(
     try:
         from mina_dashboard_settings import is_motor_paused, is_new_entries_blocked
         if is_motor_paused():
+            _haluk_reject_if(entry, "motor duraklatıldı")
             return None
         if is_new_entries_blocked():
             print("[SLOT_BRIDGE] Reddedildi: günlük zarar kill-switch aktif")
+            _haluk_reject_if(entry, "kill-switch aktif")
             return None
     except ImportError:
         pass
@@ -325,11 +414,16 @@ def open_signal_position(
 
     account = AccountManager(manager.client)
     manager.slot_size = account.calculate_slot_size()
-    margin = manager.slot_size * ENTRY_SLOT_RATIO
+    try:
+        from mina_dashboard_settings import entry_margin_for_leverage
+        margin = entry_margin_for_leverage(LEVERAGE, manager.slot_size)
+    except ImportError:
+        margin = manager.slot_size * ENTRY_SLOT_RATIO
 
     ok, reason = _slot_limit_check(manager.client, symbol, side, margin)
     if not ok:
         print(f"[SLOT_BRIDGE] Reddedildi {symbol} {side}: {reason}")
+        _haluk_reject_if(entry, reason)
         return None
 
     try:
@@ -337,6 +431,7 @@ def open_signal_position(
         lock_reason = check_motor_can_open(symbol, manager.client)
         if lock_reason:
             print(f"[SLOT_BRIDGE] Reddedildi {symbol} {side}: {lock_reason}")
+            _haluk_reject_if(entry, lock_reason)
             return None
     except ImportError:
         pass
@@ -348,6 +443,7 @@ def open_signal_position(
         mark = float(manager.client.futures_mark_price(symbol=symbol)["markPrice"])
     except Exception as e:
         print(f"[SLOT_BRIDGE] Fiyat okunamadı {symbol}: {e}")
+        _haluk_reject_if(entry, f"fiyat okunamadı: {e}")
         return None
 
     order_type, limit_px = resolve_entry_order(side, signal_entry, mark)
@@ -358,6 +454,7 @@ def open_signal_position(
     qty = manager._round_quantity(notional / exec_price, symbol)
     if qty <= 0:
         print(f"[SLOT_BRIDGE] Miktar sıfır {symbol} margin={margin:.4f} mark={mark}")
+        _haluk_reject_if(entry, "miktar sıfır")
         return None
 
     order_side = SIDE_BUY if side == "LONG" else SIDE_SELL
@@ -383,6 +480,7 @@ def open_signal_position(
             )
     except Exception as e:
         print(f"[SLOT_BRIDGE] Emir hatası {symbol} {side}: {e}")
+        _haluk_reject_if(entry, f"emir hatası: {e}")
         return None
 
     pos_key = mt.pos_key(symbol, side)
@@ -433,6 +531,7 @@ def open_signal_position(
         entry_price = mark
 
     _seed_tracking(manager, symbol, side, entry_price, margin)
+    haluk_open = _is_haluk_entry(entry)
     manager.log_position_open(
         symbol=symbol,
         side=side,
@@ -441,7 +540,15 @@ def open_signal_position(
         qty=qty,
         initial_margin=margin,
         signal_source=src_code,
+        send_telegram=not haluk_open,
     )
+    if haluk_open:
+        tp1, tp2 = _haluk_tp_prices(entry_price, side)
+        try:
+            from mina_motor_telegram import notify_haluk_signal_opened
+            notify_haluk_signal_opened(symbol, side, entry_price, tp1, tp2, LEVERAGE)
+        except Exception as exc:
+            print(f"[SLOT_BRIDGE] Haluk Telegram: {exc}")
 
     meta = {
         "symbol": symbol,

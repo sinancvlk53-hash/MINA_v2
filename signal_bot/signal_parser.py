@@ -1395,6 +1395,15 @@ def enqueue_records(records: List[Dict[str, Any]], append: bool = True) -> str:
         with open(ht_path, "w", encoding="utf-8") as f:
             json.dump(legacy, f, ensure_ascii=False, indent=2)
 
+        for rec in approved:
+            src = str(rec.get("source") or "").lower()
+            if src.startswith("haluk"):
+                try:
+                    from signal_bot.signal_slot_bridge import schedule_haluk_open_attempt
+                    schedule_haluk_open_attempt(rec)
+                except Exception as exc:
+                    print(f"[ENQUEUE] Haluk açılış planlanamadı: {exc}")
+
     return path
 
 
