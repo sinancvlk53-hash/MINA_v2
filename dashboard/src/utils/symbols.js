@@ -17,6 +17,18 @@ export function filterFuturesSymbols(symbols, query, limit = 20) {
     .slice(0, limit)
 }
 
+/** Favoriler eşleşen sonuçların başında; kalanlar alfabetik */
+export function filterFuturesSymbolsWithFavorites(symbols, query, favoriteBases, limit = 20) {
+  if (!symbols?.length) return []
+  const favSet = new Set((favoriteBases || []).map((b) => b.toUpperCase().replace(/USDT$/, '')))
+  const matched = filterFuturesSymbols(symbols, query, symbols.length)
+  const favFirst = matched.filter((sym) => favSet.has(sym.replace(/USDT$/, '')))
+  const rest = matched
+    .filter((sym) => !favSet.has(sym.replace(/USDT$/, '')))
+    .sort((a, b) => a.localeCompare(b))
+  return [...favFirst, ...rest].slice(0, limit)
+}
+
 export function formatMarkPrice(price) {
   if (price == null || Number.isNaN(Number(price))) return '—'
   const n = Number(price)

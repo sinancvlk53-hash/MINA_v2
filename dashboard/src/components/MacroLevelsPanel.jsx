@@ -21,6 +21,7 @@ const PANEL_LABELS = {
 
 const TRILLION_COINS = new Set(['TOTAL', 'TOTAL2', 'TOTAL3'])
 const PCT_COINS = new Set(['BTC.D', 'USDT.D'])
+const TAB_PRIMARY = ['TOTAL', 'BTC.D', 'USDT.D']
 
 function normalizeItem(raw, coin) {
   return {
@@ -85,6 +86,28 @@ function LevelList({ title, values, cls, coin }) {
   )
 }
 
+function FundingCard({ funding }) {
+  const display = funding?.display ?? '—'
+  const alert = funding?.alert === true
+  const count = funding?.count ?? 0
+  return (
+    <div className={`macro-card macro-card-filled macro-funding-card ${alert ? 'macro-card-zone-resist' : 'macro-card-zone-ok'}`}>
+      <div className="macro-card-head">
+        <strong>Funding (8s ort.)</strong>
+        <span className="field-hint">{count ? `${count} coin` : 'yükleniyor'}</span>
+      </div>
+      <div className={`macro-live-price macro-funding-value ${alert ? 'text-red' : ''}`}>
+        {display}
+      </div>
+      {alert ? (
+        <div className="macro-zone-alert">+%0.1 üzeri — aşırı pozitif funding</div>
+      ) : (
+        <p className="macro-snippet macro-snippet-empty">Majör 8 coin ortalaması</p>
+      )}
+    </div>
+  )
+}
+
 function MacroCard({ item }) {
   const label = PANEL_LABELS[item.coin] || item.coin.replace(/USDT$/, '')
   const dir = item.direction === 'UP' ? '↑ Yukarı' : item.direction === 'DOWN' ? '↓ Aşağı' : null
@@ -122,29 +145,88 @@ function MacroCard({ item }) {
   )
 }
 
-export default function MacroLevelsPanel({ levels = [], coinsFilter = null, compact = false }) {
+export default function MacroLevelsPanel({
+  levels = [],
+  coinsFilter = null,
+  compact = false,
+  layout = 'default',
+  funding = null,
+  halukPdfTimestamp = null,
+}) {
   const byCoin = Object.fromEntries((levels || []).map((l) => [l.coin, l]))
+  const isTab = layout === 'tab'
   const order = coinsFilter || PANEL_ORDER
   const items = order.map((c) => normalizeItem(byCoin[c], c))
   const filled = items.filter((i) => i.snippet || i.supports?.length || i.resistances?.length).length
-  const title = compact ? 'Makro Seviyeler' : 'Haluk Makro Panel'
-  const subtitle = compact ? 'TOTAL · OTHERS · BTC.D' : 'PDF + Telegram · işlem sinyali değil'
+
+  const primaryItems = isTab
+    ? TAB_PRIMARY.map((c) => normalizeItem(byCoin[c], c))
+    : items
+
+  const halukItems = isTab
+    ? PANEL_ORDER
+        .map((c) => normalizeItem(byCoin[c], c))
+        .filter((i) => i.supports?.length || i.resistances?.length)
+    : []
+
+  const title = isTab ? 'Makro Rejim' : compact ? 'Makro Seviyeler' : 'Haluk Makro Panel'
+  const subtitle = isTab
+    ? 'TOTAL · BTC.D · USDT.D · Funding'
+    : compact
+      ? 'TOTAL · OTHERS · BTC.D'
+      : 'PDF + Telegram · işlem sinyali değil'
 
   return (
-    <div className={`panel panel-macro ${compact ? 'panel-macro-compact' : ''}`}>
+    <div className={`panel panel-macro ${compact ? 'panel-macro-compact' : ''} ${isTab ? 'panel-macro-tab' : ''}`}>
       <div className="panel-head">
         <div>
           <span className="panel-title">{title}</span>
-          {!compact && <span className="panel-subtitle">{subtitle}</span>}
-          {compact && <span className="panel-subtitle">{subtitle}</span>}
+          <span className="panel-subtitle">{subtitle}</span>
+          {isTab && halukPdfTimestamp && (
+            <span className="panel-subtitle macro-pdf-ts">
+              Son PDF: {String(halukPdfTimestamp).replace('T', ' ').slice(0, 16)}
+            </span>
+          )}
         </div>
-        {!compact && <span className="panel-badge">{filled}/{PANEL_ORDER.length}</span>}
+        {!compact && !isTab && <span className="panel-badge">{filled}/{PANEL_ORDER.length}</span>}
       </div>
-      <div className={`macro-grid ${compact ? 'macro-grid-compact' : 'macro-grid-wide'}`}>
-        {items.map((item) => (
-          <MacroCard key={item.coin} item={item} />
-        ))}
-      </div>
+
+      {isTab ? (
+        <>
+          <div className="macro-section-label">Rejim göstergeleri</div>
+          <div className="macro-grid macro-grid-tab-primary">
+            {primaryItems.map((item) => (
+              <MacroCard key={item.coin} item={item} />
+            ))}
+            <FundingCard funding={funding} />
+          </div>
+          {halukItems.length > 0 && (
+            <>
+              <div className="macro-section-label">Haluk PDF — destek / direnç</div>
+              <div className="macro-grid macro-grid-wide">
+                {halukItems.map((item) => (
+                  <MacroCard key={`haluk-${item.coin}`} item={item} />
+                ))}
+              </div>
+            </>
+          )}
+          <div className="macro-section-label">Haluk notları</div>
+          <div className="macro-grid macro-grid-wide">
+            {PANEL_ORDER
+              .map((c) => normalizeItem(byCoin[c], c))
+              .filter((i) => i.snippet && !TAB_PRIMARY.includes(i.coin))
+              .map((item) => (
+                <MacroCard key={`note-${item.coin}`} item={item} />
+              ))}
+          </div>
+        </>
+      ) : (
+        <div className={`macro-grid ${compact ? 'macro-grid-compact' : 'macro-grid-wide'}`}>
+          {items.map((item) => (
+            <MacroCard key={item.coin} item={item} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

@@ -679,7 +679,15 @@ class MinaPositionManager:
         """D2/D3 kaçış emri — mainnet TAKE_PROFIT_MARKET, testnet -4120 → LIMIT GTC."""
         escape_side = SIDE_SELL if side == "LONG" else SIDE_BUY
         qty = self._round_quantity(quantity, symbol)
-        stop_px = self._round_price(breakeven_price)
+        stop_px = self._round_price(breakeven_price, symbol)
+        try:
+            mark = float(self.client.futures_mark_price(symbol=symbol)["markPrice"])
+            if side == "LONG" and stop_px < mark:
+                stop_px = self._round_price(mark * 1.001, symbol)
+            elif side == "SHORT" and stop_px > mark:
+                stop_px = self._round_price(mark * 0.999, symbol)
+        except Exception:
+            pass
         order: Optional[Dict] = None
         order_type = ORDER_TYPE_TAKE_PROFIT_MARKET
 
@@ -1122,7 +1130,7 @@ class MinaPositionManager:
         state['weighted_avg_price'] = weighted_avg
         state['tp_disabled'] = True
 
-        breakeven_price = self._round_price(weighted_avg * 1.0035)
+        breakeven_price = self._round_price(weighted_avg * 1.0035, symbol)
 
         order = self._place_breakeven_escape_order(
             symbol, side, breakeven_price, total_qty, "D2"
@@ -1291,7 +1299,7 @@ class MinaPositionManager:
 
         self._cancel_d2_order(symbol, state)
 
-        breakeven_price = self._round_price(weighted_avg * 1.0035)
+        breakeven_price = self._round_price(weighted_avg * 1.0035, symbol)
         order = self._place_breakeven_escape_order(
             symbol, side, breakeven_price, total_qty, "D3"
         )
@@ -1828,8 +1836,21 @@ class MinaPositionManager:
         rounded = (q / s).to_integral_value(rounding=ROUND_DOWN) * s
         return float(rounded)
 
-    def _round_price(self, price: float) -> float:
-        return round(max(price, 0.0), 2)
+    def _round_price(self, price: float, symbol: Optional[str] = None) -> float:
+        price = max(float(price), 0.0)
+        if symbol:
+            try:
+                from mina_exchange_info import symbol_filters
+                tick = float(symbol_filters(self.client, symbol).get("tickSize") or 0.01)
+                if tick > 0:
+                    p = Decimal(str(price))
+                    t = Decimal(str(tick))
+                    return float((p / t).to_integral_value(rounding=ROUND_DOWN) * t)
+            except Exception:
+                pass
+        if price < 1:
+            return round(price, 6)
+        return round(price, 2)
 
     def _get_tp_type(self, position: Dict) -> str:
         leverage = position.get('leverage')

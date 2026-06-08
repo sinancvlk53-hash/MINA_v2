@@ -112,6 +112,37 @@ def get_macro_levels():
         log.warning("macro_levels: panel bos — dosya=%s", MACRO_LEVELS_PATH)
     return out
 
+
+_MACRO_FUNDING_SYMBOLS = (
+    "BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT",
+    "AVAXUSDT", "LINKUSDT", "ARBUSDT", "OPUSDT",
+)
+
+
+def get_macro_funding() -> dict:
+    """Majör coinlerde 8s funding ortalaması — makro rejim paneli."""
+    client = get_client()
+    rates: list[float] = []
+    for sym in _MACRO_FUNDING_SYMBOLS:
+        try:
+            rows = client.futures_funding_rate(symbol=sym, limit=1)
+            if rows:
+                rates.append(float(rows[0].get("fundingRate") or 0))
+        except Exception as exc:
+            log.debug("funding %s: %s", sym, exc)
+    if not rates:
+        return {"avgRate": None, "display": "—", "alert": False, "count": 0}
+    avg = sum(rates) / len(rates)
+    pct = avg * 100.0
+    return {
+        "avgRate": round(avg, 6),
+        "avgPct": round(pct, 4),
+        "display": f"{pct:+.4f}%",
+        "alert": avg >= 0.001,
+        "count": len(rates),
+    }
+
+
 def get_futures_symbols_list():
     """Aktif USDT perpetual semboller — 10 dk cache."""
     now = time.time()
@@ -597,7 +628,7 @@ async def get_data():
             from mina_dashboard_settings import (
                 daily_loss_limit_pct,
                 load_daily_risk_state,
-                is_new_entries_blocked,
+                is_daily_loss_kill_active,
             )
             from mina_trading_journal import TradingJournal
 
@@ -613,9 +644,7 @@ async def get_data():
                 today_pnl = journal.get_today_realized_pnl()
                 journal.close()
                 level = "ok"
-                if today_pnl <= limit_usdt:
-                    level = "kill"
-                elif today_pnl <= half_usdt:
+                if today_pnl <= half_usdt:
                     level = "warn"
                 risk_status = {
                     "date": today,
@@ -627,7 +656,12 @@ async def get_data():
                     "level": level,
                 }
             daily_pnl = float(risk_status.get("today_pnl") or 0)
-            risk_status["newEntriesBlocked"] = is_new_entries_blocked()
+            kill_active = is_daily_loss_kill_active()
+            risk_status["newEntriesBlocked"] = kill_active
+            if kill_active:
+                risk_status["level"] = "kill"
+            elif risk_status.get("level") == "kill":
+                risk_status["level"] = "ok"
         except Exception as exc:
             log.debug(f"risk_status: {exc}")
 
@@ -642,12 +676,14 @@ async def get_data():
         except Exception as exc:
             log.debug(f"followers: {exc}")
 
+        floating_pnl = sum(p['pnlUSDT'] for p in positions)
         return {
             'balance':         balance,
             'balanceBreakdown': balance_breakdown,
             'btcMarkPrice':    btc_mark,
-            'floatingPnl':     sum(p['pnlUSDT'] for p in positions),
+            'floatingPnl':     floating_pnl,
             'dailyPnl':        daily_pnl,
+            'totalPnl':        round(daily_pnl + floating_pnl, 2),
             'riskStatus':      risk_status,
             'positionCount':   len(positions),
             'motorCount':      len(motor_positions),
@@ -660,6 +696,7 @@ async def get_data():
             'merterPositions': merter_positions,
             'merterSlots':     merter_slots,
             'macroLevels':     get_macro_levels(),
+            'macroFunding':    get_macro_funding(),
             'halukPdfTimestamp': read_json(os.path.join(ROOT, 'signal_bot/raw_signal_queue.json')).get('haluk_pdf_timestamp'),
             'slotSummary': {
                 'motorUsed':  len(motor_positions),
@@ -686,6 +723,7 @@ async def get_data():
             'positions': [],
             'logs': list(_log_buf),
             'macroLevels': get_macro_levels(),
+            'macroFunding': get_macro_funding(),
             'settings': get_dashboard_settings(),
             'slotSummary': get_slot_summary_defaults(),
             'engineRunning': engine_running(),

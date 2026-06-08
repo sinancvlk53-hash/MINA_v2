@@ -98,26 +98,30 @@ function WinRateModal({ open, derr, onClose }) {
   )
 }
 
-export default function Header({ data, status, onPanic, onLogout }) {
+export default function Header({ data, status, onPanic, onLogout, onPositionsClick }) {
   const [winDetailOpen, setWinDetailOpen] = useState(false)
   const bd = data?.balanceBreakdown ?? {}
   const totalBal = bd.total ?? data?.balance
   const inUse = bd.inUse
   const available = bd.available
-  const dailyPnl = data?.dailyPnl ?? data?.floatingPnl
+  const totalPnl = data?.totalPnl ?? (
+    data?.dailyPnl != null && data?.floatingPnl != null
+      ? data.dailyPnl + data.floatingPnl
+      : (data?.dailyPnl ?? data?.floatingPnl)
+  )
   const posCount = data?.positionCount ?? 0
   const ws = WS_STATUS[status] || WS_STATUS.connecting
   const wsConnected = status === 'connected'
   const derr = data?.derr ?? {}
   const btcPrice = data?.btcMarkPrice
 
-  const pnlPositive = dailyPnl != null && dailyPnl >= 0
-  const pnlStr = dailyPnl != null
-    ? `${dailyPnl >= 0 ? '+' : ''}${dailyPnl.toFixed(2)}`
+  const pnlPositive = totalPnl != null && totalPnl >= 0
+  const pnlStr = totalPnl != null
+    ? `${totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}`
     : '—'
 
   const winStr = formatWinRate(data)
-  const riskKill = data?.riskStatus?.level === 'kill' || data?.riskStatus?.newEntriesBlocked
+  const riskKill = data?.riskStatus?.newEntriesBlocked === true
 
   return (
     <>
@@ -166,12 +170,17 @@ export default function Header({ data, status, onPanic, onLogout }) {
           </div>
 
           <div className="header-stats">
-            <div className="header-stat">
+            <button
+              type="button"
+              className="header-stat header-stat-btn header-stat-pnl"
+              onClick={() => onPositionsClick?.()}
+              aria-label="Pozisyonları göster"
+            >
               <span className="header-stat-label">PnL</span>
               <span className={`header-stat-value ${pnlPositive ? 'text-green' : 'text-red'}`}>
                 {pnlStr}
               </span>
-            </div>
+            </button>
             <div className="header-stat">
               <span className="header-stat-label">Pozisyon</span>
               <span className="header-stat-value">{posCount}/10</span>

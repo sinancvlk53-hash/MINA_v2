@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { filterFuturesSymbols, formatMarkPrice } from '../utils/symbols.js'
+import { filterFuturesSymbolsWithFavorites, formatMarkPrice } from '../utils/symbols.js'
+import {
+  loadFavoriteCoins,
+  saveFavoriteCoins,
+  isFavoriteCoin,
+  toggleFavoriteCoin,
+  coinBase,
+} from '../utils/favoriteCoins.js'
 import ManualOpenConfirm from './ManualOpenConfirm.jsx'
 
 const LEVERS = [1, 2, 3, 4, 5, 10]
@@ -23,6 +30,7 @@ export default function OrderPanel({
   const [stopPrice, setStopPrice] = useState('')
   const [showList, setShowList] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [favorites, setFavorites] = useState(loadFavoriteCoins)
   const searchRef = useRef(null)
 
   const balance = data?.balance ?? 0
@@ -38,8 +46,10 @@ export default function OrderPanel({
   const posCount = data?.positionCount ?? 0
   const leverageStrategy = data?.settings?.leverageStrategy ?? {}
 
-  const filtered = filterFuturesSymbols(futuresSymbols, query, 20)
+  const filtered = filterFuturesSymbolsWithFavorites(futuresSymbols, query, favorites, 20)
   const markPrice = markPrices[symbol]
+  const currentBase = coinBase(query || symbol)
+  const isFav = isFavoriteCoin(favorites, currentBase)
 
   useEffect(() => {
     if (leverage === 1) {
@@ -106,6 +116,13 @@ export default function OrderPanel({
     onClearAction?.()
   }
 
+  function handleToggleFavorite() {
+    if (!currentBase) return
+    const next = toggleFavoriteCoin(favorites, currentBase)
+    setFavorites(next)
+    saveFavoriteCoins(next)
+  }
+
   return (
     <>
       <div className="panel panel-order">
@@ -127,10 +144,10 @@ export default function OrderPanel({
           </div>
 
           <label className="field-label">Coin</label>
-          <div className="search-wrap">
+          <div className="search-wrap search-wrap-with-fav">
             <input
               ref={searchRef}
-              className="field-input"
+              className="field-input search-input-with-fav"
               placeholder="SOL, BTC, ETH..."
               value={query}
               onChange={(e) => handleQueryChange(e.target.value)}
@@ -138,12 +155,25 @@ export default function OrderPanel({
               onBlur={() => setTimeout(() => setShowList(false), 180)}
               autoComplete="off"
             />
+            <button
+              type="button"
+              className={`fav-coin-btn ${isFav ? 'active' : ''}`}
+              onClick={handleToggleFavorite}
+              title={isFav ? 'Favorilerden çıkar' : 'Favorilere ekle'}
+              aria-label={isFav ? 'Favorilerden çıkar' : 'Favorilere ekle'}
+              aria-pressed={isFav}
+            >
+              ⭐
+            </button>
             {showList && (
               <ul className="search-dropdown">
                 {filtered.length > 0 ? (
                   filtered.map((s) => (
                     <li key={s}>
                       <button type="button" onMouseDown={() => pickSymbol(s)}>
+                        {isFavoriteCoin(favorites, s) && (
+                          <span className="search-fav-mark" aria-hidden>⭐</span>
+                        )}
                         <span className="search-sym-base">{s.replace(/USDT$/, '')}</span>
                         <span className="search-sym-quote">USDT</span>
                       </button>
