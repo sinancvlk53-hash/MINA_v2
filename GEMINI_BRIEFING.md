@@ -1,6 +1,6 @@
 # MINA v2 — Gemini Briefing
 
-> **Son güncelleme:** 2026-06-05  
+> **Son güncelleme:** 2026-06-08  
 > **Amaç:** Projeye yeni giren bir AI/agent için tek dosyada tam bağlam: mimari, kurallar, çözülen sorunlar, açık backlog, operasyon.  
 > **Sunucu:** `178.105.150.40` · **Repo:** [sinancvlk53-hash/MINA_v2](https://github.com/sinancvlk53-hash/MINA_v2)  
 > **Anayasa kaynakları:** `CLAUDE.md`, `MINA_ANAYASASI.md`
@@ -73,8 +73,9 @@ Eski monolitik `engine/main.py` **`_archive/`** altına taşındı. Tek motor gi
 | `mina-queue-watcher.service` | `queue_watcher.py` — K2/K3 karar logu |
 | `mina-dashboard-ws.service` | `dashboard/dashboard_ws.py` — WS veri |
 | `mina-dashboard-vite.service` | Dashboard UI — port **3000** |
+| `mina-haluk-yayin.service` | `haluk_yayin_watcher.py` — yayın özeti / tahmin hatırlatıcı |
 
-Deploy: `scripts/deploy_full.py`
+Deploy: `scripts/deploy_full.py`, `scripts/deploy_key.py`
 
 ### 2.3 4x Motor (`MinaPositionManager`)
 
@@ -86,7 +87,7 @@ Deploy: `scripts/deploy_full.py`
 | **Savunma D1** | `mark ≤ initial_entry × 0.95` (LONG) | Slot/5 ekleme, TP devam |
 | **Savunma D2** | `mark ≤ initial_entry × 0.88` | Slot/5 ekleme, TP dondur, BE emri |
 | **Savunma D3** | 4H SFP + 5m bull bar | Slot×2/5 ekleme, hayalet |
-| **Hard Stop** | `mark ≤ initial_entry × 0.75` | Tam kapanış, 2s coin cooldown |
+| **Hard Stop** | `mark ≤ initial_entry × 0.75` | Tam kapanış, **2 saat** coin cooldown (`coin_cooldown.json`) |
 | **Stop Loss** | Kaldıraç bazlı % (4x hariç) | — |
 | **TP1** | giriş × 1.03 → %50 kapat | BE stop |
 | **TP2** | giriş × 1.05 → %50 kapat | — |
@@ -111,7 +112,16 @@ Slot dağılımı (tek yuva içinde):
 
 **State dosyaları:** `defense_levels.json`, `initial_entry_prices.json`, `initial_margins.json`, `position_states.json`
 
-**Restart koruması:** `sync_reality_from_binance()` defense_levels ve DERR `defense_triggered` ile restore eder; D1 idempotency (`defense_stage >= 1` → tekrar emir yok).
+**Restart koruması (D1 idempotency v2 — 2026-06-08):**
+
+- `check_spot_defense_trigger()`: `current_stage = max(journal, state, file_defense)` — dosya/state/journal ≥1 ise D1 tetiklenmez
+- `evaluate_position()`: `defense_level <= defense_stage` ise aksiyon sıfırlanır (log + emir yok)
+- `_execute_d1()`: `already_d1 = max(stage, file, journal) >= 1` → market emri atlanır
+- `init_position_state()`: `defense_levels.json` korunur (sıfırlama yok)
+- `_persist_defense_level()`: yalnızca yükseltir (`max`), asla düşürmez
+- `dashboard_ws.py`: boş Binance yanıtında `defense_levels.json` silinmez
+
+**Zombie uyarısı:** `health_report_11_18.py` içinde `import main` yapılmamalı — eski zombie process paralel motor çalıştırabilir. Sabah kontrol: `SABAH_KONTROL.md`
 
 ### 2.5 Merter 1x DCA
 
@@ -198,6 +208,18 @@ Hacim    = Marjin × Kaldıraç
 | 11 | D2/D3 eşik hataları (eski) | -10%→-15%, -15%→-25% düzeltme | `GUNCEL_NOTLAR.md` |
 | 12 | Haluk kısa ticker (AVAX→AVAXUSDT) | Parser düzeltmesi | `signal_parser.py` |
 | 13 | Journal `signal_source` eksik | Kolon + Merter yuva id yazımı | `mina_trading_journal.py` |
+| 14 | **BCHUSDT D1 her 30s tekrar** (82 lot) | D1 idempotency v2 + zombie `health_report` (6 gün) öldürüldü | `mina_position_manager.py`, `main.py` |
+| 15 | Hard stop cooldown yoktu (Telegram iddia, kod yok) | `set_coin_cooldown()` 2 saat + `check_motor_can_open()` | `mina_coin_lock.py` |
+| 16 | Kill-switch motoru durdurmuyordu | `level=="kill"` → evaluate atlanır | `main.py` |
+| 17 | Stop-loss Telegram yok | `notify_stop_loss()` | `mina_motor_telegram.py` |
+| 18 | Kill-switch Telegram import kırık | `from tools.telegram_bot import send_notification` | `mina_position_manager.py` |
+| 19 | Binance -1003 rate limit | Proaktif `wait_before_request()` + ban bekleme | `mina_rate_limit.py`, `mina_binance_retry.py` |
+| 20 | Emir geçici hatalarda düşüyordu | Exponential backoff retry (3 deneme) | `mina_binance_retry.py` |
+| 21 | `health_report` `import main` yan etki | Dosyadan grep; logger/motor tetiklenmez | `scripts/health_report_11_18.py` |
+| 22 | Dashboard boş API → defense siliniyordu | `_prune_stale_tracking` boş set'te return | `dashboard_ws.py` |
+| 23 | `haluk_predictions` WAL crash | `sqlite3` + WAL doğrudan | `signal_bot/haluk_predictions.py` |
+| 24 | RSI > 70 LONG kabul | `_filter_ei_candidate` reddi | `signal_parser.py` |
+| 25 | `mina-haluk-yayin` deploy'da yok | `deploy_key.py` / `deploy_full.py` restart listesi | deploy scriptleri |
 
 ---
 
@@ -207,7 +229,8 @@ Hacim    = Marjin × Kaldıraç
 
 | Sorun | Durum | Not |
 |-------|-------|-----|
-| **BTC LONG D1 tetiklendi ama ekleme yok** | Açık | `defense_levels.json=1` ama qty 0.005; idempotency erken set edilmiş olabilir |
+| **BTC LONG D1 tetiklendi ama ekleme yok** | İzle | D1 idempotency v2 sonrası tekrar gözlemle |
+| **Zombie python process** | ⚠️ Operasyonel | Sabah `ps aux \| grep python` — beklenmeyen `main.py` / `health_report` yok olmalı |
 | **Motor 1x pozisyonlara stop_loss** | Kısmen | Ghost skip var; yetim/orphan 1x hâlâ risk (ZRO vakası) |
 | **Merter DCA limit orphan** | Kısmen | Motor kapanışta iptal eklendi; geçmiş yetimler manuel temizlik |
 | **initial_entry_prices.json eksik** | Açık | Sunucuda dosya yok; sync entry'den seed ediyor |
@@ -215,13 +238,14 @@ Hacim    = Marjin × Kaldıraç
 ### 🟡 Backlog (`MINA_ANAYASASI.md`)
 
 - [ ] D1/D2 sabit % vs dinamik — **50 işlem DERR analizi** sonrası karar
-- [ ] RSI > 70 → LONG reddet (Merter)
+- [x] RSI > 70 → LONG reddet (Merter) — `signal_parser.py` (2026-06-08)
 - [ ] Fiyat EMA20 altında → LONG reddet (Merter)
 - [ ] 4H SFP dinamik destek algoritması (son 20–50 mum dip fitili)
 - [ ] Dashboard: Merter yuva parça doluluk (3/10), RVOL kartı
 - [ ] Trailing algo endpoint gerçek hesap testi (`/fapi/v1/order/algo/trailing`)
 - [ ] D3 öncesi bakiye yeniden hesaplama
-- [ ] Order retry mekanizması
+- [x] Order retry mekanizması — `mina_binance_retry.py` (2026-06-08)
+- [x] Rate limit koruması — `mina_rate_limit.py` (2026-06-08)
 - [ ] Global risk limiti
 - [ ] Backtest sistemi
 - [ ] Hetzner Frankfurt prod sunucu (gerçek hesap)
@@ -338,6 +362,8 @@ Telegram mesajı
 | Makro seviyeler | `MacroLevelsPanel.jsx` | ✅ TOTAL, OTHERS, BTC.D, TOTAL3, … |
 | Ayarlar | `SettingsPanel.jsx` | ✅ Merter zaman stopu, BE çarpanı, Telegram, motor toggle |
 | Manuel Al/Sat | `OrderPanel.jsx` | ✅ Slot bar (7+1 motor, 3 Merter) |
+| Manuel yönetim (TP/Stop) | `manual_override.json` + WS | ✅ Motor `evaluate_position` manuel TP/stop izler |
+| Copy trading | `mina_copy_trading.py` + WS | ✅ Altyapı kurulu; `FOLLOWER_*` env yoksa pasif |
 | Mobil nav | `MobileNav.jsx` | ✅ Al/Sat · Pozisyonlar · Savunma · Log · Ayarlar |
 
 ### WebSocket veri
@@ -347,7 +373,11 @@ Telegram mesajı
 - Merter DCA state + RVOL cache
 - `dashboard_settings.json` (canlı okuma/yazma)
 - Motor pause: `motor_paused.flag`
+- Manuel override: `manual_override.json` (pozisyon bazlı TP/stop)
+- Copy trading durumu (follower env)
 - Log tail (`mina_bot.log`)
+
+**2026-06-08 dashboard düzeltmeleri (~15):** WS hata yönetimi, manuel override API, copy engine init, stale tracking prune, ayarlar kaydı, mobil nav, savunma panel senkronu ve ilgili JSX/WS bug fix'leri.
 
 ### Eksik (backlog)
 
@@ -410,6 +440,9 @@ Telegram mesajı
 | `merter_dca_state.json` | Merter yuva durumu |
 | `dashboard_settings.json` | UI ayarları |
 | `engine.lock` | Motor PID |
+| `manual_override.json` | Pozisyon bazlı manuel TP/stop |
+| `coin_cooldown.json` | Hard stop sonrası 2 saat coin kilidi |
+| `SABAH_KONTROL.md` | Sabah operasyon checklist (SSH komutları) |
 
 Yönetim: `mina_tracking.py`
 
@@ -434,6 +467,14 @@ Yönetim: `mina_tracking.py`
 | `backend/config.py` | Binance client |
 | `dashboard/dashboard_ws.py` | WS sunucu |
 | `scripts/deploy_full.py` | Prod deploy |
+| `scripts/deploy_key.py` | SSH key deploy (hızlı) |
+| `mina_coin_lock.py` | Coin cooldown + motor açılış kilidi |
+| `mina_manual_override.py` | Manuel TP/stop override |
+| `mina_copy_trading.py` | Follower hesap kopya motoru |
+| `mina_binance_retry.py` | API retry + rate limit wrap |
+| `mina_motor_telegram.py` | Motor Telegram bildirimleri |
+| `mina_rate_limit.py` | Proaktif rate limit sayaç |
+| `SABAH_KONTROL.md` | Sabah zombie/servis/log kontrolü |
 
 ---
 
@@ -450,10 +491,21 @@ Servisleri restart eder; listener lock temizliği dahil.
 ### Hızlı kontrol
 
 ```bash
+# Sunucuda — tam checklist:
+cat /root/MINA_v2/SABAH_KONTROL.md
+
 python scripts/sabah_kontrol.py
-python scripts/report_3coins.py      # sunucuda
-systemctl is-active mina-engine mina-merter-dca mina-listener
+python scripts/report_3coins.py
+systemctl is-active mina-engine mina-listener mina-merter-dca mina-queue-watcher mina-dashboard-ws mina-dashboard-vite mina-haluk-yayin
 ```
+
+### Son operasyonel olaylar (2026-06-08)
+
+- **BCHUSDT D1 spam:** 82 lot, marjin tükenmiş; kök neden = eski D1 idempotency + 6 günlük zombie `health_report_11_18.py` paralel motor
+- **D1 idempotency v2** deploy + zombie kill → motor `hold`, tekrar D1 yok
+- **Sistem denetimi:** hard stop cooldown, kill-switch, stop-loss Telegram, rate limit, order retry, RSI>70 reddi kodlandı
+- **Manuel yönetim modu** + **copy trading altyapısı** + genişletilmiş Telegram bildirimleri
+- **Repo temizliği:** 67 script `_archive`, secret scrub, `SABAH_KONTROL.md` eklendi
 
 ### Son operasyonel olaylar (2026-06-04/05)
 
@@ -523,6 +575,27 @@ systemctl is-active mina-engine mina-merter-dca mina-listener
 - Merter 4x legacy köprü: 1 slot → 500 USDT (motor toplam 8 → 4000 USDT)
 - Merter DCA: 3 slot → 1500 USDT (yuva başına slot/10 = 50 USDT/parça)
 - Max risk/slot (savunma tam dolduğunda): ~500 USDT
+
+---
+
+## 15. 2026-06-08 Günlük Değişiklik Özeti
+
+| Alan | Değişiklik | Dosya / not |
+|------|------------|-------------|
+| **D1 idempotency v2** | Dosya + state + journal üçlü koruma; zombie process bulundu | `mina_position_manager.py`, `main.py`, `dashboard_ws.py` |
+| **Hard stop cooldown** | 2 saat coin kilidi gerçek kod | `mina_coin_lock.py` → `execute_hard_stop()` |
+| **Kill-switch** | %20 günlük zarar → motor döngüsü evaluate atlar | `main.py` |
+| **Stop-loss Telegram** | `notify_stop_loss()` | `mina_motor_telegram.py` |
+| **Manuel yönetim** | Pozisyon bazlı TP/stop override; motor hold veya manuel kapat | `mina_manual_override.py`, `dashboard_ws.py` |
+| **Copy trading** | Follower env + oransal yansıtma altyapısı | `mina_copy_trading.py` (pasif: `FOLLOWER_*` yok) |
+| **Telegram** | TP1/TP2/trailing/D1/D2/D3/hard stop/stop-loss/manuel/günlük özet | `mina_motor_telegram.py` |
+| **Dashboard** | ~15 hata düzeltmesi (WS, override, prune, ayarlar) | `dashboard/*`, `dashboard_ws.py` |
+| **Rate limit** | Proaktif bekleme + -1003 ban handling | `mina_rate_limit.py`, `mina_binance_retry.py` |
+| **Order retry** | 3 deneme, exponential backoff | `mina_binance_retry.py` |
+| **Haluk yayın** | `mina-haluk-yayin` deploy restart listesinde | `deploy_key.py`, `deploy_full.py` |
+| **Operasyon** | `SABAH_KONTROL.md` — zombie/servis/log checklist | repo kökü |
+
+**Commit referansları:** `12a092a` (D1 v2), `f79aa88` (SABAH_KONTROL), `0c03b67` (denetim temizliği)
 
 ---
 
