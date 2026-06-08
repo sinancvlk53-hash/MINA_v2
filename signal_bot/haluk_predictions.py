@@ -13,11 +13,10 @@ TR_TZ = timezone(timedelta(hours=3))
 
 
 def _conn() -> sqlite3.Connection:
-    import sys
-    if ROOT not in sys.path:
-        sys.path.insert(0, ROOT)
-    from mina_trading_journal import TradingJournal
-    return TradingJournal.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False)
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=30000")
+    return conn
 
 
 def init_predictions_table() -> None:
