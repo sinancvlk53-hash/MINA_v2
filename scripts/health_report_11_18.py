@@ -236,20 +236,18 @@ try:
 except Exception as e:
     print(f"mina_slot_policy import: {e}")
 
-# main.py slot calc
-for mod_name, func_names in [
-    ("main", ["get_slot_size", "compute_slot", "slot_size", "_slot"]),
-    ("mina_position_manager", ["get_slot", "slot_usdt", "initial_margin"]),
-]:
+# main.py slot calc — dosyadan oku (import main motor logger'ı tetikler)
+for mod_name in ("main", "mina_position_manager"):
     p = os.path.join(ROOT, f"{mod_name}.py")
     if not os.path.isfile(p):
         continue
     print(f"\n>>> slot/margin fonksiyonları {mod_name}.py")
-    spec = __import__(mod_name)
-    for fn in dir(spec):
-        if any(x in fn.lower() for x in ("slot", "margin", "kasa")):
-            if callable(getattr(spec, fn, None)) and not fn.startswith("_"):
-                print(f"  found: {fn}")
+    with open(p, encoding="utf-8", errors="replace") as f:
+        for i, ln in enumerate(f, 1):
+            if "def " in ln and any(
+                x in ln.lower() for x in ("slot", "margin", "kasa")
+            ):
+                print(f"  {i:5d}| {ln.rstrip()}")
 
 # manual calc
 slot_calc = wallet / 10

@@ -458,8 +458,8 @@ def _binance_open_keys(raw_positions) -> set:
 
 def _prune_stale_tracking(open_keys: set) -> None:
     """Binance'te kapalı pozisyonların tracking kayıtlarını sil."""
-    if not open_keys and open_keys is not None:
-        pass
+    if not open_keys:
+        return
     try:
         import mina_tracking as mt
         for fname in mt.TRACKING_FILES:
@@ -490,9 +490,10 @@ async def get_data():
         open_keys      = _binance_open_keys(raw)
         _prune_stale_tracking(open_keys)
         defense_levels = read_json(os.path.join(ROOT, 'defense_levels.json'))
-        for stale_key in list(defense_levels.keys()):
-            if stale_key not in open_keys:
-                defense_levels.pop(stale_key, None)
+        if open_keys:
+            for stale_key in list(defense_levels.keys()):
+                if stale_key not in open_keys:
+                    defense_levels.pop(stale_key, None)
         try:
             with open(os.path.join(ROOT, 'defense_levels.json'), 'w', encoding='utf-8') as df:
                 json.dump(defense_levels, df, indent=2)

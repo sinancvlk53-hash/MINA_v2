@@ -225,9 +225,9 @@ class MinaPositionManager:
             report['defense_preserved'].append({'key': key, 'level': preserved_defense})
             report['max_prices_seeded'].append({key: max_prices.get(key, mark)})
 
-            self.init_position_state(symbol, entry)
+            self.init_position_state(symbol, entry, side=side)
             state = self.position_states.get(symbol, {})
-            state['defense_stage'] = preserved_defense
+            state['defense_stage'] = max(int(state.get('defense_stage', 0)), preserved_defense)
             state['highest_price'] = mark
             if preserved_defense > 0 and journal_row and journal_row.get('weighted_avg_price'):
                 state['weighted_avg_price'] = float(journal_row['weighted_avg_price'])
@@ -402,7 +402,8 @@ class MinaPositionManager:
 
     def _persist_defense_level(self, symbol: str, side: str, level: int) -> None:
         data = mt.load_json(mt.DEFENSE_FILE)
-        data[self._pos_key(symbol, side)] = level
+        key = self._pos_key(symbol, side)
+        data[key] = max(int(data.get(key, 0)), int(level))
         mt.save_json(mt.DEFENSE_FILE, data)
 
     def _persist_tp_level(self, symbol: str, side: str, level: int) -> None:
@@ -444,20 +445,37 @@ class MinaPositionManager:
         except Exception:
             pass
 
-    def init_position_state(self, symbol: str, entry_price: float) -> None:
-        """Yeni pozisyon için başlangıç state'i oluşturur."""
+    def _file_defense_stage(self, symbol: str, side: Optional[str] = None) -> int:
+        dl = mt.load_json(mt.DEFENSE_FILE)
+        if side:
+            return int(dl.get(self._pos_key(symbol, side), 0))
+        return max(
+            int(dl.get(self._pos_key(symbol, 'LONG'), 0)),
+            int(dl.get(self._pos_key(symbol, 'SHORT'), 0)),
+            0,
+        )
+
+    def init_position_state(
+        self, symbol: str, entry_price: float, side: Optional[str] = None
+    ) -> None:
+        """Yeni pozisyon için başlangıç state'i oluşturur (mevcut savunma korunur)."""
+        existing = self.position_states.get(symbol, {})
+        preserved_defense = max(
+            int(existing.get('defense_stage', 0)),
+            self._file_defense_stage(symbol, side),
+        )
         self.position_states[symbol] = {
             'entry_price': entry_price,
-            'tp1_done': False,
-            'tp2_done': False,
-            'highest_price': entry_price,
-            'defense_stage': 0,
-            'd2_order_active': False,
-            'd2_order_id': None,
-            'd3_order_id': None,
-            'tp_disabled': False,
-            'weighted_avg_price': entry_price,
-            'd2_triggered_at': None,
+            'tp1_done': bool(existing.get('tp1_done', False)),
+            'tp2_done': bool(existing.get('tp2_done', False)),
+            'highest_price': existing.get('highest_price', entry_price),
+            'defense_stage': preserved_defense,
+            'd2_order_active': bool(existing.get('d2_order_active', False)),
+            'd2_order_id': existing.get('d2_order_id'),
+            'd3_order_id': existing.get('d3_order_id'),
+            'tp_disabled': bool(existing.get('tp_disabled', False) or preserved_defense >= 2),
+            'weighted_avg_price': existing.get('weighted_avg_price', entry_price),
+            'd2_triggered_at': existing.get('d2_triggered_at'),
         }
         self._save_state()
 
@@ -766,7 +784,7 @@ class MinaPositionManager:
 
         state = self.position_states.get(symbol)
         if state is None:
-            self.init_position_state(symbol, entry_price)
+            self.init_position_state(symbol, entry_price, side=side)
             state = self.position_states[symbol]
 
         if rules['has_defense']:
@@ -784,7 +802,16 @@ class MinaPositionManager:
                     'reason': f'D2 {D2_TIME_STOP_H}h zaman stopu — TP/breakeven gelmedi',
                 }
 
+            if defense_stage > int(state.get('defense_stage', 0)):
+                state['defense_stage'] = defense_stage
+                if defense_stage >= 2:
+                    state['tp_disabled'] = True
+                self._save_state()
+
             defense_level = self.check_spot_defense_trigger(position, current_price)
+            # Idempotency: dosya/state/journal zaten bu seviyede veya üstündeyse tekrar tetikleme
+            if defense_level > 0 and defense_level <= defense_stage:
+                defense_level = 0
             if defense_level > 0:
                 return {
                     'action': 'defense',
@@ -927,11 +954,8 @@ class MinaPositionManager:
         file_defense = int(mt.load_json(mt.DEFENSE_FILE).get(self._pos_key(symbol, side), 0))
         journal_defense = self._defense_level_from_journal(symbol, side)
         state_stage = int(state.get('defense_stage', 0))
-        # Journal = gerçek icra; dosya/state tek başına D1'i bloklamaz (stale fix)
-        if journal_defense >= 1:
-            current_stage = max(journal_defense, state_stage, file_defense)
-        else:
-            current_stage = 0
+        # D1 idempotency: dosya, state veya DERR'de >=1 ise D1 tekrar tetiklenmez
+        current_stage = max(journal_defense, state_stage, file_defense)
 
         if current_stage == 0 and self._is_d1_hit(current_price, entry_price, side):
             return 1
@@ -979,7 +1003,9 @@ class MinaPositionManager:
         if defense_level == 1:
             ok = self._execute_d1(position, current_price)
             if ok:
-                self._persist_defense_level(symbol, side, 1)
+                cur = int(mt.load_json(mt.DEFENSE_FILE).get(self._pos_key(symbol, side), 0))
+                if cur < 1:
+                    self._persist_defense_level(symbol, side, 1)
             return ok
 
         state['defense_stage'] = defense_level
@@ -1006,9 +1032,13 @@ class MinaPositionManager:
         file_defense = int(mt.load_json(mt.DEFENSE_FILE).get(key, 0))
         stage = int(state.get('defense_stage', 0))
         journal_defense = self._defense_level_from_journal(symbol, side)
-        if journal_defense >= 1:
+        already_d1 = max(stage, file_defense, journal_defense) >= 1
+        if already_d1:
             state['defense_stage'] = max(stage, file_defense, journal_defense, 1)
             self._save_state()
+            if file_defense < 1:
+                self._persist_defense_level(symbol, side, 1)
+            print(f"   ⏭️  D1 atlandı (idempotent): {symbol} stage={state['defense_stage']}")
             return True
 
         add_usdt = self.slot_size / 5

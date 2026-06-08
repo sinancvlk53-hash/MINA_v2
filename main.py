@@ -61,6 +61,20 @@ def run() -> None:
         print(f"⚠️  Copy trading init: {exc}")
 
     lock_path = os.path.join(ROOT, "engine.lock")
+    if os.path.exists(lock_path):
+        try:
+            old_pid = int(open(lock_path, encoding="utf-8").read().strip())
+            if old_pid != os.getpid():
+                try:
+                    os.kill(old_pid, 0)
+                    logger.warning(
+                        "engine.lock mevcut pid=%s — eski motor hâlâ çalışıyor olabilir",
+                        old_pid,
+                    )
+                except OSError:
+                    pass
+        except (ValueError, OSError):
+            pass
     with open(lock_path, "w", encoding="utf-8") as lf:
         lf.write(str(os.getpid()))
     logger.info("engine.lock yazıldı pid=%s", os.getpid())
@@ -85,7 +99,7 @@ def run() -> None:
     loop_n = 0
     last_reconcile = time.time()
     logger.info(
-        "Motor başladı — interval=%ss ghost_every=%s reconcile_every=%ss",
+        "Motor başladı — interval=%ss ghost_every=%s reconcile_every=%ss D1_idempotency=v2",
         interval, ghost_every, reconcile_every,
     )
 
