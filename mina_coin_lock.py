@@ -5,9 +5,13 @@ from __future__ import annotations
 
 import os
 import sqlite3
+import time
 from typing import Optional, Set
 
 import mina_tracking as mt
+
+COOLDOWN_FILE = "coin_cooldown.json"
+HARD_STOP_COOLDOWN_HOURS = 2.0
 
 
 def _root(data_root: Optional[str] = None) -> str:
@@ -16,6 +20,36 @@ def _root(data_root: Optional[str] = None) -> str:
 
 def _json_path(data_root: str, filename: str) -> str:
     return os.path.join(data_root, filename)
+
+
+def set_coin_cooldown(
+    symbol: str,
+    hours: float = HARD_STOP_COOLDOWN_HOURS,
+    data_root: Optional[str] = None,
+) -> None:
+    """Hard stop sonrası coine cooldown koy — `{symbol: expiry_ts}`."""
+    sym = (symbol or "").upper()
+    if not sym:
+        return
+    path = _json_path(_root(data_root), COOLDOWN_FILE)
+    data = mt.load_json(path) or {}
+    data[sym] = time.time() + float(hours) * 3600.0
+    mt.save_json(path, data)
+
+
+def coin_cooldown_remaining(symbol: str, data_root: Optional[str] = None) -> float:
+    """Cooldown bitişine kalan saniye (yoksa 0)."""
+    sym = (symbol or "").upper()
+    if not sym:
+        return 0.0
+    path = _json_path(_root(data_root), COOLDOWN_FILE)
+    data = mt.load_json(path) or {}
+    try:
+        expiry = float(data.get(sym, 0) or 0)
+    except (TypeError, ValueError):
+        return 0.0
+    remaining = expiry - time.time()
+    return remaining if remaining > 0 else 0.0
 
 
 def merter_active_symbols(data_root: Optional[str] = None) -> Set[str]:
@@ -113,6 +147,9 @@ def check_motor_can_open(
 ) -> Optional[str]:
     """Motor açılışı engellenmişse sebep döner."""
     sym = (symbol or "").upper()
+    cd = coin_cooldown_remaining(sym, data_root)
+    if cd > 0:
+        return f"{sym} hard stop cooldown — {int(cd // 60)} dk kaldı, motor açamaz"
     if sym in merter_active_symbols(data_root):
         return f"{sym} Merter DCA tarafında aktif — motor açılamaz"
     if client is not None:

@@ -487,7 +487,7 @@ class MinaPositionManager:
 
     def _send_risk_telegram(self, message: str) -> None:
         try:
-            from telegram_bot import send_notification
+            from tools.telegram_bot import send_notification
             send_notification(message)
         except Exception as e:
             print(f"   ⚠️  Risk Telegram hatası: {e}")
@@ -1360,6 +1360,13 @@ class MinaPositionManager:
             )
 
             try:
+                from mina_coin_lock import set_coin_cooldown, HARD_STOP_COOLDOWN_HOURS
+                set_coin_cooldown(symbol, hours=HARD_STOP_COOLDOWN_HOURS, data_root=self.data_root)
+                print(f"   ⏳ {symbol} hard stop cooldown {HARD_STOP_COOLDOWN_HOURS:.0f} saat")
+            except Exception as e:
+                print(f"   ⚠️  Cooldown yazılamadı: {e}")
+
+            try:
                 from mina_motor_telegram import notify_hard_stop
                 notify_hard_stop(symbol, pnl_usdt)
             except Exception:
@@ -1741,7 +1748,13 @@ class MinaPositionManager:
                 pnl_percent=pnl_percent,
                 roe_percent=roe_percent,
             )
-            
+
+            try:
+                from mina_motor_telegram import notify_stop_loss
+                notify_stop_loss(symbol, pnl_usdt)
+            except Exception:
+                pass
+
             self.reset_position_state(symbol)
             return True
         except Exception as e:

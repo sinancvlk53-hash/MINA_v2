@@ -73,6 +73,7 @@ def main() -> None:
         "systemctl restart mina-merter-dca.service",
         "systemctl restart mina-dashboard-ws.service",
         "systemctl restart mina-dashboard-vite.service",
+        "systemctl restart mina-haluk-yayin.service",
         "sleep 4",
         f"{REMOTE}/venv/bin/python -c \"import sqlite3; c=sqlite3.connect('{REMOTE}/mina_trading_journal.db',timeout=30); print('journal_mode', c.execute('PRAGMA journal_mode').fetchone()[0])\"",
         "systemctl is-active mina-engine mina-merter-dca mina-dashboard-ws mina-dashboard-vite mina-listener",

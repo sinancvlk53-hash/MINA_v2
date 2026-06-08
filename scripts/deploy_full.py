@@ -182,6 +182,7 @@ def main() -> None:
         "systemctl restart mina-binance-listings.service",
         "systemctl enable mina-upbit-listings.service 2>/dev/null || true",
         "systemctl restart mina-upbit-listings.service",
+        "systemctl restart mina-haluk-yayin.service 2>/dev/null || true",
         f"{REMOTE}/venv/bin/python {REMOTE}/scripts/test_entry_orders.py 2>&1 | tail -8",
         f"{REMOTE}/venv/bin/python {REMOTE}/scripts/reconcile_derr_ghosts.py",
         "sleep 4",

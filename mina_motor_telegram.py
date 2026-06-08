@@ -82,6 +82,10 @@ def notify_hard_stop(symbol: str, loss_usdt: float = 0.0) -> None:
     )
 
 
+def notify_stop_loss(symbol: str, pnl_usdt: float = 0.0) -> None:
+    _send(f"🛑 {_sym(symbol)} Stop-Loss tetiklendi | PnL: {_fmt_usdt(pnl_usdt)} USDT")
+
+
 def notify_manual_stop(symbol: str) -> None:
     _send(f"🔶 {_sym(symbol)} Manuel Stop tetiklendi")
 

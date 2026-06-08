@@ -101,10 +101,15 @@ def run() -> None:
                 data_root=ROOT,
             )
             if risk.get("level") == "kill":
+                # %20 zarar: pozisyonlar check_daily_risk_limit içinde kapatıldı,
+                # daily_loss_kill.flag set edildi. Motor döngüsü burada durdurulur:
+                # yeni giriş, pending fill, evaluate atlanır.
                 print(
                     f"  🚨 Kill-switch aktif — bugün PnL {risk.get('today_pnl')} USDT "
-                    f"(limit {risk.get('limit_usdt')}) — yeni giriş yok"
+                    f"(limit {risk.get('limit_usdt')}) — motor durduruldu, evaluate atlanıyor"
                 )
+                time.sleep(interval)
+                continue
             elif risk.get("level") == "warn":
                 print(
                     f"  ⚠️  Günlük zarar uyarısı — bugün PnL {risk.get('today_pnl')} USDT "
