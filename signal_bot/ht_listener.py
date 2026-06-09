@@ -236,8 +236,14 @@ def write_queue(signals: list, source_info: str):
     try:
         with open(QUEUE_FILE, 'w', encoding='utf-8') as f:
             json.dump({'signals': signals, 'source': source_info}, f, ensure_ascii=False)
-        labels = [f"{s['coin']} {s['side']}" for s in signals]
+        labels = [f"{s.get('coin', s.get('symbol', '?'))} {s.get('side', s.get('direction', '?'))}" for s in signals]
         print(f"[HT KUYRUK] {', '.join(labels)} → {QUEUE_FILE}")
+        for sig in signals:
+            try:
+                from mina_motor_telegram import notify_ht_signal_queued
+                notify_ht_signal_queued(sig, source_info=source_info)
+            except Exception as exc:
+                print(f"[HT KUYRUK] Telegram bildirimi atlandı: {exc}")
     except Exception as e:
         print(f'[HT KUYRUK] Yazma hatası: {e}')
 

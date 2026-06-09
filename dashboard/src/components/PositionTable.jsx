@@ -111,6 +111,7 @@ function StrategyBadge({ mode }) {
     defense: 'badge-strategy-defense',
     stop: 'badge-strategy-stop',
     ht: 'badge-strategy-ht',
+    ht_pdf: 'badge-strategy-ht-pdf',
     full_manual: 'badge-strategy-manual',
   }
   const label = labels[stratMode] || stratMode
@@ -454,6 +455,7 @@ export default function PositionTable({
   chartSheetOpen = false,
   onChartSheetChange,
   leverageStrategy = {},
+  onOpenPositions,
 }) {
   const isMobile = useMediaQuery('(max-width: 768px)')
   const mobile = mobileMode || isMobile
@@ -530,7 +532,15 @@ export default function PositionTable({
     return (
       <div className="panel panel-positions">
         <div className="panel-head">
-          <span className="panel-title">Pozisyonlar</span>
+          <span
+            className="panel-title panel-title-btn"
+            role="button"
+            tabIndex={0}
+            onClick={() => onOpenPositions?.()}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onOpenPositions?.() }}
+          >
+            Pozisyonlar
+          </span>
           <span className="panel-badge">0</span>
         </div>
         <div className="empty-state">Açık pozisyon yok</div>

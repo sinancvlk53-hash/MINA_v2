@@ -98,7 +98,7 @@ function WinRateModal({ open, derr, onClose }) {
   )
 }
 
-export default function Header({ data, status, onPanic, onLogout, onPositionsClick }) {
+export default function Header({ data, status, onPanic, onLogout }) {
   const [winDetailOpen, setWinDetailOpen] = useState(false)
   const bd = data?.balanceBreakdown ?? {}
   const totalBal = bd.total ?? data?.balance
@@ -170,17 +170,12 @@ export default function Header({ data, status, onPanic, onLogout, onPositionsCli
           </div>
 
           <div className="header-stats">
-            <button
-              type="button"
-              className="header-stat header-stat-btn header-stat-pnl"
-              onClick={() => onPositionsClick?.()}
-              aria-label="Pozisyonları göster"
-            >
+            <div className="header-stat header-stat-pnl">
               <span className="header-stat-label">PnL</span>
               <span className={`header-stat-value ${pnlPositive ? 'text-green' : 'text-red'}`}>
                 {pnlStr}
               </span>
-            </button>
+            </div>
             <div className="header-stat">
               <span className="header-stat-label">Pozisyon</span>
               <span className="header-stat-value">{posCount}/10</span>

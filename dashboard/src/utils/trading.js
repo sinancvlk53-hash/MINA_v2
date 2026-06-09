@@ -15,6 +15,8 @@ export function resolveStrategyMode(leverage, leverageStrategy = {}) {
   return leverageStrategy[String(leverage)] || 'defense'
 }
 
+/** ht_pdf: Hoca'nın entry/tp/stop seviyeleri kullanılır; 4x her zaman defense */
+
 /** Manuel aç onay ekranı — anayasa özeti */
 export function getManualOpenPreview(leverage, slotSize, leverageStrategy = {}) {
   const strategyMode = resolveStrategyMode(leverage, leverageStrategy)
@@ -23,6 +25,7 @@ export function getManualOpenPreview(leverage, slotSize, leverageStrategy = {}) 
   const stopLossPct = { 1: 3, 2: 3, 3: 2, 5: 2, 10: 1 }[leverage] ?? null
   const useDefense = strategyMode === 'defense'
   const isHt = strategyMode === 'ht'
+  const isHtPdf = strategyMode === 'ht_pdf'
   const isFullManual = strategyMode === 'full_manual'
 
   const preview = {
@@ -30,18 +33,19 @@ export function getManualOpenPreview(leverage, slotSize, leverageStrategy = {}) 
     margin,
     marginLabel: isFullManual ? 'tam slot' : 'slot/5',
     notional: margin * leverage,
-    tp1: isHt ? '+4% (1:2 R/R)' : `+${rules.tp1_pct}%`,
-    tp2: isHt ? '+8% (1:4 R/R) · kalan tamam' : (rules.tp_type === 'fast' ? `+${rules.tp2_pct}% (tam kapama)` : `+${rules.tp2_pct}%`),
-    trailing: isHt || isFullManual ? 'Yok' : (rules.trailing_callback != null ? `%${rules.trailing_callback} callback` : 'Yok (10x)'),
+    tp1: isHtPdf ? 'Hoca TP (sinyal)' : (isHt ? '+4% (1:2 R/R)' : `+${rules.tp1_pct}%`),
+    tp2: isHtPdf ? '—' : (isHt ? '+8% (1:4 R/R) · kalan tamam' : (rules.tp_type === 'fast' ? `+${rules.tp2_pct}% (tam kapama)` : `+${rules.tp2_pct}%`)),
+    trailing: isHt || isHtPdf || isFullManual ? 'Yok' : (rules.trailing_callback != null ? `%${rules.trailing_callback} callback` : 'Yok (10x)'),
     hasDefense: useDefense,
     defense: useDefense
       ? (leverage === 4
         ? { d1: '-5%', d2: '-12%', hardStop: '-25%' }
         : { d1: '-5%', d2: '-12%', hardStop: '-25% (savunma modu)' })
       : null,
-    stopLoss: isHt ? '-2% (sabit)' : (!useDefense && stopLossPct != null ? `-${stopLossPct}%` : null),
+    stopLoss: isHtPdf ? 'Hoca stop (sinyal)' : (isHt ? '-2% (sabit)' : (!useDefense && stopLossPct != null ? `-${stopLossPct}%` : null)),
     fullManual: isFullManual,
     ht: isHt,
+    htPdf: isHtPdf,
   }
   return preview
 }

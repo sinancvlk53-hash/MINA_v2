@@ -356,6 +356,12 @@ def _write_ht_signals_queue(records: List[Dict[str, Any]], pdf_path: str) -> Non
     with open(HT_SIGNALS_QUEUE_FILE, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)
     print(f"[HALUK VISUAL] {len(records)} sinyal → {HT_SIGNALS_QUEUE_FILE}")
+    for rec in records:
+        try:
+            from mina_motor_telegram import notify_ht_signal_queued
+            notify_ht_signal_queued(rec, source_info=payload.get("source", ""))
+        except Exception as exc:
+            print(f"[HALUK VISUAL] Telegram bildirimi atlandı: {exc}")
 
 
 def _log_ht_pdf_signals_journal(records: List[Dict[str, Any]]) -> None:

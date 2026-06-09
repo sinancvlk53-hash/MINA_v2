@@ -678,6 +678,37 @@ body {
   border-radius: 4px;
 }
 
+.positions-open-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin: 0 0 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  cursor: pointer;
+  text-align: left;
+}
+
+.positions-open-bar:hover {
+  border-color: var(--accent-dim);
+}
+
+.panel-title-btn {
+  cursor: pointer;
+}
+
+.panel-title-btn:hover {
+  color: var(--accent);
+}
+
+.badge-strategy-ht-pdf {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+}
+
 .panel-body {
   padding: 14px 16px;
   flex: 1;

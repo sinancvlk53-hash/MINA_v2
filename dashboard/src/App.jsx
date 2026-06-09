@@ -57,7 +57,6 @@ export default function App() {
   const showOrder = activeTab === 'order'
   const showMacro = activeTab === 'macro'
   const showDefense = activeTab === 'defense'
-  const showLog = activeTab === 'log'
   const showSettings = activeTab === 'settings'
 
   if (authRequired || !authenticated) {
@@ -78,8 +77,17 @@ export default function App() {
         status={status}
         onPanic={handlePanic}
         onLogout={logout}
-        onPositionsClick={() => setPositionsOpen(true)}
       />
+
+      <button
+        type="button"
+        className="positions-open-bar"
+        onClick={() => setPositionsOpen(true)}
+        aria-label="Pozisyonları göster"
+      >
+        <span className="panel-title">Pozisyonlar</span>
+        <span className="panel-badge">{positions.length}/10</span>
+      </button>
 
       {!isMobile && (
         <DesktopNav active={activeTab} onChange={setActiveTab} />
@@ -108,20 +116,20 @@ export default function App() {
           />
         </section>
 
-        <aside className={`col-right ${showDefense || showLog || showSettings ? 'mobile-show' : 'mobile-hide'}`}>
+        <aside className={`col-right ${showDefense || showSettings ? 'mobile-show' : 'mobile-hide'}`}>
           {showDefense && (
             <DefensePanel data={data} />
           )}
-          {showLog && (
-            <LogPanel logs={logs} testLogs={data?.testLogs ?? []} />
-          )}
           {showSettings && (
-            <SettingsPanel
-              data={data}
-              sendMessage={sendMessage}
-              status={status}
-              actionMsg={actionMsg}
-            />
+            <>
+              <SettingsPanel
+                data={data}
+                sendMessage={sendMessage}
+                status={status}
+                actionMsg={actionMsg}
+              />
+              <LogPanel logs={logs} testLogs={data?.testLogs ?? []} />
+            </>
           )}
         </aside>
       </main>
@@ -145,6 +153,7 @@ export default function App() {
           onSelectPos={setSelectedPos}
           selectedPos={selectedPos}
           leverageStrategy={data?.settings?.leverageStrategy ?? {}}
+          onOpenPositions={() => setPositionsOpen(true)}
         />
       </PositionsOverlay>
 

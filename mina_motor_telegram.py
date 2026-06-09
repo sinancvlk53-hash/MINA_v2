@@ -124,6 +124,69 @@ def notify_merter_dca_closed(symbol: str, reason: str, pnl_usdt: float = 0.0) ->
     )
 
 
+def _fmt_price(value) -> str:
+    try:
+        return f"{float(value):,.2f}"
+    except (TypeError, ValueError):
+        return str(value or "—")
+
+
+def _ht_rr_ratio(entry: float, tp: float, stop: float, side: str) -> str:
+    try:
+        entry_f, tp_f, stop_f = float(entry), float(tp), float(stop)
+        side_u = str(side or "").upper()
+        if side_u == "LONG":
+            risk = entry_f - stop_f
+            reward = tp_f - entry_f
+        else:
+            risk = stop_f - entry_f
+            reward = entry_f - tp_f
+        if risk <= 0 or reward <= 0:
+            return "—"
+        return f"1:{reward / risk:.1f}"
+    except (TypeError, ValueError, ZeroDivisionError):
+        return "—"
+
+
+def _ht_source_label(signal: dict, source_info: str = "") -> str:
+    src = str(signal.get("source") or source_info or "").upper()
+    if "PDF" in src or "HALUK_PDF" in src:
+        return "HT PDF"
+    if "VISION" in src or "GÖRSEL" in src or "GORSEL" in src:
+        return "HT Görsel"
+    if "TEXT" in src or "METİN" in src or "METIN" in src:
+        return "HT Metin"
+    return "HT"
+
+
+def notify_ht_signal_queued(signal: dict, *, source_info: str = "") -> None:
+    """ht_signals_queue.json sinyali — Telegram bildirimi."""
+    coin = _sym(signal.get("coin") or signal.get("symbol") or "")
+    side = str(signal.get("side") or signal.get("direction") or "").upper()
+    entry = signal.get("entry") or signal.get("entry_price")
+    tp = signal.get("tp") or signal.get("tp_price") or signal.get("tp1")
+    stop = signal.get("stop") or signal.get("stop_price")
+    if not all(v not in (None, "", "—") for v in (entry, tp, stop)):
+        return
+
+    src_label = _ht_source_label(signal, source_info)
+    rr = _ht_rr_ratio(entry, tp, stop, side)
+    dir_icon = "📈" if side == "LONG" else "📉"
+    _send(
+        "🎯 HT SİNYAL\n"
+        "━━━━━━━━━━━━━━\n"
+        f"📌 COIN: {coin}\n"
+        f"{dir_icon} YÖN: {side}\n"
+        f"💰 GİRİŞ: {_fmt_price(entry)}\n"
+        f"🎯 HEDEF: {_fmt_price(tp)}\n"
+        f"🛑 STOP: {_fmt_price(stop)}\n"
+        f"📊 R/R: {rr}\n"
+        f"⚡ KAYNAK: {src_label}\n"
+        "━━━━━━━━━━━━━━\n"
+        "✅ Limit emir kuyruğa alındı"
+    )
+
+
 def notify_haluk_signal_opened(
     symbol: str,
     side: str,

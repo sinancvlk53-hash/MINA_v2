@@ -329,6 +329,11 @@ export default function OrderPanel({
                   <li><span>TP1</span><span>+4% · %50 · BE stop</span></li>
                   <li><span>TP2</span><span>+8% · kalan tamam</span></li>
                 </>
+              ) : strategyMode === 'ht_pdf' ? (
+                <>
+                  <li><span>Giriş / TP / Stop</span><span>Hoca seviyeleri</span></li>
+                  <li><span>Emir</span><span>Limit kuyruk</span></li>
+                </>
               ) : strategyMode === 'full_manual' ? (
                 <li><span>Motor</span><span>⚠️ müdahale etmez</span></li>
               ) : (

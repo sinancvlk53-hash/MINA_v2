@@ -25,6 +25,7 @@ const STRATEGY_OPTIONS = [
   { value: 'defense', label: 'Savunma modu' },
   { value: 'stop', label: 'Stop modu' },
   { value: 'ht', label: 'HT Stratejisi' },
+  { value: 'ht_pdf', label: 'HT PDF' },
   { value: 'full_manual', label: 'Full Manuel' },
 ]
 
@@ -141,7 +142,7 @@ export default function SettingsPanel({ data, sendMessage, status, actionMsg }) 
         <section className="settings-section">
           <h3 className="settings-section-title">Kaldıraç stratejisi</h3>
           <div className="field-hint settings-strategy-hint">
-            Savunma: D1/D2/D3 · Stop: sabit % stop · HT: %2 stop, 1:2/1:4 R/R · Full Manuel: motor müdahale etmez
+            Savunma: D1/D2/D3 · Stop: sabit % stop · HT: %2 stop, 1:2/1:4 R/R · HT PDF: Hoca entry/tp/stop · Full Manuel: motor müdahale etmez
           </div>
           <div className="settings-strategy-row settings-strategy-locked">
             <span className="settings-strategy-lev">4x</span>
