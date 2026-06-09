@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import io
 import os
+import subprocess
 import sys
+from datetime import datetime
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _ROOT not in sys.path:
@@ -75,6 +77,52 @@ SERVICES = [
     "mina-upbit-listings.service",
     "mina-makro-watcher.service",
 ]
+
+
+def git_sync_after_deploy(repo_root: str) -> None:
+    """Deploy sonrası lokal değişiklikleri commit + push."""
+    print(">>> Git sync after deploy...")
+    status = subprocess.run(
+        ["git", "status", "--porcelain"],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if not (status.stdout or "").strip():
+        print("Git: değişiklik yok, commit atlandı")
+    else:
+        ts = datetime.now().strftime("%Y-%m-%d %H:%M")
+        msg = f"auto: deploy sonrası sync [{ts}]"
+        for cmd in (
+            ["git", "add", "-A"],
+            ["git", "commit", "-m", msg],
+        ):
+            print(">>>", " ".join(cmd))
+            r = subprocess.run(cmd, cwd=repo_root, capture_output=True, text=True, check=False)
+            if r.stdout.strip():
+                print(r.stdout)
+            if r.stderr.strip():
+                print(r.stderr)
+            if r.returncode != 0 and cmd[1] == "commit":
+                print("Git commit atlandı veya başarısız")
+                return
+    print(">>> git push origin main")
+    push = subprocess.run(
+        ["git", "push", "origin", "main"],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if push.stdout.strip():
+        print(push.stdout)
+    if push.stderr.strip():
+        print(push.stderr)
+    if push.returncode != 0:
+        print(f"Git push başarısız (exit {push.returncode})")
+    else:
+        print("Git push OK")
 
 
 def ensure_remote_dir(sftp, path: str) -> None:
@@ -212,6 +260,7 @@ def main() -> None:
 
     c.close()
     print("DEPLOY DONE")
+    git_sync_after_deploy(LOCAL)
 
 
 if __name__ == "__main__":
