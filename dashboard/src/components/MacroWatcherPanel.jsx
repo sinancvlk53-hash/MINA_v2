@@ -91,7 +91,7 @@ export default function MacroWatcherPanel({ watcher = null }) {
   const risk = w.riskScore ?? 0
   const macro = w.macroScore ?? 0
   const permKey = w.tradePermission || 'REDUCED_RISK'
-  const permLabel = w.tradePermissionLabel || '🟡 REDUCED RISK'
+  const permLabel = w.tradePermissionLabel || '🟡 RİSKLİ'
   const combos = w.combinations || []
   const sources = w.sources || {}
   const updatedAt = w.updatedAt
@@ -124,7 +124,6 @@ export default function MacroWatcherPanel({ watcher = null }) {
       <div className={`makro-permission-banner ${permClass(permKey)}`}>
         <span className="makro-perm-label">İşlem İzni</span>
         <span className="makro-perm-value">{permLabel}</span>
-        <span className="makro-perm-hint">Öneri — motor henüz bağlı değil</span>
       </div>
 
       <div className="makro-grid">

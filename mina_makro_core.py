@@ -450,8 +450,8 @@ def trade_permission(macro_score: int) -> Tuple[str, str]:
     if macro_score >= 30:
         return "FULL_RISK", "🟢 FULL RISK"
     if macro_score <= -30:
-        return "DEFENSIVE", "🔴 DEFENSIVE"
-    return "REDUCED_RISK", "🟡 REDUCED RISK"
+        return "DEFENSIVE", "🔴 DİKKAT"
+    return "REDUCED_RISK", "🟡 RİSKLİ"
 
 
 def detect_alarms(metrics: dict, combos: List[str]) -> List[Tuple[str, str]]:
@@ -647,7 +647,7 @@ def load_dashboard_payload() -> dict:
             "riskScore": 0,
             "macroScore": 0,
             "tradePermission": "REDUCED_RISK",
-            "tradePermissionLabel": "🟡 REDUCED RISK",
+            "tradePermissionLabel": "🟡 RİSKLİ",
             "combinations": [],
             "sources": {},
             "updatedAt": None,
@@ -658,7 +658,7 @@ def load_dashboard_payload() -> dict:
         "riskScore": state.get("risk_score", 0),
         "macroScore": state.get("macro_score", 0),
         "tradePermission": state.get("trade_permission", "REDUCED_RISK"),
-        "tradePermissionLabel": state.get("trade_permission_label", "🟡 REDUCED RISK"),
+        "tradePermissionLabel": state.get("trade_permission_label", "🟡 RİSKLİ"),
         "combinations": state.get("combinations") or [],
         "sources": state.get("sources") or {},
         "updatedAt": state.get("updated_at"),

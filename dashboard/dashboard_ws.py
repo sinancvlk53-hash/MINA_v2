@@ -131,7 +131,7 @@ def get_macro_watcher() -> dict:
             "riskScore": 0,
             "macroScore": 0,
             "tradePermission": "REDUCED_RISK",
-            "tradePermissionLabel": "🟡 REDUCED RISK",
+            "tradePermissionLabel": "🟡 RİSKLİ",
             "combinations": [],
             "sources": {},
             "updatedAt": None,
