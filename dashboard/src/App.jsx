@@ -7,6 +7,7 @@ import PositionDetailModal from './components/PositionDetailModal.jsx'
 import PositionsOverlay from './components/PositionsOverlay.jsx'
 import DefensePanel from './components/DefensePanel.jsx'
 import MacroLevelsPanel from './components/MacroLevelsPanel.jsx'
+import MacroWatcherPanel from './components/MacroWatcherPanel.jsx'
 import SettingsPanel from './components/SettingsPanel.jsx'
 import LogPanel from './components/LogPanel.jsx'
 import DesktopNav from './components/DesktopNav.jsx'
@@ -38,6 +39,7 @@ export default function App() {
   const merterSlots = data?.merterSlots ?? {}
   const macroLevels = data?.macroLevels ?? []
   const macroFunding = data?.macroFunding ?? null
+  const macroWatcher = data?.macroWatcher ?? null
   const halukPdfTimestamp = data?.halukPdfTimestamp ?? null
   const logs = data?.logs ?? []
   const slotSize = (data?.balance ?? 0) / 10
@@ -97,6 +99,7 @@ export default function App() {
         </aside>
 
         <section className={`col-center ${showMacro ? 'mobile-show' : 'mobile-hide'}`}>
+          <MacroWatcherPanel watcher={macroWatcher} />
           <MacroLevelsPanel
             levels={macroLevels}
             funding={macroFunding}
@@ -141,6 +144,7 @@ export default function App() {
           slotSize={slotSize}
           onSelectPos={setSelectedPos}
           selectedPos={selectedPos}
+          leverageStrategy={data?.settings?.leverageStrategy ?? {}}
         />
       </PositionsOverlay>
 

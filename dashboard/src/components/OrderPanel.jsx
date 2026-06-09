@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { filterFuturesSymbolsWithFavorites, formatMarkPrice } from '../utils/symbols.js'
+import { resolveStrategyMode, getManualOpenPreview } from '../utils/trading.js'
 import {
   loadFavoriteCoins,
   saveFavoriteCoins,
@@ -35,7 +36,10 @@ export default function OrderPanel({
 
   const balance = data?.balance ?? 0
   const slot = balance / 10
-  const entryMargin = slot / 5
+  const leverageStrategy = data?.settings?.leverageStrategy ?? {}
+  const strategyMode = resolveStrategyMode(leverage, leverageStrategy)
+  const preview = getManualOpenPreview(leverage, slot, leverageStrategy)
+  const entryMargin = preview.margin
   const slotSummary = data?.slotSummary ?? {}
   const motorUsed = slotSummary.motorUsed ?? data?.motorCount ?? 0
   const merterUsed = slotSummary.merterUsed ?? data?.merterCount ?? 0
@@ -44,7 +48,6 @@ export default function OrderPanel({
   const slotTarget = leverage === 1 ? 'Merter DCA' : 'Motor'
   const merterLongOnly = leverage === 1 && side === 'SHORT'
   const posCount = data?.positionCount ?? 0
-  const leverageStrategy = data?.settings?.leverageStrategy ?? {}
 
   const filtered = filterFuturesSymbolsWithFavorites(futuresSymbols, query, favorites, 20)
   const markPrice = markPrices[symbol]
@@ -291,8 +294,13 @@ export default function OrderPanel({
               Merter DCA (1x) yalnızca LONG destekler
             </div>
           )}
+          {strategyMode === 'full_manual' && leverage !== 1 && (
+            <div className="field-hint manual-open-footnote text-amber">
+              ⚠️ Full Manuel mod — motor müdahale etmez (TP/stop/savunma yok)
+            </div>
+          )}
           <div className="field-hint manual-open-footnote">
-            Otomatik slot: {slotTarget} · Marjin slot/5
+            Otomatik slot: {slotTarget} · Marjin {preview.marginLabel}
           </div>
 
           <div className="slot-budget">
@@ -301,7 +309,7 @@ export default function OrderPanel({
               <strong>{slot.toFixed(2)} USDT</strong>
             </div>
             <div className="slot-budget-row">
-              <span>Giriş marjini (÷5)</span>
+              <span>Giriş marjini</span>
               <strong className="accent">{entryMargin.toFixed(2)} USDT</strong>
             </div>
             <div className="slot-budget-row">
@@ -311,15 +319,27 @@ export default function OrderPanel({
           </div>
 
           <div className="rules-box">
-            <div className="rules-title">Sistem Kuralları</div>
+            <div className="rules-title">Sistem Kuralları ({strategyMode})</div>
             <ul className="rules-list">
               <li><span>10 Slot</span><span>Kasa ÷ 10</span></li>
-              <li><span>Giriş</span><span>Slot ÷ 5 (%20)</span></li>
-              <li><span>TP1</span><span>+%3 · %50 kapat</span></li>
-              <li><span>TP2</span><span>+%5 · %50 kapat</span></li>
-              <li><span>Trailing</span><span>%2 callback</span></li>
-              {leverage === 4 && (
-                <li><span>Defans</span><span>D1 -5% · D2 -12% · HS -25%</span></li>
+              <li><span>Giriş</span><span>{preview.marginLabel}</span></li>
+              {strategyMode === 'ht' ? (
+                <>
+                  <li><span>Stop</span><span>-2% sabit</span></li>
+                  <li><span>TP1</span><span>+4% · %50 · BE stop</span></li>
+                  <li><span>TP2</span><span>+8% · kalan tamam</span></li>
+                </>
+              ) : strategyMode === 'full_manual' ? (
+                <li><span>Motor</span><span>⚠️ müdahale etmez</span></li>
+              ) : (
+                <>
+                  <li><span>TP1</span><span>+%3 · %50 kapat</span></li>
+                  <li><span>TP2</span><span>+%5 · %50 kapat</span></li>
+                  <li><span>Trailing</span><span>%2 callback</span></li>
+                  {leverage === 4 && (
+                    <li><span>Defans</span><span>D1 -5% · D2 -12% · HS -25%</span></li>
+                  )}
+                </>
               )}
             </ul>
           </div>

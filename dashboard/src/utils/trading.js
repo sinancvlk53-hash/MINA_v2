@@ -10,29 +10,38 @@ export function getLevRules(lev) {
   return { tp_type: 'standard', tp1_pct: 3, tp2_pct: 5, tp2_close: 0.5, trailing_callback: 2.0 }
 }
 
+export function resolveStrategyMode(leverage, leverageStrategy = {}) {
+  if (leverage === 4) return 'defense'
+  return leverageStrategy[String(leverage)] || 'defense'
+}
+
 /** Manuel aç onay ekranı — anayasa özeti */
 export function getManualOpenPreview(leverage, slotSize, leverageStrategy = {}) {
-  const margin = slotSize / 5
+  const strategyMode = resolveStrategyMode(leverage, leverageStrategy)
+  const margin = strategyMode === 'full_manual' ? slotSize : slotSize / 5
   const rules = getLevRules(leverage)
   const stopLossPct = { 1: 3, 2: 3, 3: 2, 5: 2, 10: 1 }[leverage] ?? null
-  const strategyMode = leverage === 4
-    ? 'defense'
-    : (leverageStrategy[String(leverage)] || 'defense')
   const useDefense = strategyMode === 'defense'
+  const isHt = strategyMode === 'ht'
+  const isFullManual = strategyMode === 'full_manual'
 
   const preview = {
+    strategyMode,
     margin,
+    marginLabel: isFullManual ? 'tam slot' : 'slot/5',
     notional: margin * leverage,
-    tp1: `+${rules.tp1_pct}%`,
-    tp2: rules.tp_type === 'fast' ? `+${rules.tp2_pct}% (tam kapama)` : `+${rules.tp2_pct}%`,
-    trailing: rules.trailing_callback != null ? `%${rules.trailing_callback} callback` : 'Yok (10x)',
+    tp1: isHt ? '+4% (1:2 R/R)' : `+${rules.tp1_pct}%`,
+    tp2: isHt ? '+8% (1:4 R/R) · kalan tamam' : (rules.tp_type === 'fast' ? `+${rules.tp2_pct}% (tam kapama)` : `+${rules.tp2_pct}%`),
+    trailing: isHt || isFullManual ? 'Yok' : (rules.trailing_callback != null ? `%${rules.trailing_callback} callback` : 'Yok (10x)'),
     hasDefense: useDefense,
     defense: useDefense
       ? (leverage === 4
         ? { d1: '-5%', d2: '-12%', hardStop: '-25%' }
         : { d1: '-5%', d2: '-12%', hardStop: '-25% (savunma modu)' })
       : null,
-    stopLoss: !useDefense && stopLossPct != null ? `-${stopLossPct}%` : null,
+    stopLoss: isHt ? '-2% (sabit)' : (!useDefense && stopLossPct != null ? `-${stopLossPct}%` : null),
+    fullManual: isFullManual,
+    ht: isHt,
   }
   return preview
 }

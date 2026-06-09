@@ -10,12 +10,11 @@ import sys
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
-from mina_ssh import require_ssh_pass, SSH_HOST, SSH_USER
+from mina_ssh import connect_paramiko, SSH_HOST, SSH_USER
 
 import paramiko
 
 HOST, USER = SSH_HOST, SSH_USER
-PASS = require_ssh_pass()
 REMOTE = "/root/MINA_v2"
 LOCAL = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -32,6 +31,8 @@ FILES = [
     "mina_trading_journal.py",
     "mina_coin_lock.py",
     "mina_ssh.py",
+    "mina_makro_core.py",
+    "mina_makro_watcher.py",
     "mina_binance_retry.py",
     "backend/config.py",
     "scripts/reconcile_atom_derr.py",
@@ -72,6 +73,7 @@ SERVICES = [
     "mina-dashboard-vite.service",
     "mina-binance-listings.service",
     "mina-upbit-listings.service",
+    "mina-makro-watcher.service",
 ]
 
 
@@ -90,8 +92,8 @@ def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     c = paramiko.SSHClient()
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    print(f"Connecting {HOST}...")
-    c.connect(HOST, username=USER, password=PASS, timeout=30)
+    print(f"Connecting {HOST} (SSH key)...")
+    connect_paramiko(c, host=HOST, user=USER, timeout=30)
     sftp = c.open_sftp()
 
     for rel in FILES:
@@ -130,6 +132,11 @@ def main() -> None:
     if os.path.isfile(upbit_unit):
         print("PUT ops/mina-upbit-listings.service → /etc/systemd/system/")
         sftp.put(upbit_unit, "/etc/systemd/system/mina-upbit-listings.service")
+
+    makro_unit = os.path.join(LOCAL, "ops", "mina-makro-watcher.service")
+    if os.path.isfile(makro_unit):
+        print("PUT ops/mina-makro-watcher.service → /etc/systemd/system/")
+        sftp.put(makro_unit, "/etc/systemd/system/mina-makro-watcher.service")
 
     backup_local = os.path.join(LOCAL, "ops", "backup_mina.sh")
     if os.path.isfile(backup_local):
@@ -171,7 +178,7 @@ def main() -> None:
     )
 
     restart_cmds = systemd_cmds + [
-        f"{REMOTE}/venv/bin/pip install -q pymupdf pdfplumber 2>/dev/null || true",
+        f"{REMOTE}/venv/bin/pip install -q pymupdf pdfplumber yfinance 2>/dev/null || true",
         listener_clean + "systemctl restart mina-engine.service",
         "systemctl restart mina-merter-dca.service",
         "systemctl restart mina-queue-watcher.service 2>/dev/null || true",
@@ -182,6 +189,8 @@ def main() -> None:
         "systemctl restart mina-binance-listings.service",
         "systemctl enable mina-upbit-listings.service 2>/dev/null || true",
         "systemctl restart mina-upbit-listings.service",
+        "systemctl enable mina-makro-watcher.service 2>/dev/null || true",
+        "systemctl restart mina-makro-watcher.service",
         "systemctl restart mina-haluk-yayin.service 2>/dev/null || true",
         f"{REMOTE}/venv/bin/python {REMOTE}/scripts/test_entry_orders.py 2>&1 | tail -8",
         f"{REMOTE}/venv/bin/python {REMOTE}/scripts/reconcile_derr_ghosts.py",

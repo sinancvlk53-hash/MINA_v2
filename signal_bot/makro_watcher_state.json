@@ -1,0 +1,157 @@
+{
+  "updated_at": "2026-06-08T18:26:35.927587+03:00",
+  "metrics": {
+    "TOTAL": {
+      "value": 2.2835,
+      "change24h": 2.843740396066977,
+      "direction": "up",
+      "unit": "T",
+      "display": "2.284T"
+    },
+    "TOTAL2": {
+      "value": 0.9983,
+      "change24h": null,
+      "direction": "flat",
+      "unit": "T",
+      "display": null
+    },
+    "TOTAL3": {
+      "value": 0.7928,
+      "change24h": null,
+      "direction": "flat",
+      "unit": "T",
+      "display": null
+    },
+    "OTHERS": {
+      "value": 530.42,
+      "change24h": null,
+      "direction": "flat",
+      "unit": "B",
+      "display": "530.4B"
+    },
+    "BTC.D": {
+      "value": 56.284,
+      "change24h": null,
+      "direction": "flat",
+      "unit": "%",
+      "display": "56.28%"
+    },
+    "USDT.D": {
+      "value": 8.183,
+      "change24h": null,
+      "direction": "flat",
+      "unit": "%",
+      "display": "8.18%"
+    },
+    "ETH.D": {
+      "value": 8.995,
+      "change24h": null,
+      "direction": "flat",
+      "unit": "%",
+      "display": "9.00%"
+    },
+    "BTC": {
+      "value": 64069.7,
+      "change24h": 3.64,
+      "direction": "up",
+      "unit": "$",
+      "display": "$64,070"
+    },
+    "ETH": {
+      "value": 1699.16,
+      "change24h": 4.343,
+      "direction": "up",
+      "unit": "$",
+      "display": "$1,699"
+    },
+    "ETH_BTC": {
+      "value": 0.026491,
+      "change24h": 0.673,
+      "direction": "up",
+      "unit": "",
+      "display": "0.026491"
+    },
+    "BTC_FUNDING": {
+      "value": 0.0035,
+      "change24h": null,
+      "direction": "flat",
+      "unit": "%",
+      "display": "+0.0035%"
+    },
+    "ETH_FUNDING": {
+      "value": -0.0066,
+      "change24h": null,
+      "direction": "flat",
+      "unit": "%",
+      "display": "-0.0066%"
+    },
+    "BTC_OI": {
+      "value": 98856.53,
+      "change24h": null,
+      "direction": "flat",
+      "unit": "BTC",
+      "display": "98,857"
+    },
+    "BTC_LS": {
+      "value": 1.752,
+      "change24h": null,
+      "direction": "flat",
+      "unit": "",
+      "display": "1.75"
+    },
+    "XAU": {
+      "value": 4333.43,
+      "change24h": null,
+      "direction": "flat",
+      "unit": "$",
+      "display": "$4,333"
+    },
+    "FEAR_GREED": {
+      "value": 8,
+      "change24h": null,
+      "direction": "flat",
+      "unit": "",
+      "display": "8 (Extreme Fear)"
+    },
+    "DXY": {
+      "value": 99.919,
+      "change24h": -0.151,
+      "direction": "down",
+      "unit": "",
+      "display": "99.92"
+    },
+    "USOIL": {
+      "value": 92.26,
+      "change24h": 1.9,
+      "direction": "up",
+      "unit": "",
+      "display": "92.26"
+    },
+    "SPX": {
+      "value": 7456.8198,
+      "change24h": 0.99,
+      "direction": "up",
+      "unit": "",
+      "display": "7,457"
+    }
+  },
+  "combinations": [],
+  "risk_score": 1,
+  "macro_score": 8,
+  "trade_permission": "REDUCED_RISK",
+  "trade_permission_label": "🟡 REDUCED RISK",
+  "sources": {
+    "coingecko": "ok",
+    "binance_ticker": "ok",
+    "binance_funding": "ok",
+    "binance_oi": "ok",
+    "binance_ls": "ok",
+    "xau": "ok",
+    "fear_greed": "ok",
+    "dxy": "ok",
+    "usoil": "ok",
+    "spx": "ok"
+  },
+  "alarm_cooldowns": {},
+  "last_morning_summary": null
+}

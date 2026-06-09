@@ -1,0 +1,16 @@
+[Unit]
+Description=MINA Makro Market Watcher
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/MINA_v2
+ExecStart=/root/MINA_v2/venv/bin/python -u /root/MINA_v2/mina_makro_watcher.py
+Restart=on-failure
+RestartSec=30
+StandardOutput=append:/root/MINA_v2/signal_bot/makro_watcher.log
+StandardError=append:/root/MINA_v2/signal_bot/makro_watcher.log
+
+[Install]
+WantedBy=multi-user.target

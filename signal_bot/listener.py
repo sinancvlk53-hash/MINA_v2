@@ -141,6 +141,16 @@ def _dispatch_haluk_text(text: str, msg_id: int) -> None:
         archive_haluk_message_async(text, message_id=msg_id)
     except Exception as e:
         _log(f"[HALUK] arşiv hatası: {e}")
+
+    try:
+        from signal_bot.haluk_yayin_analiz import extract_youtube_urls, schedule_yayin_analiz
+
+        for yt_url in extract_youtube_urls(text):
+            _log(f"[HALUK YAYIN] YouTube linki → analiz kuyruğu | id={msg_id} | {yt_url}")
+            schedule_yayin_analiz(yt_url, message_id=msg_id)
+    except Exception as e:
+        _log(f"[HALUK YAYIN] analiz tetikleme hatası: {e}")
+
     records, pause = parse_haluk_telegram(text)
     if records:
         enqueue_records(records)

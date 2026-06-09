@@ -124,7 +124,11 @@ def main() -> None:
 
     account = AccountManager(client)
     slot = account.calculate_slot_size()
-    margin = slot * ENTRY_SLOT_RATIO
+    try:
+        from mina_dashboard_settings import entry_margin_for_leverage
+        margin = entry_margin_for_leverage(args.leverage, slot)
+    except ImportError:
+        margin = slot * ENTRY_SLOT_RATIO
     journal = TradingJournal(os.path.join(ROOT, "mina_trading_journal.db"))
     mina = MinaPositionManager(client, slot, journal=journal, data_root=ROOT)
 

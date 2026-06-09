@@ -21,6 +21,13 @@ const DEFAULTS = {
 
 const STRATEGY_LEVERS = [1, 2, 3, 5, 10]
 
+const STRATEGY_OPTIONS = [
+  { value: 'defense', label: 'Savunma modu' },
+  { value: 'stop', label: 'Stop modu' },
+  { value: 'ht', label: 'HT Stratejisi' },
+  { value: 'full_manual', label: 'Full Manuel' },
+]
+
 export default function SettingsPanel({ data, sendMessage, status, actionMsg }) {
   const server = data?.settings ?? {}
   const slotSummary = data?.slotSummary ?? {}
@@ -134,7 +141,7 @@ export default function SettingsPanel({ data, sendMessage, status, actionMsg }) 
         <section className="settings-section">
           <h3 className="settings-section-title">Kaldıraç stratejisi</h3>
           <div className="field-hint settings-strategy-hint">
-            Savunma: D1/D2/D3, stop-loss yok · Stop: stop-loss aktif, savunma yok
+            Savunma: D1/D2/D3 · Stop: sabit % stop · HT: %2 stop, 1:2/1:4 R/R · Full Manuel: motor müdahale etmez
           </div>
           <div className="settings-strategy-row settings-strategy-locked">
             <span className="settings-strategy-lev">4x</span>
@@ -148,8 +155,9 @@ export default function SettingsPanel({ data, sendMessage, status, actionMsg }) 
                 value={form.leverageStrategy[String(lev)] || 'defense'}
                 onChange={(e) => updateLeverageStrategy(lev, e.target.value)}
               >
-                <option value="defense">Savunma modu</option>
-                <option value="stop">Stop modu</option>
+                {STRATEGY_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
               </select>
             </div>
           ))}

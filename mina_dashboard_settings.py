@@ -11,6 +11,8 @@ ROOT = os.environ.get("MINA_DATA_ROOT", os.path.dirname(os.path.abspath(__file__
 SETTINGS_FILE = os.path.join(ROOT, "dashboard_settings.json")
 MOTOR_PAUSE_FILE = os.path.join(ROOT, "motor_paused.flag")
 
+VALID_STRATEGY_MODES = frozenset({"defense", "stop", "ht", "full_manual"})
+
 DEFAULT_LEVERAGE_STRATEGY: Dict[str, str] = {
     "1": "defense",
     "2": "defense",
@@ -18,6 +20,8 @@ DEFAULT_LEVERAGE_STRATEGY: Dict[str, str] = {
     "5": "defense",
     "10": "defense",
 }
+
+HT_STOP_PCT = 2.0
 
 DEFAULTS: Dict[str, Any] = {
     "merterTimeStopH": 4,
@@ -45,7 +49,10 @@ def load_settings() -> Dict[str, Any]:
             pass
     strat = dict(DEFAULT_LEVERAGE_STRATEGY)
     if isinstance(data.get("leverageStrategy"), dict):
-        strat.update({str(k): v for k, v in data["leverageStrategy"].items() if v in ("defense", "stop")})
+        strat.update({
+            str(k): v for k, v in data["leverageStrategy"].items()
+            if v in VALID_STRATEGY_MODES
+        })
     data["leverageStrategy"] = strat
     data["motorActive"] = not os.path.isfile(MOTOR_PAUSE_FILE)
     return data
@@ -61,7 +68,7 @@ def save_settings(updates: Dict[str, Any]) -> Dict[str, Any]:
             strat = dict(current.get("leverageStrategy") or DEFAULT_LEVERAGE_STRATEGY)
             for lev, mode in v.items():
                 key = str(lev)
-                if key in DEFAULT_LEVERAGE_STRATEGY and mode in ("defense", "stop"):
+                if key in DEFAULT_LEVERAGE_STRATEGY and mode in VALID_STRATEGY_MODES:
                     strat[key] = mode
             current["leverageStrategy"] = strat
             continue
@@ -164,4 +171,13 @@ def leverage_strategy_mode(leverage: int) -> str:
         return "defense"
     strat = load_settings().get("leverageStrategy") or DEFAULT_LEVERAGE_STRATEGY
     mode = strat.get(str(leverage), "defense")
-    return mode if mode in ("defense", "stop") else "defense"
+    return mode if mode in VALID_STRATEGY_MODES else "defense"
+
+
+def entry_margin_for_leverage(leverage: int, slot: float) -> float:
+    """Giriş marjini — full_manual: tam slot, diğer modlar: slot/5."""
+    if leverage == 4:
+        return slot / 5
+    if leverage_strategy_mode(leverage) == "full_manual":
+        return float(slot)
+    return float(slot) / 5

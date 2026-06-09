@@ -82,8 +82,11 @@ export default function ManualOpenConfirm({
 
         <div className="manual-open-rules">
           <div className="manual-open-rules-title">Otomatik hesaplanan kurallar</div>
+          {preview.fullManual && (
+            <div className="manual-open-warn">⚠️ Full Manuel — motor müdahale etmez</div>
+          )}
           <ul>
-            <li><span>Marjin</span><span>slot/5 = {preview.margin.toFixed(2)} USDT</span></li>
+            <li><span>Marjin</span><span>{preview.marginLabel} = {preview.margin.toFixed(2)} USDT</span></li>
             <li><span>Hacim</span><span>{preview.notional.toFixed(2)} USDT</span></li>
             <li><span>TP1</span><span>{preview.tp1} · %50 kapat</span></li>
             <li><span>TP2</span><span>{preview.tp2}</span></li>
