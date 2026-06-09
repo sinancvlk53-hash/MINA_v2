@@ -1,9 +1,10 @@
 import React from 'react'
+import { createPortal } from 'react-dom'
 
 export default function PositionsOverlay({ open, onClose, children }) {
   if (!open) return null
 
-  return (
+  return createPortal(
     <div className="positions-overlay" onClick={onClose} role="presentation">
       <div
         className="positions-slide-panel"
@@ -22,6 +23,7 @@ export default function PositionsOverlay({ open, onClose, children }) {
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

@@ -299,6 +299,70 @@ body {
   flex-wrap: nowrap;
 }
 
+.header-stats-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.header-macro-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.header-macro-value {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+}
+
+.header-macro-normal {
+  border-color: rgba(14, 203, 129, 0.45);
+  background: rgba(14, 203, 129, 0.08);
+}
+
+.header-macro-normal .header-macro-value {
+  color: var(--green);
+}
+
+.header-macro-risky {
+  border-color: rgba(240, 185, 11, 0.45);
+  background: rgba(240, 185, 11, 0.08);
+}
+
+.header-macro-risky .header-macro-value {
+  color: var(--accent);
+}
+
+.header-macro-defensive {
+  border-color: rgba(246, 70, 93, 0.45);
+  background: rgba(246, 70, 93, 0.08);
+}
+
+.header-macro-defensive .header-macro-value {
+  color: var(--red);
+}
+
+.header-stat-btn {
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  width: 100%;
+}
+
+.header-stat-btn:hover {
+  border-color: var(--accent-dim);
+}
+
 .header-stat {
   background: var(--card);
   border: 1px solid var(--border);
@@ -3072,7 +3136,7 @@ body {
 .positions-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1100;
+  z-index: 2500;
   background: rgba(0, 0, 0, 0.55);
   display: flex;
   flex-direction: column;
@@ -3337,6 +3401,10 @@ body {
 
   .header-v2 {
     padding: 10px;
+  }
+
+  .header-stats-block {
+    width: 100%;
   }
 
   .header-stats {

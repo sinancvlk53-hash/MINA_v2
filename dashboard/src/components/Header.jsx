@@ -98,7 +98,24 @@ function WinRateModal({ open, derr, onClose }) {
   )
 }
 
-export default function Header({ data, status, onPanic, onLogout }) {
+function resolveMacroHeaderStatus(watcher) {
+  const w = watcher || {}
+  const key = String(w.tradePermission || '').toUpperCase()
+  const lbl = String(w.tradePermissionLabel || '')
+
+  if (key === 'FULL_RISK' || lbl.includes('FULL RISK') || lbl.includes('NORMAL')) {
+    return { label: 'NORMAL', cls: 'header-macro-normal' }
+  }
+  if (key === 'DEFENSIVE' || lbl.includes('DİKKAT') || lbl.includes('DEFENSIVE')) {
+    return { label: 'DİKKAT', cls: 'header-macro-defensive' }
+  }
+  if (key === 'REDUCED_RISK' || lbl.includes('RİSKLİ') || lbl.includes('REDUCED')) {
+    return { label: 'RİSKLİ', cls: 'header-macro-risky' }
+  }
+  return { label: 'RİSKLİ', cls: 'header-macro-risky' }
+}
+
+export default function Header({ data, status, onPanic, onLogout, onPositionsClick }) {
   const [winDetailOpen, setWinDetailOpen] = useState(false)
   const bd = data?.balanceBreakdown ?? {}
   const totalBal = bd.total ?? data?.balance
@@ -122,6 +139,7 @@ export default function Header({ data, status, onPanic, onLogout }) {
 
   const winStr = formatWinRate(data)
   const riskKill = data?.riskStatus?.newEntriesBlocked === true
+  const macroStatus = resolveMacroHeaderStatus(data?.macroWatcher)
 
   return (
     <>
@@ -169,26 +187,38 @@ export default function Header({ data, status, onPanic, onLogout }) {
             </div>
           </div>
 
-          <div className="header-stats">
-            <div className="header-stat header-stat-pnl">
-              <span className="header-stat-label">PnL</span>
-              <span className={`header-stat-value ${pnlPositive ? 'text-green' : 'text-red'}`}>
-                {pnlStr}
-              </span>
+          <div className="header-stats-block">
+            <div className={`header-macro-bar ${macroStatus.cls}`}>
+              <span className="header-stat-label">Makro Durum</span>
+              <span className="header-macro-value">{macroStatus.label}</span>
             </div>
-            <div className="header-stat">
-              <span className="header-stat-label">Pozisyon</span>
-              <span className="header-stat-value">{posCount}/10</span>
+
+            <div className="header-stats">
+              <button
+                type="button"
+                className="header-stat header-stat-btn"
+                onClick={() => onPositionsClick?.()}
+                aria-label="Pozisyonları göster"
+              >
+                <span className="header-stat-label">Pozisyonlar</span>
+                <span className="header-stat-value">{posCount}/10</span>
+              </button>
+              <div className="header-stat header-stat-pnl">
+                <span className="header-stat-label">PnL</span>
+                <span className={`header-stat-value ${pnlPositive ? 'text-green' : 'text-red'}`}>
+                  {pnlStr}
+                </span>
+              </div>
+              <button
+                type="button"
+                className={`header-stat header-stat-winrate header-stat-btn ${winDetailOpen ? 'open' : ''}`}
+                onClick={() => setWinDetailOpen(true)}
+                aria-label="Win rate detayları"
+              >
+                <span className="header-stat-label">Win Rate</span>
+                <span className="header-stat-value accent">{winStr}</span>
+              </button>
             </div>
-            <button
-              type="button"
-              className={`header-stat header-stat-winrate header-stat-btn ${winDetailOpen ? 'open' : ''}`}
-              onClick={() => setWinDetailOpen(true)}
-              aria-label="Win rate detayları"
-            >
-              <span className="header-stat-label">Win Rate</span>
-              <span className="header-stat-value accent">{winStr}</span>
-            </button>
           </div>
         </div>
       </header>

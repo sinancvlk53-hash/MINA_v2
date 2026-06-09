@@ -77,17 +77,8 @@ export default function App() {
         status={status}
         onPanic={handlePanic}
         onLogout={logout}
+        onPositionsClick={() => setPositionsOpen(true)}
       />
-
-      <button
-        type="button"
-        className="positions-open-bar"
-        onClick={() => setPositionsOpen(true)}
-        aria-label="Pozisyonları göster"
-      >
-        <span className="panel-title">Pozisyonlar</span>
-        <span className="panel-badge">{positions.length}/10</span>
-      </button>
 
       {!isMobile && (
         <DesktopNav active={activeTab} onChange={setActiveTab} />
