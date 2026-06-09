@@ -121,6 +121,62 @@ def parse_text_signal(text: str) -> list:
 # Görsel sinyali — Claude Vision
 # ---------------------------------------------------------------------------
 
+VISION_PROMPT = """Bu görüntü Haluk Hoca'nın Telegram kanalından gelen kripto analiz grafiğidir.
+
+GÖREV: TradingView 'Long Position' veya 'Short Position' aracı ara.
+- Long Position: üstü YEŞİL, altı KIRMIZI kutu
+- Short Position: üstü KIRMIZI, altı YEŞİL kutu
+
+Bu araç yoksa → {"signals": []}
+
+Araç varsa:
+- symbol: grafik başlığındaki coin adı (ETHUSDT → ETH, BTCUSDT → BTC)
+- direction: "LONG" veya "SHORT"
+- entry: aracın giriş çizgisi fiyatı
+- tp: aracın hedef fiyatı
+- stop: aracın stop fiyatı
+- is_scalp: grafik üzerinde "scalp" yazıyorsa true, yoksa false
+
+Sadece geçerli JSON döndür:
+{"signals": [{"symbol": "ETH", "direction": "LONG",
+"entry": 2890.48, "tp": 2971.72, "stop": 2844.19, "is_scalp": false}]}"""
+
+
+def _normalize_vision_signal(raw: dict) -> dict | None:
+    symbol = str(raw.get('symbol') or raw.get('coin') or '').upper().strip()
+    if symbol.endswith('USDT'):
+        symbol = symbol[:-4]
+    if not symbol:
+        return None
+    coin = symbol + 'USDT'
+    if _is_filter_coin(coin):
+        return None
+
+    direction = str(raw.get('direction') or raw.get('side') or '').upper()
+    if direction not in ('LONG', 'SHORT'):
+        return None
+
+    out = {
+        'coin': coin,
+        'side': direction,
+        'source': 'HT_VISION',
+    }
+    for key in ('entry', 'tp', 'stop'):
+        val = raw.get(key)
+        if val is not None:
+            out[key] = val
+    if 'is_scalp' in raw:
+        out['is_scalp'] = bool(raw.get('is_scalp'))
+    elif raw.get('trade_type', '').lower() == 'scalp':
+        out['is_scalp'] = True
+
+    # Entry, TP ve Stop üçü de yoksa sinyali atla
+    if not out.get('entry') or not out.get('tp') or not out.get('stop'):
+        return None
+
+    return out
+
+
 def _vision_sync(img_b64: str, mime: str) -> list:
     """Senkron Claude Vision çağrısı (run_in_executor içinde çalışır)."""
     try:
@@ -134,19 +190,7 @@ def _vision_sync(img_b64: str, mime: str) -> list:
                         'type': 'image',
                         'source': {'type': 'base64', 'media_type': mime, 'data': img_b64}
                     },
-                    {
-                        'type': 'text',
-                        'text': (
-                            'Bu bir kripto trading sinyali grafiği mi?\n'
-                            'Eğer başlık veya açıklamada UPDATE, RETEST veya DURUM kelimesi varsa '
-                            'sadece {"skip": true} döndür.\n'
-                            'Eğer sinyal grafiği değilse (haber, bilgi, analiz) {"skip": true} döndür.\n'
-                            'Eğer trading sinyali ise şu JSON formatında döndür:\n'
-                            '{"coin":"BTCUSDT","side":"LONG","entry":"75000",'
-                            '"stop":"72000","tp1":"78000","tp2":"81000"}\n'
-                            'Coin adında USDT yoksa ekle. Sadece JSON döndür, başka hiçbir şey yazma.'
-                        )
-                    }
+                    {'type': 'text', 'text': VISION_PROMPT},
                 ]
             }]
         )
@@ -156,19 +200,21 @@ def _vision_sync(img_b64: str, mime: str) -> list:
         if isinstance(data, dict):
             if data.get('skip'):
                 return []
-            data = [data]
+            items = data.get('signals')
+            if items is None:
+                items = [data] if data.get('symbol') or data.get('coin') else []
+        elif isinstance(data, list):
+            items = data
+        else:
+            return []
 
         results = []
-        for s in data:
-            if s.get('skip'):
+        for s in items:
+            if not isinstance(s, dict) or s.get('skip'):
                 continue
-            coin = s.get('coin', '')
-            if coin and not coin.endswith('USDT'):
-                s['coin'] = coin + 'USDT'
-            if _is_filter_coin(s.get('coin', '')):
-                continue
-            s['source'] = 'HT_VISION'
-            results.append(s)
+            norm = _normalize_vision_signal(s)
+            if norm:
+                results.append(norm)
         return results
 
     except Exception as e:

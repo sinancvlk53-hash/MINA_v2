@@ -1,0 +1,14 @@
+[Unit]
+Description=MINA HT Telegram Gorsel Sinyal Dinleyici
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/MINA_v2
+ExecStart=/root/MINA_v2/venv/bin/python /root/MINA_v2/signal_bot/ht_listener.py
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
