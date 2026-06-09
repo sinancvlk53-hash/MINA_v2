@@ -16,7 +16,7 @@ import sqlite3
 import json
 import os
 from datetime import datetime
-from typing import Dict, Optional, List
+from typing import Any, Dict, Optional, List
 
 
 class TradingJournal:
@@ -181,6 +181,29 @@ class TradingJournal:
             cursor.execute('''
                 CREATE INDEX IF NOT EXISTS idx_follower_status
                 ON follower_trades(follower_id, status)
+            ''')
+
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS ht_pdf_basari_orani (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    symbol TEXT,
+                    direction TEXT,
+                    entry_price REAL,
+                    tp_price REAL,
+                    stop_price REAL,
+                    pdf_file TEXT,
+                    source TEXT DEFAULT 'haluk_pdf',
+                    status TEXT DEFAULT 'pending',
+                    result TEXT,
+                    result_price REAL,
+                    open_time TEXT,
+                    close_time TEXT,
+                    created_at TEXT DEFAULT (datetime('now'))
+                )
+            ''')
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_ht_pdf_status
+                ON ht_pdf_basari_orani(status, symbol)
             ''')
             
             self.conn.commit()
@@ -808,6 +831,35 @@ class TradingJournal:
         except Exception as e:
             print(f"❌ insert_haluk_message hatası: {e}")
             return -1
+
+    def log_ht_pdf_signal(self, signal: Dict[str, Any]) -> int:
+        """Haluk PDF görsel trading sinyalini ht_pdf_basari_orani tablosuna yaz."""
+        try:
+            cur = self.conn.cursor()
+            cur.execute(
+                '''
+                INSERT INTO ht_pdf_basari_orani (
+                    symbol, direction, entry_price, tp_price, stop_price,
+                    pdf_file, source, status, open_time
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''',
+                (
+                    signal.get("symbol"),
+                    signal.get("direction"),
+                    signal.get("entry_price"),
+                    signal.get("tp_price"),
+                    signal.get("stop_price"),
+                    signal.get("pdf_file"),
+                    signal.get("source", "haluk_pdf"),
+                    signal.get("status", "pending"),
+                    signal.get("timestamp"),
+                ),
+            )
+            self.conn.commit()
+            return int(cur.lastrowid or 0)
+        except Exception as e:
+            print(f"❌ log_ht_pdf_signal hatası: {e}")
+            return 0
 
     def list_haluk_messages(
         self,

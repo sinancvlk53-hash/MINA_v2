@@ -502,6 +502,19 @@ def parse_haluk_pdf(pdf_path: str) -> ParseResult:
         except Exception as exc:
             print(f"[HALUK PDF] Görsel makro analiz atlandı: {exc}")
 
+    if os.getenv("HALUK_VISUAL_MACRO", "1").strip().lower() not in ("0", "false", "no"):
+        try:
+            from signal_bot.haluk_pdf_visual import extract_trading_signals
+
+            pdf_signals = extract_trading_signals(pdf_path)
+            if pdf_signals:
+                print(
+                    f"[HALUK PDF] Görsel trading sinyali: "
+                    + ", ".join(f"{s['symbol']} {s['direction']}" for s in pdf_signals)
+                )
+        except Exception as exc:
+            print(f"[HALUK PDF] Görsel trading sinyali atlandı: {exc}")
+
     return result
 
 

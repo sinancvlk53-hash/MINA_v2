@@ -13,9 +13,14 @@ import json
 import os
 import re
 from collections import defaultdict
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from signal_bot.macro_levels_store import MACRO_PANEL_COINS, panel_key_for, merge_macro_levels
+
+SIGNAL_BOT_DIR = os.path.dirname(os.path.abspath(__file__))
+HT_SIGNALS_QUEUE_FILE = os.path.join(SIGNAL_BOT_DIR, "ht_signals_queue.json")
+_page_analysis_cache: Dict[str, List[Dict[str, Any]]] = {}
 
 VISUAL_MACRO_SYMBOLS = (
     "TOTAL", "OTHERS", "BTC.D", "USDT.D", "BTC", "ETH", "XAU", "XAG", "BRENT", "TOTAL2", "TOTAL3",
@@ -47,6 +52,27 @@ Format:
 {{"charts":[{{"symbol":"TOTAL","supports":[1.91,1.85],"resistances":[2.05,2.10]}}]}}
 
 Sayfa {page_num}. Grafik yoksa: {{"charts":[]}}"""
+
+TRADING_SIGNAL_PROMPT = """Bu görüntü Haluk Hoca'nın kripto analiz PDF'inin bir sayfasıdır.
+
+GÖREV: TradingView 'Long Position' veya 'Short Position' aracı ara.
+- Long Position: üstü YEŞİL, altı KIRMIZI kutu
+- Short Position: üstü KIRMIZI, altı YEŞİL kutu
+
+Bu araç yoksa → {{"signals": []}}
+
+Araç varsa:
+- symbol: grafik başlığındaki coin adı (ETHUSDT → ETH)
+- direction: "LONG" veya "SHORT"
+- entry: aracın giriş çizgisi fiyatı
+- tp: aracın hedef (üst/alt uç) fiyatı  
+- stop: aracın stop (karşı uç) fiyatı
+
+Sadece geçerli JSON döndür:
+{{"signals": [{{"symbol": "ETH", "direction": "LONG", 
+"entry": 2890.48, "tp": 2971.72, "stop": 2844.19}}]}}
+
+Sayfa {page_num}."""
 
 
 def _anthropic_client():
@@ -82,18 +108,20 @@ def render_pdf_pages_png(pdf_path: str, dpi: int = RENDER_DPI) -> List[Tuple[int
     return pages
 
 
-def _parse_claude_json(text: str) -> Dict[str, Any]:
+def _parse_claude_json(text: str, *, empty: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    fallback = empty if empty is not None else {"charts": []}
     text = (text or "").strip()
     if not text:
-        return {"charts": []}
+        return dict(fallback)
     fence = re.search(r"```(?:json)?\s*([\s\S]*?)```", text)
     if fence:
         text = fence.group(1).strip()
     try:
         data = json.loads(text)
         if isinstance(data, list):
-            return {"charts": data}
-        return data if isinstance(data, dict) else {"charts": []}
+            key = "signals" if "signals" in fallback else "charts"
+            return {key: data}
+        return data if isinstance(data, dict) else dict(fallback)
     except json.JSONDecodeError:
         start = text.find("{")
         end = text.rfind("}")
@@ -103,25 +131,11 @@ def _parse_claude_json(text: str) -> Dict[str, Any]:
             except json.JSONDecodeError:
                 pass
     print(f"[HALUK VISUAL] JSON parse edilemedi: {text[:200]}...")
-    return {"charts": []}
+    return dict(fallback)
 
 
-def _normalize_levels(values: Any) -> List[float]:
-    out: List[float] = []
-    if not isinstance(values, list):
-        return out
-    for v in values:
-        try:
-            out.append(round(float(v), 6))
-        except (TypeError, ValueError):
-            continue
-    return sorted(set(out))
-
-
-def analyze_page_image(client, png_bytes: bytes, page_num: int) -> Dict[str, Any]:
-    """Tek sayfa PNG → Claude vision → charts dict."""
+def _vision_call(client, png_bytes: bytes, prompt: str) -> str:
     b64 = base64.standard_b64encode(png_bytes).decode("ascii")
-    prompt = VISION_PROMPT.format(page_num=page_num)
     resp = client.messages.create(
         model=CLAUDE_MODEL,
         max_tokens=1024,
@@ -146,7 +160,31 @@ def analyze_page_image(client, png_bytes: bytes, page_num: int) -> Dict[str, Any
     for block in resp.content:
         if getattr(block, "type", None) == "text":
             parts.append(block.text)
-    return _parse_claude_json("\n".join(parts))
+    return "\n".join(parts)
+
+
+def _normalize_levels(values: Any) -> List[float]:
+    out: List[float] = []
+    if not isinstance(values, list):
+        return out
+    for v in values:
+        try:
+            out.append(round(float(v), 6))
+        except (TypeError, ValueError):
+            continue
+    return sorted(set(out))
+
+
+def analyze_page_image(client, png_bytes: bytes, page_num: int) -> Dict[str, Any]:
+    """Tek sayfa PNG → makro charts + trading signals (ayrı vision çağrıları)."""
+    macro_text = _vision_call(client, png_bytes, VISION_PROMPT.format(page_num=page_num))
+    signal_text = _vision_call(client, png_bytes, TRADING_SIGNAL_PROMPT.format(page_num=page_num))
+    macro = _parse_claude_json(macro_text, empty={"charts": []})
+    trading = _parse_claude_json(signal_text, empty={"signals": []})
+    return {
+        "charts": macro.get("charts") or [],
+        "signals": trading.get("signals") or [],
+    }
 
 
 def aggregate_chart_levels(page_results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -182,31 +220,58 @@ def aggregate_chart_levels(page_results: List[Dict[str, Any]]) -> List[Dict[str,
     return out
 
 
-def extract_visual_macro_levels(pdf_path: str) -> List[Dict[str, Any]]:
-    """PDF tüm sayfalar → görsel makro destek/direnç listesi."""
+def _pdf_cache_key(pdf_path: str) -> str:
+    try:
+        st = os.stat(pdf_path)
+        return f"{pdf_path}:{st.st_mtime_ns}:{st.st_size}"
+    except OSError:
+        return pdf_path
+
+
+def _analyze_pdf_pages(pdf_path: str) -> List[Dict[str, Any]]:
+    """PDF sayfalarını vision ile analiz et (aynı dosya için tek tarama)."""
+    cache_key = _pdf_cache_key(pdf_path)
+    cached = _page_analysis_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
     pages = render_pdf_pages_png(pdf_path)
     if not pages:
-        print(f"[HALUK VISUAL] Sayfa yok: {pdf_path}")
         return []
 
     client = _anthropic_client()
     page_results: List[Dict[str, Any]] = []
     for page_num, png in pages:
         try:
-            result = analyze_page_image(client, png, page_num)
-            charts = result.get("charts") or []
-            if charts:
-                print(
-                    f"[HALUK VISUAL] sayfa {page_num}: "
-                    + ", ".join(
-                        f"{c.get('symbol', '?')} S={len(c.get('supports') or [])} R={len(c.get('resistances') or [])}"
-                        for c in charts
-                        if isinstance(c, dict)
-                    )
-                )
-            page_results.append(result)
+            page_results.append(analyze_page_image(client, png, page_num))
         except Exception as exc:
             print(f"[HALUK VISUAL] sayfa {page_num} hata: {exc}")
+            page_results.append({"charts": [], "signals": []})
+
+    if len(_page_analysis_cache) > 8:
+        _page_analysis_cache.clear()
+    _page_analysis_cache[cache_key] = page_results
+    return page_results
+
+
+def extract_visual_macro_levels(pdf_path: str) -> List[Dict[str, Any]]:
+    """PDF tüm sayfalar → görsel makro destek/direnç listesi."""
+    page_results = _analyze_pdf_pages(pdf_path)
+    if not page_results:
+        print(f"[HALUK VISUAL] Sayfa yok: {pdf_path}")
+        return []
+
+    for idx, result in enumerate(page_results, start=1):
+        charts = result.get("charts") or []
+        if charts:
+            print(
+                f"[HALUK VISUAL] sayfa {idx}: "
+                + ", ".join(
+                    f"{c.get('symbol', '?')} S={len(c.get('supports') or [])} R={len(c.get('resistances') or [])}"
+                    for c in charts
+                    if isinstance(c, dict)
+                )
+            )
 
     levels = aggregate_chart_levels(page_results)
     print(f"[HALUK VISUAL] {len(levels)} makro sembol SR güncellenecek")
@@ -229,3 +294,111 @@ def merge_visual_macro_levels(pdf_path: str, source: Optional[str] = None) -> Li
 def extract_and_merge_visual_macro_levels(pdf_path: str, source: Optional[str] = None) -> List[Dict[str, Any]]:
     """haluk_pdf_parser entegrasyon noktası."""
     return merge_visual_macro_levels(pdf_path, source)
+
+
+def _normalize_ht_symbol(raw: str) -> str:
+    sym = str(raw or "").upper().strip()
+    if not sym:
+        return ""
+    if sym.endswith("USDT"):
+        return sym
+    return sym + "USDT"
+
+
+def _parse_signal_price(val: Any) -> Optional[float]:
+    if val is None:
+        return None
+    try:
+        return round(float(str(val).replace(",", ".")), 8)
+    except (TypeError, ValueError):
+        return None
+
+
+def _raw_signal_to_queue_record(sig: Dict[str, Any], pdf_path: str) -> Optional[Dict[str, Any]]:
+    symbol = _normalize_ht_symbol(sig.get("symbol"))
+    direction = str(sig.get("direction") or "").upper()
+    entry = _parse_signal_price(sig.get("entry"))
+    tp = _parse_signal_price(sig.get("tp"))
+    stop = _parse_signal_price(sig.get("stop"))
+    if not symbol or direction not in ("LONG", "SHORT"):
+        return None
+    if entry is None or tp is None or stop is None:
+        return None
+    pdf_name = os.path.basename(pdf_path)
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return {
+        "symbol": symbol,
+        "direction": direction,
+        "entry_price": entry,
+        "tp_price": tp,
+        "stop_price": stop,
+        "source": "haluk_pdf",
+        "status": "pending",
+        "timestamp": ts,
+        "pdf_file": pdf_name,
+    }
+
+
+def _write_ht_signals_queue(records: List[Dict[str, Any]], pdf_path: str) -> None:
+    payload: Dict[str, Any] = {
+        "signals": records,
+        "source": f"HALUK_PDF_VISUAL:{os.path.basename(pdf_path)}",
+    }
+    if os.path.isfile(HT_SIGNALS_QUEUE_FILE):
+        try:
+            with open(HT_SIGNALS_QUEUE_FILE, encoding="utf-8") as f:
+                old = json.load(f)
+            merged = list(old.get("signals") or []) + records
+            payload["signals"] = merged
+        except (OSError, json.JSONDecodeError):
+            pass
+    os.makedirs(SIGNAL_BOT_DIR, exist_ok=True)
+    with open(HT_SIGNALS_QUEUE_FILE, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+    print(f"[HALUK VISUAL] {len(records)} sinyal → {HT_SIGNALS_QUEUE_FILE}")
+
+
+def _log_ht_pdf_signals_journal(records: List[Dict[str, Any]]) -> None:
+    try:
+        from mina_trading_journal import TradingJournal
+
+        root = os.environ.get(
+            "MINA_DATA_ROOT",
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        )
+        journal = TradingJournal(db_path=os.path.join(root, "mina_trading_journal.db"))
+        for rec in records:
+            journal.log_ht_pdf_signal(rec)
+        journal.close()
+    except Exception as exc:
+        print(f"[HALUK VISUAL] ht_pdf_basari_orani journal hatası: {exc}")
+
+
+def extract_trading_signals(pdf_path: str) -> List[Dict[str, Any]]:
+    """PDF sayfalarından TradingView Long/Short Position sinyallerini çıkar."""
+    page_results = _analyze_pdf_pages(pdf_path)
+    if not page_results:
+        print(f"[HALUK VISUAL] Trading sinyali — sayfa yok: {pdf_path}")
+        return []
+
+    records: List[Dict[str, Any]] = []
+    for page_num, result in enumerate(page_results, start=1):
+        for sig in result.get("signals") or []:
+            if not isinstance(sig, dict):
+                continue
+            rec = _raw_signal_to_queue_record(sig, pdf_path)
+            if rec:
+                records.append(rec)
+                print(
+                    f"[HALUK VISUAL] sinyal sayfa {page_num}: "
+                    f"{rec['symbol']} {rec['direction']} entry={rec['entry_price']}"
+                )
+
+    if not records:
+        print(f"[HALUK VISUAL] Trading sinyali bulunamadı: {pdf_path}")
+        return []
+
+    _write_ht_signals_queue(records, pdf_path)
+    _log_ht_pdf_signals_journal(records)
+    print(f"[HALUK VISUAL] Toplam {len(records)} trading sinyali kaydedildi")
+    return records
