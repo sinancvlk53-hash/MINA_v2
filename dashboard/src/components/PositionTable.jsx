@@ -171,6 +171,7 @@ function PositionCards({
   selected,
   onRowClick,
   onDetail,
+  onChart,
   onClose,
   sendMessage,
   merterSlots,
@@ -193,9 +194,6 @@ function PositionCards({
           <article
             key={p.posKey || `${p.symbol}_${p.side}`}
             className={`pos-card ${isMerterSection ? 'pos-card-merter' : ''} ${isSelected ? 'pos-card-selected' : ''} ${manualActive ? 'pos-card-manual-active' : ''}`}
-            onClick={() => onRowClick(p)}
-            role="button"
-            tabIndex={0}
           >
             <div className="pos-card-top">
               <div className="pos-card-symbol">
@@ -246,6 +244,9 @@ function PositionCards({
               <button type="button" className="btn btn-ghost touch-target" onClick={(e) => { e.stopPropagation(); onDetail?.(p) }}>
                 Detay
               </button>
+              <button type="button" className="btn btn-ghost touch-target" onClick={(e) => { e.stopPropagation(); onChart?.(p, e) }}>
+                📊 Grafik
+              </button>
               <button type="button" className="btn btn-close touch-target" onClick={(e) => { e.stopPropagation(); onClose?.(p, e, sendMessage) }}>
                 Kapat
               </button>
@@ -263,6 +264,7 @@ function PositionTableDesktop({
   selected,
   onRowClick,
   onDetail,
+  onChart,
   onClose,
   sendMessage,
   merterSlots,
@@ -301,7 +303,6 @@ function PositionTableDesktop({
               <tr
                 key={p.posKey || `${p.symbol}_${p.side}`}
                 className={`${isSelected ? 'row-selected' : ''} ${p.slotType === 'merter' ? 'row-merter' : ''} ${p.manualOverride?.active ? 'row-manual-active' : ''}`}
-                onClick={() => onRowClick(p)}
               >
                 <td className="sym-cell">
                   <span className="sym-name">{p.symbol.replace(/USDT$/, '')}</span>
@@ -329,6 +330,7 @@ function PositionTableDesktop({
                 <td className="actions-cell">
                   <ManualOverrideControls pos={p} sendMessage={sendMessage} />
                   <button type="button" className="btn btn-sm btn-ghost" onClick={(e) => { e.stopPropagation(); onDetail?.(p) }}>Detay</button>
+                  <button type="button" className="btn btn-sm btn-ghost" onClick={(e) => { e.stopPropagation(); onChart?.(p, e) }}>📊 Grafik</button>
                   <button type="button" className="btn btn-sm btn-close" onClick={(e) => { e.stopPropagation(); onClose?.(p, e, sendMessage) }}>Kapat</button>
                   {p.leverage === 4 && <span className={`def-stage ${stage.cls}`}>{stage.text}</span>}
                 </td>
@@ -354,6 +356,7 @@ function PositionSection({
   selected,
   onRowClick,
   onDetail,
+  onChart,
   onClose,
   sendMessage,
   showTable,
@@ -384,6 +387,7 @@ function PositionSection({
             selected={selected}
             onRowClick={onRowClick}
             onDetail={onDetail}
+            onChart={onChart}
             onClose={onClose}
             sendMessage={sendMessage}
             merterSlots={merterSlots}
@@ -406,6 +410,7 @@ function PositionSection({
               selected={selected}
               onRowClick={onRowClick}
               onDetail={onDetail}
+              onChart={onChart}
               onClose={onClose}
               sendMessage={sendMessage}
               merterSlots={merterSlots}
@@ -491,6 +496,11 @@ export default function PositionTable({
 
   function handleRowClick(p) {
     selectPos(p)
+  }
+
+  function handleChartOpen(p, e) {
+    e?.stopPropagation()
+    selectPos(p)
     setSheetOpen(true)
   }
 
@@ -501,6 +511,7 @@ export default function PositionTable({
     selected,
     onRowClick: handleRowClick,
     onDetail,
+    onChart: handleChartOpen,
     onClose: handleClose,
     sendMessage,
     leverageStrategy,

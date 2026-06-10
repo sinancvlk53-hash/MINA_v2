@@ -67,12 +67,16 @@ class AccountManager:
             return 0.0
 
     def get_balance_breakdown(self) -> dict:
-        """Futures USDT: toplam, işlemde (kullanılan), boşta (available)."""
+        """Futures USDT: toplam, işlemde (marjin + açık emir), boşta."""
         try:
             acct = self.client.futures_account()
             total = float(acct.get('totalWalletBalance') or 0)
             available = float(acct.get('availableBalance') or 0)
-            in_use = max(0.0, total - available)
+            pos_margin = float(acct.get('totalInitialMargin') or 0)
+            order_margin = float(acct.get('totalOpenOrderInitialMargin') or 0)
+            in_use = pos_margin + order_margin
+            if in_use <= 0:
+                in_use = max(0.0, total - available)
             return {
                 'total': round(total, 2),
                 'inUse': round(in_use, 2),

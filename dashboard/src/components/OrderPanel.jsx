@@ -136,9 +136,9 @@ export default function OrderPanel({
 
         <div className="panel-body">
           <div className="slot-status-line">
-            Motor: <strong>{motorUsed}/{motorMax}</strong> dolu
-            {' | '}
-            Merter DCA: <strong>{merterUsed}/{merterMax}</strong> dolu
+            🤖 Motor Slotları: <strong>{motorUsed}/{motorMax}</strong>
+            {' · '}
+            📊 Merter: <strong>{merterUsed}/{merterMax}</strong>
           </div>
           <div className="field-hint slot-auto-hint">
             {leverage === 1
@@ -147,7 +147,7 @@ export default function OrderPanel({
           </div>
 
           <label className="field-label">Coin</label>
-          <div className="search-wrap search-wrap-with-fav">
+          <div className="search-wrap search-wrap-with-fav search-wrap-full">
             <input
               ref={searchRef}
               className="field-input search-input-with-fav"

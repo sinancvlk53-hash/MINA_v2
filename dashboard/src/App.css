@@ -1117,6 +1117,11 @@ body {
   display: flex;
   align-items: stretch;
   gap: 6px;
+  width: 100%;
+}
+
+.search-wrap-full {
+  width: 100%;
 }
 
 .search-input-with-fav {
@@ -1178,7 +1183,7 @@ body {
   border: none;
   color: var(--text);
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: 1rem;
   cursor: pointer;
   display: flex;
   align-items: center;

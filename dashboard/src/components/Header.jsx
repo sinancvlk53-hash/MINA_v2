@@ -11,12 +11,10 @@ const WS_STATUS = {
 
 function formatWinRate(data) {
   const derr = data?.derr ?? {}
-  const total = derr.totalTrades ?? data?.totalTrades
-  const winRate = derr.winRate ?? data?.winRate
-  if (total == null || total === 0) {
-    return winRate != null ? `${total ?? 0} işlem %${Number(winRate).toFixed(1)}` : '—'
-  }
-  const pct = winRate != null ? Number(winRate).toFixed(1) : '0.0'
+  const total = derr.totalTrades
+  const winRate = derr.winRate
+  if (total == null || total === 0) return '—'
+  const pct = Number(winRate ?? 0).toFixed(1)
   return `${total} işlem %${pct}`
 }
 
@@ -134,8 +132,16 @@ export default function Header({ data, status, onPanic, onLogout, onPositionsCli
   const btcPrice = data?.btcMarkPrice
 
   const pnlPositive = totalPnl != null && totalPnl >= 0
+  const balanceForPct = totalBal != null && Number(totalBal) > 0 ? Number(totalBal) : null
+  const pnlPct = totalPnl != null && balanceForPct
+    ? (Number(totalPnl) / balanceForPct) * 100
+    : null
   const pnlStr = totalPnl != null
-    ? `${totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}`
+    ? `${totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)} USDT${
+        pnlPct != null
+          ? ` | ${pnlPct >= 0 ? '+' : '-'}%${Math.abs(pnlPct).toFixed(1)}`
+          : ''
+      }`
     : '—'
 
   const winStr = formatWinRate(data)

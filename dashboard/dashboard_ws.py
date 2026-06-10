@@ -380,7 +380,7 @@ def calculate_rvol(client, symbol):
 
 
 def get_derr_summary() -> dict:
-    """DERR kapalı işlemlerden win rate ve özet istatistik."""
+    """DERR — yalnızca status='closed' işlemlerden win rate."""
     db_path = os.path.join(ROOT, "mina_trading_journal.db")
     if not os.path.isfile(db_path):
         return {}
@@ -394,8 +394,9 @@ def get_derr_summary() -> dict:
             SELECT
                 COUNT(*) AS total,
                 SUM(CASE WHEN pnl_usdt > 0 THEN 1 ELSE 0 END) AS winners,
-                SUM(CASE WHEN pnl_usdt <= 0 THEN 1 ELSE 0 END) AS losers,
-                SUM(pnl_usdt) AS net_pnl,
+                SUM(CASE WHEN pnl_usdt < 0 THEN 1 ELSE 0 END) AS losers,
+                SUM(CASE WHEN pnl_usdt = 0 OR pnl_usdt IS NULL THEN 1 ELSE 0 END) AS break_even,
+                SUM(COALESCE(pnl_usdt, 0)) AS net_pnl,
                 AVG(CASE WHEN pnl_usdt > 0 THEN pnl_usdt END) AS avg_profit,
                 AVG(CASE WHEN pnl_usdt < 0 THEN pnl_usdt END) AS avg_loss
             FROM trades
@@ -406,6 +407,7 @@ def get_derr_summary() -> dict:
         total = int(row["total"] or 0)
         winners = int(row["winners"] or 0)
         losers = int(row["losers"] or 0)
+        break_even = int(row["break_even"] or 0)
         net_pnl = float(row["net_pnl"] or 0)
         avg_profit = float(row["avg_profit"] or 0)
         avg_loss = float(row["avg_loss"] or 0)
@@ -461,6 +463,7 @@ def get_derr_summary() -> dict:
             "totalTrades": total,
             "winningTrades": winners,
             "losingTrades": losers,
+            "breakEvenTrades": break_even,
             "winRate": win_rate,
             "netPnl": round(net_pnl, 2),
             "avgProfit": round(avg_profit, 2),
@@ -895,25 +898,63 @@ async def close_position(websocket, symbol, side):
         await websocket.send(json.dumps({'action': 'error', 'message': str(e)}))
 
 # ── Panik: tüm pozisyonları kapat ───────────────────────────────────────────
+def _close_all_positions_sync() -> int:
+    """Tüm açık emirleri iptal et, pozisyonları yuvarlayarak kapat, gerekirse tekrar dene."""
+    import time
+    from backend.config import AccountManager
+    from mina_position_manager import MinaPositionManager
+    from mina_trading_journal import TradingJournal
+
+    client = get_client()
+    try:
+        client.futures_cancel_all_open_orders()
+    except Exception as exc:
+        log.warning("PANIC cancel_all orders: %s", exc)
+
+    account = AccountManager(client)
+    slot = account.calculate_slot_size()
+    db_path = os.path.join(ROOT, "mina_trading_journal.db")
+    journal = TradingJournal(db_path=db_path)
+    pm = MinaPositionManager(client, slot, journal=journal, data_root=ROOT)
+    closed = 0
+    try:
+        for attempt in range(3):
+            raw = client.futures_position_information()
+            open_pos = [p for p in raw if float(p.get("positionAmt") or 0) != 0]
+            if not open_pos:
+                break
+            for p in open_pos:
+                amt = float(p["positionAmt"])
+                sym = p["symbol"]
+                side = "LONG" if amt > 0 else "SHORT"
+                c_side = "SELL" if amt > 0 else "BUY"
+                qty = pm._round_quantity(abs(amt), sym)
+                if qty <= 0:
+                    continue
+                try:
+                    client.futures_create_order(
+                        symbol=sym,
+                        side=c_side,
+                        type="MARKET",
+                        quantity=qty,
+                        positionSide=side,
+                    )
+                    closed += 1
+                    log.warning("PANIC closed: %s %s qty=%s", sym, side, qty)
+                except Exception as exc:
+                    log.error("close error %s: %s", sym, exc)
+            if attempt < 2:
+                time.sleep(1.5)
+        raw_all = client.futures_position_information()
+        _prune_stale_tracking(_binance_open_keys(raw_all))
+    finally:
+        journal.close()
+    return closed
+
+
 async def close_all(websocket):
     try:
-        client = get_client()
-        raw    = client.futures_position_information()
-        closed = 0
-        for p in raw:
-            amt = float(p['positionAmt'])
-            if amt == 0: continue
-            sym   = p['symbol']
-            side  = 'LONG' if amt > 0 else 'SHORT'
-            c_side = 'SELL' if amt > 0 else 'BUY'
-            try:
-                client.futures_create_order(
-                    symbol=sym, side=c_side, type='MARKET',
-                    quantity=abs(amt), positionSide=side)
-                closed += 1
-                log.warning(f"PANIC closed: {sym} {side}")
-            except Exception as e:
-                log.error(f"close error {sym}: {e}")
+        closed = await asyncio.to_thread(_close_all_positions_sync)
         await asyncio.to_thread(_reconcile_derr_sync)
         await websocket.send(json.dumps({'action': 'close_all_result', 'closed': closed}))
         await push_broadcast()
