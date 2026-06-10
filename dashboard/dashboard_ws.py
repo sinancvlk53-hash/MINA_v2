@@ -862,29 +862,129 @@ async def push_broadcast():
     except Exception as e:
         log.error(f"push_broadcast: {e}")
 
+
+def _build_market_lot_cache(client) -> dict:
+    """symbol → {maxQty, stepSize} from MARKET_LOT_SIZE (fallback LOT_SIZE)."""
+    cache: dict = {}
+    try:
+        for s in client.futures_exchange_info().get("symbols", []):
+            sym = s.get("symbol")
+            if not sym:
+                continue
+            max_qty = None
+            step = None
+            lot_max = None
+            for f in s.get("filters", []):
+                ft = f.get("filterType")
+                if ft == "MARKET_LOT_SIZE":
+                    max_qty = float(f.get("maxQty") or 0)
+                    step = float(f.get("stepSize") or 0)
+                elif ft == "LOT_SIZE":
+                    lot_max = float(f.get("maxQty") or 0)
+                    if step is None:
+                        step = float(f.get("stepSize") or 0)
+            if not max_qty and lot_max:
+                max_qty = lot_max
+            if max_qty and max_qty > 0:
+                cache[sym] = {"maxQty": max_qty, "stepSize": step or 0.001}
+    except Exception as exc:
+        log.warning("market lot cache: %s", exc)
+    return cache
+
+
+def _position_amt_for_side(raw_positions, symbol: str, side: str) -> float:
+    sym = symbol.upper()
+    sd = side.upper()
+    for p in raw_positions:
+        if p.get("symbol") != sym:
+            continue
+        amt = float(p.get("positionAmt") or 0)
+        if amt == 0:
+            continue
+        ps = p.get("positionSide") or ("LONG" if amt > 0 else "SHORT")
+        if ps in (sd, "BOTH"):
+            return amt
+    return 0.0
+
+
+def _close_position_market_sync(
+    client,
+    pm,
+    symbol: str,
+    side: str,
+    *,
+    lot_cache: dict | None = None,
+    chunk_pause: float = 0.5,
+    log_prefix: str = "PANIC",
+) -> int:
+    """Pozisyonu maxQty parçalarında MARKET ile kapat."""
+    import time
+
+    sym = symbol.upper()
+    sd = side.upper()
+    order_side = "SELL" if sd == "LONG" else "BUY"
+    limits = (lot_cache or {}).get(sym) or {}
+    max_qty = float(limits.get("maxQty") or 0)
+    if max_qty <= 0:
+        max_qty = float("inf")
+
+    placed = 0
+    for _ in range(250):
+        raw = client.futures_position_information(symbol=sym)
+        amt = _position_amt_for_side(raw, sym, sd)
+        if abs(amt) <= 0:
+            break
+        chunk = min(abs(amt), max_qty)
+        qty = pm._round_quantity(chunk, sym)
+        if qty <= 0:
+            break
+        try:
+            client.futures_create_order(
+                symbol=sym,
+                side=order_side,
+                type="MARKET",
+                quantity=qty,
+                positionSide=sd,
+            )
+            placed += 1
+            log.warning("%s closed: %s %s qty=%s", log_prefix, sym, sd, qty)
+        except Exception as exc:
+            log.error("close error %s: %s", sym, exc)
+            break
+        time.sleep(chunk_pause)
+    return placed
+
+
 # ── Tek pozisyon kapat ───────────────────────────────────────────────────────
 async def close_position(websocket, symbol, side):
     try:
         if not symbol or not side:
             raise ValueError('symbol and side required')
         client = get_client()
-        raw = client.futures_position_information(symbol=symbol)
-        closed = False
-        for p in raw:
-            amt = float(p['positionAmt'])
-            if amt == 0:
-                continue
-            pos_side = 'LONG' if amt > 0 else 'SHORT'
-            if pos_side != side:
-                continue
-            c_side = 'SELL' if amt > 0 else 'BUY'
-            qty = abs(amt)
-            client.futures_create_order(
-                symbol=symbol, side=c_side, type='MARKET',
-                quantity=qty, positionSide=side)
-            closed = True
-            log.warning(f"Client closed: {symbol} {side} qty={qty}")
-            break
+        from backend.config import AccountManager
+        from mina_position_manager import MinaPositionManager
+        from mina_trading_journal import TradingJournal
+
+        account = AccountManager(client)
+        slot = account.calculate_slot_size()
+        db_path = os.path.join(ROOT, 'mina_trading_journal.db')
+        journal = TradingJournal(db_path=db_path)
+        pm = MinaPositionManager(client, slot, journal=journal, data_root=ROOT)
+        lot_cache = _build_market_lot_cache(client)
+        try:
+            placed = await asyncio.to_thread(
+                _close_position_market_sync,
+                client,
+                pm,
+                symbol,
+                side,
+                lot_cache=lot_cache,
+                chunk_pause=0.5,
+                log_prefix="Client",
+            )
+        finally:
+            journal.close()
+        closed = placed > 0
         if closed:
             await asyncio.to_thread(_reconcile_derr_sync)
             raw_all = client.futures_position_information()
@@ -916,6 +1016,7 @@ def _close_all_positions_sync() -> int:
     db_path = os.path.join(ROOT, "mina_trading_journal.db")
     journal = TradingJournal(db_path=db_path)
     pm = MinaPositionManager(client, slot, journal=journal, data_root=ROOT)
+    lot_cache = _build_market_lot_cache(client)
     closed = 0
     try:
         for attempt in range(3):
@@ -923,26 +1024,25 @@ def _close_all_positions_sync() -> int:
             open_pos = [p for p in raw if float(p.get("positionAmt") or 0) != 0]
             if not open_pos:
                 break
+            seen: set = set()
             for p in open_pos:
                 amt = float(p["positionAmt"])
                 sym = p["symbol"]
                 side = "LONG" if amt > 0 else "SHORT"
-                c_side = "SELL" if amt > 0 else "BUY"
-                qty = pm._round_quantity(abs(amt), sym)
-                if qty <= 0:
+                key = (sym, side)
+                if key in seen:
                     continue
-                try:
-                    client.futures_create_order(
-                        symbol=sym,
-                        side=c_side,
-                        type="MARKET",
-                        quantity=qty,
-                        positionSide=side,
-                    )
-                    closed += 1
-                    log.warning("PANIC closed: %s %s qty=%s", sym, side, qty)
-                except Exception as exc:
-                    log.error("close error %s: %s", sym, exc)
+                seen.add(key)
+                n = _close_position_market_sync(
+                    client,
+                    pm,
+                    sym,
+                    side,
+                    lot_cache=lot_cache,
+                    chunk_pause=0.5,
+                    log_prefix="PANIC",
+                )
+                closed += n
             if attempt < 2:
                 time.sleep(1.5)
         raw_all = client.futures_position_information()

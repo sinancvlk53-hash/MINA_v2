@@ -29,6 +29,7 @@ body {
 .app {
   display: flex;
   flex-direction: column;
+  height: 100dvh;
   height: 100vh;
 }
 
@@ -3449,12 +3450,13 @@ body {
 
 /* ── RESPONSIVE ─────────────────────────────── */
 @media (max-width: 768px) {
-  body { overflow: auto; overflow-x: hidden; }
+  body { overflow: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
   .app {
     height: auto;
-    min-height: 100vh;
     min-height: 100dvh;
-    padding-bottom: calc(var(--mobile-nav-h) + env(safe-area-inset-bottom, 0px) + 8px);
+    min-height: 100vh;
+    padding-bottom: 70px;
+    padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
     overflow-x: hidden;
     max-width: 100vw;
   }
