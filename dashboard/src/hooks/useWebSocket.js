@@ -112,8 +112,11 @@ export default function useWebSocket(url) {
 
       ws.onclose = () => {
         if (!mountedRef.current) return
-        setStatus('disconnected')
-        setAuthenticated(false)
+        setStatus('reconnecting')
+        if (!storedToken()) {
+          setAuthenticated(false)
+          setAuthRequired(true)
+        }
         reconnectRef.current = setTimeout(connect, 3000)
       }
 

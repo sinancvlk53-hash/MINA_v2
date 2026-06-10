@@ -8,6 +8,7 @@ import PositionsOverlay from './components/PositionsOverlay.jsx'
 import DefensePanel from './components/DefensePanel.jsx'
 import MacroLevelsPanel from './components/MacroLevelsPanel.jsx'
 import MacroWatcherPanel from './components/MacroWatcherPanel.jsx'
+import HalukArchivePanel from './components/HalukArchivePanel.jsx'
 import SettingsPanel from './components/SettingsPanel.jsx'
 import LogPanel from './components/LogPanel.jsx'
 import DesktopNav from './components/DesktopNav.jsx'
@@ -104,6 +105,11 @@ export default function App() {
             funding={macroFunding}
             halukPdfTimestamp={halukPdfTimestamp}
             layout="tab"
+          />
+          <HalukArchivePanel
+            status={status}
+            sendMessage={sendMessage}
+            actionMsg={actionMsg}
           />
         </section>
 

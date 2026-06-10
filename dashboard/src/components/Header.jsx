@@ -4,6 +4,7 @@ import PanicButton from './PanicButton.jsx'
 const WS_STATUS = {
   connected:    { color: '#0ecb81', label: 'CANLI' },
   disconnected: { color: '#f6465d', label: 'KESİK' },
+  reconnecting: { color: '#f0b90b', label: 'YENİDEN' },
   error:        { color: '#f6465d', label: 'HATA' },
   connecting:   { color: '#f0b90b', label: 'BAĞLANIYOR' },
 }

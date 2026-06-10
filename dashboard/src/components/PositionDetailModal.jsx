@@ -1,6 +1,6 @@
 import React from 'react'
 import { createPortal } from 'react-dom'
-import { fmt, calcTP, calcDefense } from '../utils/trading.js'
+import { fmt, calcTP, calcDefense, calcBreakevenPrice } from '../utils/trading.js'
 
 function DefenseProgress({ pos, slotSize }) {
   const def = calcDefense(pos, slotSize)
@@ -28,14 +28,14 @@ function DefenseProgress({ pos, slotSize }) {
     <div className="def-progress-wrap">
       <div className="def-progress-labels">
         <span>Giriş ${fmt(entryPrice, 4)}</span>
-        <span>Mark ${fmt(markPrice, 4)}</span>
+        <span>Piyasa Fiyatı ${fmt(markPrice, 4)}</span>
         <span>Hard ${fmt(d3Price, 4)}</span>
       </div>
       <div className="def-progress-track">
         <div className="def-band band-entry" style={{ width: `${Math.min(d1Pct, 100)}%` }} />
         <div className="def-band band-d1" style={{ left: `${d1Pct}%`, width: `${Math.max(0, d2Pct - d1Pct)}%` }} />
         <div className="def-band band-d2" style={{ left: `${d2Pct}%`, width: `${Math.max(0, 100 - d2Pct)}%` }} />
-        <div className="def-marker" style={{ left: `${markPct}%` }} title="Mark fiyat" />
+        <div className="def-marker" style={{ left: `${markPct}%` }} title="Piyasa fiyatı" />
       </div>
       <div className="def-progress-legend">
         <span><i className="dot dot-yellow" /> D1</span>
@@ -50,9 +50,12 @@ export default function PositionDetailModal({ pos, onClose, data }) {
   if (!pos) return null
 
   const slotSize = (data?.balance ?? 0) / 10
+  const breakevenMult = data?.settings?.breakevenMult ?? 1.002
   const tp = calcTP(pos)
   const def = calcDefense(pos, slotSize)
+  const bePrice = calcBreakevenPrice(pos, breakevenMult)
   const isFast = tp.tp_type === 'fast'
+  const d2Active = (pos.defenseLevel || 0) >= 2
 
   return createPortal(
     <div className="detail-modal-overlay" onClick={onClose}>
@@ -63,6 +66,9 @@ export default function PositionDetailModal({ pos, onClose, data }) {
             <span className={`badge ${pos.side === 'LONG' ? 'badge-long' : 'badge-short'}`}>
               {pos.side} · {pos.leverage}x
             </span>
+            {d2Active && (
+              <span className="badge-pill badge-breakeven">D2 Tetiklendi — Zarar Yok Çıkış</span>
+            )}
           </div>
           <button type="button" className="modal-close" onClick={onClose}>✕</button>
         </div>
@@ -120,6 +126,16 @@ export default function PositionDetailModal({ pos, onClose, data }) {
                 </div>
               </div>
               <DefenseProgress pos={pos} slotSize={slotSize} />
+              <div className="detail-grid detail-grid-be">
+                <div className="detail-card">
+                  <span className="detail-label">Zararsız Çıkış Noktası</span>
+                  <span className="detail-price accent">${fmt(bePrice, 4)}</span>
+                  <span className="detail-note">Ağırlıklı ortalama + BE çarpanı</span>
+                </div>
+              </div>
+              {d2Active && (
+                <p className="detail-note text-accent">D2 Tetiklendi — Zarar Yok Çıkış (TP donduruldu)</p>
+              )}
               <p className="detail-note">Mevcut aşama: D{pos.defenseLevel || 0}</p>
             </section>
           )}

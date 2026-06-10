@@ -3,7 +3,9 @@ import { fmt, calcDefense, calcBreakevenPrice, defenseStageLabel } from '../util
 
 function DefenseMiniCard({ pos, slotSize, breakevenMult }) {
   const def = calcDefense(pos, slotSize)
-  const stage = defenseStageLabel(pos.defenseLevel || 0)
+  const stage = (pos.defenseLevel || 0) >= 2
+    ? { text: 'D2 Tetiklendi — Zarar Yok Çıkış', cls: 'stage-d2' }
+    : defenseStageLabel(pos.defenseLevel || 0)
   const isLong = pos.side === 'LONG'
   const bePrice = calcBreakevenPrice(pos, breakevenMult)
   const liq = pos.liqPrice
@@ -22,7 +24,7 @@ function DefenseMiniCard({ pos, slotSize, breakevenMult }) {
       <div className="def-mini-mark">
         Giriş <strong className="mono">${fmt(pos.entryPrice, 4)}</strong>
         {' · '}
-        Mark <strong className="mono">${fmt(pos.markPrice, 4)}</strong>
+        Piyasa Fiyatı <strong className="mono">${fmt(pos.markPrice, 4)}</strong>
       </div>
 
       <div className="def-mini-levels def-mini-levels-full">
@@ -31,7 +33,7 @@ function DefenseMiniCard({ pos, slotSize, breakevenMult }) {
           <span className="mono">${fmt(liq, 4)}</span>
         </div>
         <div className="def-mini-level def-mini-level-be">
-          <span className="lvl-be">Breakeven</span>
+          <span className="lvl-be">Zararsız Çıkış Noktası</span>
           <span className="mono">${fmt(bePrice, 4)}</span>
         </div>
         {def ? (

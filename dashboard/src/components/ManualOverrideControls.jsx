@@ -82,7 +82,7 @@ export default function ManualOverrideControls({ pos, sendMessage }) {
         className={`btn btn-sm ${active ? 'btn-manual-off' : 'btn-manual-on'} touch-target`}
         onClick={toggleManual}
       >
-        {active ? 'Otomatik Mod' : 'Manuel Yönet'}
+        {active ? 'Manuel Kapat (Otomatik)' : 'Manuel Yönet'}
       </button>
     </div>
   )

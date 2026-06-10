@@ -75,20 +75,6 @@ function notionalUsdt(p) {
   return (p.amount ?? 0) * mark
 }
 
-function RvolBadge({ rvol }) {
-  if (rvol == null || rvol === undefined) {
-    return (
-      <span className="badge-rvol badge-rvol-na" title="RVOL hesaplanamadı">RVOL —</span>
-    )
-  }
-  const hot = rvol >= 2
-  return (
-    <span className={`badge-rvol ${hot ? 'badge-rvol-hot' : ''}`} title="Son 5m / 1s ort. hacim">
-      RVOL {fmt(rvol, 2)}
-    </span>
-  )
-}
-
 function SourceBadge({ source, label }) {
   if (!source) return null
   const cls = source === 'HT' ? 'badge-src-ht' : source === 'MZ' ? 'badge-src-mz' : 'badge-src-manuel'
@@ -220,7 +206,6 @@ function PositionCards({
                 <SideBadge side={p.side} />
                 <SourceBadge source={p.signalSource} label={p.signalSourceLabel} />
                 <span className="badge-lev">{p.leverage}x</span>
-                <RvolBadge rvol={p.rvol} />
                 <StrategyBadge mode={stratMode} />
                 {p.leverage === 4 && (
                   <span className={`def-stage ${stage.cls}`}>{stage.text}</span>
@@ -246,14 +231,11 @@ function PositionCards({
             <div className="pos-card-grid">
               <div><span className="pos-card-k">Giriş</span><span className="mono">${fmt(p.entryPrice)}</span></div>
               <div><span className="pos-card-k">Ort.</span><span className="mono">${fmt(avgPrice(p))}</span></div>
-              <div><span className="pos-card-k">Mark</span><span className="mono">${fmt(p.markPrice)}</span></div>
+              <div><span className="pos-card-k">Piyasa Fiyatı</span><span className="mono">${fmt(p.markPrice)}</span></div>
               <div><span className="pos-card-k">Liq</span><span className="mono liq">${fmt(p.liqPrice)}</span></div>
               <div><span className="pos-card-k">Miktar</span><span className="mono">{fmt(p.amount, 4)}</span></div>
               <div><span className="pos-card-k">Büyüklük</span><span className="mono">{fmt(notionalUsdt(p), 2)}</span></div>
               <div><span className="pos-card-k">Marjin</span><span className="mono">{fmt(p.margin, 2)}</span></div>
-              {p.rvol != null && (
-                <div><span className="pos-card-k">RVOL</span><span className={`mono ${p.rvol >= 2 ? 'text-green' : ''}`}>{fmt(p.rvol, 2)}</span></div>
-              )}
             </div>
 
             <DefenseBars pos={p} slotSize={slotSize} />
@@ -295,9 +277,8 @@ function PositionTableDesktop({
             <th>Kaynak</th>
             <th>Yön</th>
             <th>Kaldıraç</th>
-            <th>RVOL</th>
             <th>Giriş</th>
-            <th>Mark</th>
+            <th>Piyasa Fiyatı</th>
             <th>ROE %</th>
             <th>PnL</th>
             <th></th>
@@ -338,9 +319,6 @@ function PositionTableDesktop({
                 <td className="mono">
                   {p.leverage}x
                   <StrategyBadge mode={stratMode} />
-                </td>
-                <td className={`mono ${p.rvol >= 2 ? 'text-green' : 'dim'}`}>
-                  {p.rvol != null ? fmt(p.rvol, 2) : '—'}
                 </td>
                 <td className="mono dim">${fmt(p.entryPrice)}</td>
                 <td className="mono">${fmt(p.markPrice)}</td>
