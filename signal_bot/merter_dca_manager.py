@@ -1048,7 +1048,13 @@ class MerterDCAManager:
                     self._save_state()
                     try:
                         from mina_motor_telegram import notify_merter_tp1
-                        notify_merter_tp1(symbol, tp1_pct)
+                        notify_merter_tp1(
+                            symbol,
+                            tp1_pct,
+                            entry_price=avg,
+                            tp1_price=mark,
+                            pnl_usdt=tp1_pnl,
+                        )
                     except Exception:
                         pass
                 continue
@@ -1063,7 +1069,16 @@ class MerterDCAManager:
                 tp2_pct = ((mark - avg) / avg) * 100 if avg else 0
                 try:
                     from mina_motor_telegram import notify_tp2
-                    notify_tp2(symbol, tp2_pct, tp2_pnl)
+                    notify_tp2(
+                        symbol,
+                        tp2_pct,
+                        tp2_pnl,
+                        side="LONG",
+                        leverage=1,
+                        entry_price=avg,
+                        tp2_price=mark,
+                        source="merter",
+                    )
                 except Exception:
                     pass
                 continue

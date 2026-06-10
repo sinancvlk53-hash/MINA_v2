@@ -1156,7 +1156,21 @@ class MinaPositionManager:
         print(f"   🛡️  D1 gerçekleştirildi: yeni ağırlıklı ortalama {self._round_price(weighted_avg)}")
         try:
             from mina_motor_telegram import notify_d1
-            notify_d1(symbol)
+            entry = float(position.get('entry_price', 0) or 0)
+            leverage = int(position.get('leverage', 4) or 4)
+            if entry > 0:
+                spot_chg = ((current_price - entry) / entry * 100) if side == 'LONG' else ((entry - current_price) / entry * 100)
+                roe_pct = spot_chg * leverage
+            else:
+                roe_pct = 0.0
+            notify_d1(
+                symbol,
+                side=side,
+                leverage=leverage,
+                roe_pct=roe_pct,
+                margin_added=add_usdt,
+                source="motor",
+            )
         except Exception:
             pass
         return True
@@ -1229,7 +1243,21 @@ class MinaPositionManager:
             print(f"   🛡️  D2 yürütüldü: başa baş escape fiyatı {breakeven_price}")
             try:
                 from mina_motor_telegram import notify_d2
-                notify_d2(symbol)
+                entry = float(position.get('entry_price', 0) or 0)
+                leverage = int(position.get('leverage', 4) or 4)
+                if entry > 0:
+                    spot_chg = ((current_price - entry) / entry * 100) if side == 'LONG' else ((entry - current_price) / entry * 100)
+                    roe_pct = spot_chg * leverage
+                else:
+                    roe_pct = 0.0
+                notify_d2(
+                    symbol,
+                    side=side,
+                    leverage=leverage,
+                    roe_pct=roe_pct,
+                    margin_added=add_usdt,
+                    source="motor",
+                )
             except Exception:
                 pass
             return True
@@ -1394,7 +1422,21 @@ class MinaPositionManager:
             print(f"   🛡️  D3 tamamlandı: yeni TP kaçış emri {breakeven_price} fiyatına gönderildi")
             try:
                 from mina_motor_telegram import notify_d3
-                notify_d3(symbol)
+                entry = float(position.get('entry_price', 0) or 0)
+                leverage = int(position.get('leverage', 4) or 4)
+                if entry > 0:
+                    spot_chg = ((current_price - entry) / entry * 100) if side == 'LONG' else ((entry - current_price) / entry * 100)
+                    roe_pct = spot_chg * leverage
+                else:
+                    roe_pct = 0.0
+                notify_d3(
+                    symbol,
+                    side=side,
+                    leverage=leverage,
+                    roe_pct=roe_pct,
+                    margin_added=add_usdt,
+                    source="motor",
+                )
             except Exception:
                 pass
             return True
@@ -1618,7 +1660,17 @@ class MinaPositionManager:
             self._persist_tp_level(symbol, side, 1)
             try:
                 from mina_motor_telegram import notify_tp1
-                notify_tp1(symbol, partial_pct, partial_pnl)
+                leverage = int(position.get('leverage', 4) or 4)
+                notify_tp1(
+                    symbol,
+                    partial_pct,
+                    partial_pnl,
+                    side=side,
+                    leverage=leverage,
+                    entry_price=entry_price,
+                    tp1_price=close_price,
+                    source="motor",
+                )
             except Exception:
                 pass
             return True
@@ -1682,7 +1734,17 @@ class MinaPositionManager:
             print(f"   📈 max_prices seed after TP2: {peak}")
             try:
                 from mina_motor_telegram import notify_tp2
-                notify_tp2(symbol, partial_pct, partial_pnl)
+                leverage = int(position.get('leverage', 4) or 4)
+                notify_tp2(
+                    symbol,
+                    partial_pct,
+                    partial_pnl,
+                    side=side,
+                    leverage=leverage,
+                    entry_price=entry_price,
+                    tp2_price=close_price,
+                    source="motor",
+                )
             except Exception:
                 pass
             return True
@@ -1735,7 +1797,17 @@ class MinaPositionManager:
 
             try:
                 from mina_motor_telegram import notify_trailing_closed
-                notify_trailing_closed(symbol, pnl_usdt)
+                leverage = int(position.get('leverage', 4) or 4)
+                notify_trailing_closed(
+                    symbol,
+                    pnl_usdt,
+                    side=side,
+                    leverage=leverage,
+                    peak_price=state.get('highest_price'),
+                    exit_price=close_price,
+                    pnl_pct=pnl_percent,
+                    source="motor",
+                )
             except Exception:
                 pass
             

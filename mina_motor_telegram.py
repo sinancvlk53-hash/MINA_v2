@@ -46,34 +46,169 @@ def notify_position_open(
     )
 
 
-def notify_tp1(symbol: str, pnl_pct: float = 3.0, pnl_usdt: float = 0.0) -> None:
-    pct = abs(float(pnl_pct or 3.0))
-    _send(f"✅ {_sym(symbol)} TP1 tetiklendi! +%{pct:.0f} | Kalan: %50")
+def _fmt_px(value) -> str:
+    try:
+        v = float(value)
+        if v >= 1000:
+            return f"{v:,.2f}"
+        if v >= 1:
+            return f"{v:.4f}"
+        return f"{v:.6f}"
+    except (TypeError, ValueError):
+        return str(value or "—")
 
 
-def notify_tp2(symbol: str, pnl_pct: float = 5.0, pnl_usdt: float = 0.0) -> None:
-    pct = abs(float(pnl_pct or 5.0))
-    _send(f"✅ {_sym(symbol)} TP2 tetiklendi! +%{pct:.0f} | Trailing başladı")
+def _side_emoji(side: str) -> str:
+    return "📈" if str(side or "").upper() == "LONG" else "📉"
 
 
-def notify_trailing_closed(symbol: str, net_pnl_usdt: float) -> None:
+def notify_tp1(
+    symbol: str,
+    pnl_pct: float = 3.0,
+    pnl_usdt: float = 0.0,
+    *,
+    side: str = "LONG",
+    leverage: int = 4,
+    entry_price: Optional[float] = None,
+    tp1_price: Optional[float] = None,
+    source: str = "motor",
+) -> None:
+    sym = _sym(symbol)
+    pct = abs(float(pnl_pct or 0))
+    pnl = abs(float(pnl_usdt or 0))
+    entry_s = _fmt_px(entry_price) if entry_price is not None else "—"
+    tp_s = _fmt_px(tp1_price) if tp1_price is not None else "—"
     _send(
-        f"🏁 {_sym(symbol)} trailing ile kapandı | PnL: {_fmt_usdt(net_pnl_usdt)} USDT"
+        f"✅ TP1 TETİKLENDİ\n"
+        f"━━━━━━━━━━━━━━\n"
+        f"{_side_emoji(side)} {sym} {side.upper()}\n"
+        f"📊 Kaynak: {source} ({int(leverage)}x)\n"
+        f"💰 Kâr: +{pct:.1f}% | +{pnl:.2f} USDT\n"
+        f"📌 Giriş: {entry_s} → TP1: {tp_s}\n"
+        f"🔵 Kalan: %50 açık — TP2 bekleniyor\n"
+        f"━━━━━━━━━━━━━━"
     )
 
 
-def notify_d1(symbol: str) -> None:
-    _send(f"⚠️ {_sym(symbol)} D1 savunma! Ekleme yapıldı")
-
-
-def notify_d2(symbol: str) -> None:
+def notify_tp2(
+    symbol: str,
+    pnl_pct: float = 5.0,
+    pnl_usdt: float = 0.0,
+    *,
+    side: str = "LONG",
+    leverage: int = 4,
+    entry_price: Optional[float] = None,
+    tp2_price: Optional[float] = None,
+    exit_price: Optional[float] = None,
+    source: str = "motor",
+) -> None:
+    sym = _sym(symbol)
+    pct = abs(float(pnl_pct or 0))
+    pnl = abs(float(pnl_usdt or 0))
+    entry_s = _fmt_px(entry_price) if entry_price is not None else "—"
+    out_s = _fmt_px(tp2_price if tp2_price is not None else exit_price)
     _send(
-        f"🔴 {_sym(symbol)} D2 savunma! TP donduruldu, kurtarma emri kondu"
+        f"🎯 TP2 TETİKLENDİ\n"
+        f"━━━━━━━━━━━━━━\n"
+        f"{_side_emoji(side)} {sym} {side.upper()}\n"
+        f"📊 Kaynak: {source} ({int(leverage)}x)\n"
+        f"💰 Kâr: +{pct:.1f}% | +{pnl:.2f} USDT\n"
+        f"📌 Giriş: {entry_s} → TP2: {out_s}\n"
+        f"🏁 Trailing başladı — kalan pozisyon izleniyor\n"
+        f"━━━━━━━━━━━━━━"
     )
 
 
-def notify_d3(symbol: str) -> None:
-    _send(f"🆘 {_sym(symbol)} D3 savunma! Büyük ekleme yapıldı")
+def notify_trailing_closed(
+    symbol: str,
+    net_pnl_usdt: float,
+    *,
+    side: str = "LONG",
+    leverage: int = 4,
+    peak_price: Optional[float] = None,
+    exit_price: Optional[float] = None,
+    pnl_pct: float = 0.0,
+    source: str = "motor",
+) -> None:
+    sym = _sym(symbol)
+    pnl = float(net_pnl_usdt or 0)
+    pct = abs(float(pnl_pct or 0))
+    peak_s = _fmt_px(peak_price) if peak_price is not None else "—"
+    exit_s = _fmt_px(exit_price) if exit_price is not None else "—"
+    sign = "+" if pnl >= 0 else ""
+    _send(
+        f"🔔 TRAILING STOP\n"
+        f"━━━━━━━━━━━━━━\n"
+        f"{_side_emoji(side)} {sym} {side.upper()}\n"
+        f"📊 Kaynak: {source} ({int(leverage)}x)\n"
+        f"📈 Tepe: {peak_s} → Çıkış: {exit_s}\n"
+        f"💰 Kâr: {sign}{pct:.1f}% | {sign}{pnl:.2f} USDT\n"
+        f"━━━━━━━━━━━━━━"
+    )
+
+
+def notify_d1(
+    symbol: str,
+    *,
+    side: str = "LONG",
+    leverage: int = 4,
+    roe_pct: float = 0.0,
+    margin_added: float = 0.0,
+    source: str = "motor",
+) -> None:
+    sym = _sym(symbol)
+    _send(
+        f"🛡 D1 SAVUNMA\n"
+        f"━━━━━━━━━━━━━━\n"
+        f"{_side_emoji(side)} {sym} {side.upper()}\n"
+        f"📊 Kaynak: {source} ({int(leverage)}x)\n"
+        f"📉 ROE: {roe_pct:+.1f}%\n"
+        f"➕ Eklenen marjin: {margin_added:.2f} USDT\n"
+        f"━━━━━━━━━━━━━━"
+    )
+
+
+def notify_d2(
+    symbol: str,
+    *,
+    side: str = "LONG",
+    leverage: int = 4,
+    roe_pct: float = 0.0,
+    margin_added: float = 0.0,
+    source: str = "motor",
+) -> None:
+    sym = _sym(symbol)
+    _send(
+        f"⚠️ D2 SAVUNMA\n"
+        f"━━━━━━━━━━━━━━\n"
+        f"{_side_emoji(side)} {sym} {side.upper()}\n"
+        f"📊 Kaynak: {source} ({int(leverage)}x)\n"
+        f"📉 ROE: {roe_pct:+.1f}%\n"
+        f"➕ Eklenen marjin: {margin_added:.2f} USDT\n"
+        f"🔒 TP donduruldu — kurtarma emri kondu\n"
+        f"━━━━━━━━━━━━━━"
+    )
+
+
+def notify_d3(
+    symbol: str,
+    *,
+    side: str = "LONG",
+    leverage: int = 4,
+    roe_pct: float = 0.0,
+    margin_added: float = 0.0,
+    source: str = "motor",
+) -> None:
+    sym = _sym(symbol)
+    _send(
+        f"🚨 D3 SAVUNMA\n"
+        f"━━━━━━━━━━━━━━\n"
+        f"{_side_emoji(side)} {sym} {side.upper()}\n"
+        f"📊 Kaynak: {source} ({int(leverage)}x)\n"
+        f"📉 ROE: {roe_pct:+.1f}%\n"
+        f"➕ Eklenen marjin: {margin_added:.2f} USDT\n"
+        f"━━━━━━━━━━━━━━"
+    )
 
 
 def notify_hard_stop(symbol: str, loss_usdt: float = 0.0) -> None:
@@ -107,9 +242,24 @@ def notify_merter_dca_open(
     )
 
 
-def notify_merter_tp1(symbol: str, pnl_pct: float = 3.0) -> None:
-    pct = abs(float(pnl_pct or 3.0))
-    _send(f"✅ Merter {_sym(symbol)} TP1 | +%{pct:.0f}")
+def notify_merter_tp1(
+    symbol: str,
+    pnl_pct: float = 3.0,
+    *,
+    entry_price: Optional[float] = None,
+    tp1_price: Optional[float] = None,
+    pnl_usdt: float = 0.0,
+) -> None:
+    notify_tp1(
+        symbol,
+        pnl_pct,
+        pnl_usdt,
+        side="LONG",
+        leverage=1,
+        entry_price=entry_price,
+        tp1_price=tp1_price,
+        source="merter",
+    )
 
 
 def notify_merter_time_stop(symbol: str) -> None:
