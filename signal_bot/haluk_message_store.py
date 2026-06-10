@@ -80,46 +80,9 @@ def _heuristic_analysis(raw_text: str) -> Dict[str, Any]:
     }
 
 
-def analyze_message(raw_text: str) -> Dict[str, Any]:
-    if not raw_text.strip():
-        return _heuristic_analysis("")
-    try:
-        client = _get_claude()
-        resp = client.messages.create(
-            model=MODEL,
-            max_tokens=512,
-            messages=[{
-                "role": "user",
-                "content": (
-                    "Haluk Hoca kripto Telegram mesajını analiz et. Sadece JSON döndür:\n"
-                    '{"message_type":"sinyal|kutu|makro|haber|diger",'
-                    '"coins_mentioned":["BTC","SOL"],'
-                    '"direction":"AL|SAT|None",'
-                    '"price_levels":["96000","195B"],'
-                    '"analysis_summary":"1-2 cümle Türkçe özet"}\n\n'
-                    f"Mesaj:\n{raw_text[:2000]}"
-                ),
-            }],
-        )
-        data = _parse_claude_json(resp.content[0].text)
-        msg_type = str(data.get("message_type") or "diger").lower()
-        if msg_type not in TYPE_LABELS:
-            msg_type = "diger"
-        direction = str(data.get("direction") or "None").upper()
-        if direction not in ("AL", "SAT", "NONE"):
-            direction = "None"
-        if direction == "NONE":
-            direction = "None"
-        return {
-            "message_type": msg_type,
-            "coins_mentioned": [str(c).upper().replace("USDT", "") for c in (data.get("coins_mentioned") or [])][:12],
-            "direction": direction,
-            "price_levels": data.get("price_levels") or [],
-            "analysis_summary": str(data.get("analysis_summary") or "")[:500],
-        }
-    except Exception as exc:
-        print(f"[HALUK ARCHIVE] Claude hatası, heuristik kullanılıyor: {exc}")
-        return _heuristic_analysis(raw_text)
+def analyze_message(raw_text: str) -> Optional[Dict[str, Any]]:
+    """Claude analiz devre dışı — API çağrısı yapılmaz."""
+    return None
 
 
 def send_haluk_telegram(
@@ -183,6 +146,8 @@ def archive_haluk_message(
             return 0
 
         analysis = analyze_message(raw_text) if use_claude else _heuristic_analysis(raw_text)
+        if analysis is None:
+            return -1
         row_id = journal.insert_haluk_message(
             timestamp=ts,
             message_id=message_id,
