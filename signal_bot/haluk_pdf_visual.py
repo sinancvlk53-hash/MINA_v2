@@ -62,18 +62,27 @@ Büyük küçük fark etmez, soluk da olsa say. Sohbet/yorumları yok say, sadec
 
 BU ARAÇ YOKSA → {{"signals": []}}
 
-YÖN TESPİTİ — TEK KURAL:
-TradingView Position Tool iki renkli dikdörtgenden oluşur: yeşil ve kırmızı.
+YÖN TESPİTİ — TEMEL KURAL:
+TradingView Position Tool'da YEŞİL rengin yönüne bak:
 
-Hangisi DAHA UZUNSA (daha büyük alan kaplarsa) o yönü al:
-- YEŞİL taraf daha uzunsa → LONG
-- KIRMIZI taraf daha uzunsa → SHORT
+- Yeşil YUKARI doğru büyükse (yeşil üstte) → LONG
+- Yeşil AŞAĞI doğru büyükse (yeşil altta) → SHORT
 
-Entry = iki rengin birleştiği çizgi
-TP = uzun tarafın dış ucu
-Stop = kısa tarafın dış ucu
+Kırmızı her zaman yeşilin tersindedir, ona bakma.
+Sadece yeşilin nereye baktığına bak.
 
-Bu kuralı asla karıştırma. Sadece hangi renk daha büyük alana sahip, ona bak.
+Giriş (entry) = yeşil ve kırmızının birleştiği çizgi
+TP = yeşilin dış ucu (yeşilin baktığı yön)
+Stop = kırmızının dış ucu (yeşilin tersi)
+
+İKİ YÖNLÜ POZİSYON:
+Aynı grafikte iki ayrı Position Tool varsa ikisini de yaz.
+Üstteki ve alttaki ayrı ayrı değerlendir.
+Her biri için ayrı sinyal üret.
+
+ZEC ÖRNEĞI:
+Üstte: yeşil aşağı büyük → SHORT, giriş 541.42, TP 325.28, stop 629.15
+Altta: yeşil yukarı büyük → LONG, giriş 378.38, TP 629.15, stop 325.28
 
 ARAÇ VARSA:
 - symbol: grafik başlığındaki coin (BTCUSDT → BTC, ETHUSDT → ETH)
