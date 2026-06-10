@@ -57,30 +57,28 @@ TRADING_SIGNAL_PROMPT = """Bu görüntü Haluk Hoca'nın kripto analiz PDF'inin 
 
 GÖREV: Sayfada TradingView pozisyon aracı ara.
 
-POZİSYON ARACI TANIMI — bunlardan herhangi biri varsa sinyal say:
-- Üstü YEŞİL altı KIRMIZI dikdörtgen bölge → LONG
-- Üstü KIRMIZI altı YEŞİL dikdörtgen bölge → SHORT
-- Yeşil ve kırmızı renkli kutular üst alta veya yan yana → yön renge göre
-- Büyük küçük fark etmez, soluk da olsa, grafik içinde veya kenarında olsa da say
-- Sohbet mesajları veya yorumlar seni yanıltmasın, sadece grafige bak
+POZİSYON ARACI — yeşil ve kırmızı iki renkli dikdörtgen varsa sinyal say.
+Büyük küçük fark etmez, soluk da olsa say. Sohbet/yorumları yok say, sadece grafiğe bak.
 
 BU ARAÇ YOKSA → {{"signals": []}}
 
+YÖN TESPİTİ — TEK KURAL:
+TradingView Position Tool iki renkli dikdörtgenden oluşur: yeşil ve kırmızı.
+
+Hangisi DAHA UZUNSA (daha büyük alan kaplarsa) o yönü al:
+- YEŞİL taraf daha uzunsa → LONG
+- KIRMIZI taraf daha uzunsa → SHORT
+
+Entry = iki rengin birleştiği çizgi
+TP = uzun tarafın dış ucu
+Stop = kısa tarafın dış ucu
+
+Bu kuralı asla karıştırma. Sadece hangi renk daha büyük alana sahip, ona bak.
+
 ARAÇ VARSA:
 - symbol: grafik başlığındaki coin (BTCUSDT → BTC, ETHUSDT → ETH)
-- direction: "LONG" veya "SHORT"
-
-İKİ YÖNLÜ SİNYAL:
-- Aynı grafikte hem yeşil hem kırmızı kutu varsa ikisini de ayrı sinyal olarak yaz
-- Yeşil kutu → LONG sinyali
-- Kırmızı kutu → SHORT sinyali
-- Her ikisi için ayrı entry/tp/stop çıkar
-
-GİRİŞ ÇİZGİSİ KURALI (Position Tool):
-- entry LONG için → yeşil ve kırmızı kutunun birleştiği çizgi (alt kırmızının üstü)
-- entry SHORT için → kırmızı ve yeşil kutunun birleştiği çizgi (üst kırmızının altı)
-- tp → yeşil kutunun dış ucu (LONG için üst, SHORT için alt)
-- stop → kırmızı kutunun dış ucu (LONG için alt, SHORT için üst)
+- direction: "LONG" veya "SHORT" (yukarıdaki tek kurala göre)
+- entry, tp, stop: yukarıdaki entry/tp/stop kurallarına göre sayısal fiyat
 
 Sadece geçerli JSON döndür:
 {{"signals": [{{"symbol": "BTC", "direction": "LONG",
