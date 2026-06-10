@@ -3189,15 +3189,15 @@ body {
 }
 
 /* ── MODAL ──────────────────────────────────── */
-.modal-overlay {
+.detail-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
+  z-index: 2600;
+  background: rgba(0, 0, 0, 0.82);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  padding: 16px;
+  padding: 20px;
 }
 
 .modal {

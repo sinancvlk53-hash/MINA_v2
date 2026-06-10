@@ -1,4 +1,5 @@
 import React from 'react'
+import { createPortal } from 'react-dom'
 import { fmt, calcTP, calcDefense } from '../utils/trading.js'
 
 function DefenseProgress({ pos, slotSize }) {
@@ -53,8 +54,8 @@ export default function PositionDetailModal({ pos, onClose, data }) {
   const def = calcDefense(pos, slotSize)
   const isFast = tp.tp_type === 'fast'
 
-  return (
-    <div className="modal-overlay" onClick={onClose}>
+  return createPortal(
+    <div className="detail-modal-overlay" onClick={onClose}>
       <div className="modal detail-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div>
@@ -124,6 +125,7 @@ export default function PositionDetailModal({ pos, onClose, data }) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
