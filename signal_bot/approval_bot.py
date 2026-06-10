@@ -492,6 +492,8 @@ def _auto_execute_haluk_pdf_signals(signals: list, pdf_time: str = "") -> None:
     """haluk_pdf kaynaklı sinyaller — Telegram onayı beklemeden aç."""
     if not signals:
         return
+    from mina_ht_pdf_supersede import normalize_ht_symbol, supersede_ht_pdf_coin
+
     config = BinanceConfig()
     client = config.get_client()
     account = AccountManager(client)
@@ -503,6 +505,8 @@ def _auto_execute_haluk_pdf_signals(signals: list, pdf_time: str = "") -> None:
         if not symbol or side not in ("LONG", "SHORT"):
             results.append(f"❌ {symbol or '?'}: geçersiz sembol/yön")
             continue
+        sym = normalize_ht_symbol(symbol)
+        supersede_ht_pdf_coin(sym, client, log=print)
         ok, detail = open_position(
             client,
             account,

@@ -1243,38 +1243,42 @@ def pdf_timestamp_from_path(pdf_path: str) -> str:
 def _cancel_superseded_haluk_limits(superseded: List[Dict[str, Any]]) -> None:
     """Eski PDF'den bekleyen limit emirlerini iptal et."""
     to_cancel: List[Tuple[str, int]] = []
+    symbols: set = set()
     for entry in superseded:
+        sym = entry.get("symbol")
+        if sym:
+            symbols.add(str(sym).upper())
         if entry.get("queue_state") != "pending_limit":
             continue
-        sym = entry.get("symbol")
         oid = entry.get("pending_order_id")
         if sym and oid:
             to_cancel.append((sym, int(oid)))
-
-    if not to_cancel:
-        return
 
     try:
         client = _get_binance_client()
     except Exception:
         client = None
-    if client is None:
-        print(f"[HALUK PDF] {len(to_cancel)} eski limit emri iptal edilemedi (client yok)")
-        return
 
-    import mina_tracking as mt
+    if to_cancel and client:
+        import mina_tracking as mt
 
-    pending = mt.load_json(mt.PENDING_ORDERS_FILE)
-    for sym, oid in to_cancel:
-        try:
-            client.futures_cancel_order(symbol=sym, orderId=oid)
-            print(f"[HALUK PDF] Eski limit iptal: {sym} order={oid}")
-        except Exception as e:
-            print(f"[HALUK PDF] Limit iptal hatası {sym} {oid}: {e}")
-        for pk, info in list(pending.items()):
-            if info.get("order_id") == oid and info.get("symbol") == sym:
-                pending.pop(pk, None)
-    mt.save_json(mt.PENDING_ORDERS_FILE, pending)
+        pending = mt.load_json(mt.PENDING_ORDERS_FILE)
+        for sym, oid in to_cancel:
+            try:
+                client.futures_cancel_order(symbol=sym, orderId=oid)
+                print(f"[HALUK PDF] Eski limit iptal: {sym} order={oid}")
+            except Exception as e:
+                print(f"[HALUK PDF] Limit iptal hatası {sym} {oid}: {e}")
+            for pk, info in list(pending.items()):
+                if info.get("order_id") == oid and info.get("symbol") == sym:
+                    pending.pop(pk, None)
+        mt.save_json(mt.PENDING_ORDERS_FILE, pending)
+
+    if symbols and client:
+        from mina_ht_pdf_supersede import normalize_ht_symbol, cancel_binance_pending_limits
+
+        for sym in symbols:
+            cancel_binance_pending_limits(client, normalize_ht_symbol(sym))
 
 
 def supersede_stale_haluk_pdf_entries(
@@ -1344,6 +1348,17 @@ def enqueue_haluk_pdf_records(pdf_path: str, records: List[Dict[str, Any]]) -> s
         if r.get("status") == "approved" and r.get("symbol") != "SYSTEM"
     ]
     if approved:
+        from mina_ht_pdf_supersede import (
+            get_binance_client_optional,
+            normalize_ht_symbol,
+            supersede_ht_pdf_coins,
+        )
+
+        approved_symbols = [normalize_ht_symbol(r["symbol"]) for r in approved]
+        ht_client = get_binance_client_optional()
+        if approved_symbols:
+            supersede_ht_pdf_coins(approved_symbols, ht_client)
+
         legacy = {
             "signals": [
                 {
@@ -1361,6 +1376,7 @@ def enqueue_haluk_pdf_records(pdf_path: str, records: List[Dict[str, Any]]) -> s
             ],
             "source": f"haluk_pdf:{os.path.basename(pdf_path)}",
             "pdf_timestamp": pdf_ts,
+            "updated_at": _now_iso(),
         }
         ht_path = os.path.join(SIGNAL_BOT_DIR, "ht_signals_queue.json")
         with open(ht_path, "w", encoding="utf-8") as f:

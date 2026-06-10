@@ -345,18 +345,40 @@ def _raw_signal_to_queue_record(sig: Dict[str, Any], pdf_path: str) -> Optional[
 
 
 def _write_ht_signals_queue(records: List[Dict[str, Any]], pdf_path: str) -> None:
-    payload: Dict[str, Any] = {
-        "signals": records,
-        "source": f"HALUK_PDF_VISUAL:{os.path.basename(pdf_path)}",
-    }
+    from mina_ht_pdf_supersede import (
+        get_binance_client_optional,
+        normalize_ht_symbol,
+        supersede_ht_pdf_coins,
+        signal_symbol,
+    )
+
+    new_symbols = [
+        normalize_ht_symbol(r.get("symbol"))
+        for r in records
+        if r.get("symbol")
+    ]
+    client = get_binance_client_optional()
+    if new_symbols:
+        supersede_ht_pdf_coins(new_symbols, client)
+
+    kept: List[Dict[str, Any]] = []
+    new_symbol_set = set(new_symbols)
     if os.path.isfile(HT_SIGNALS_QUEUE_FILE):
         try:
             with open(HT_SIGNALS_QUEUE_FILE, encoding="utf-8") as f:
                 old = json.load(f)
-            merged = list(old.get("signals") or []) + records
-            payload["signals"] = merged
+            kept = [
+                s for s in (old.get("signals") or [])
+                if signal_symbol(s) not in new_symbol_set
+            ]
         except (OSError, json.JSONDecodeError):
             pass
+
+    payload: Dict[str, Any] = {
+        "signals": kept + records,
+        "source": f"HALUK_PDF_VISUAL:{os.path.basename(pdf_path)}",
+        "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
     os.makedirs(SIGNAL_BOT_DIR, exist_ok=True)
     with open(HT_SIGNALS_QUEUE_FILE, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)

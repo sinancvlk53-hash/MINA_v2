@@ -861,6 +861,26 @@ class TradingJournal:
             print(f"❌ log_ht_pdf_signal hatası: {e}")
             return 0
 
+    def cancel_ht_pdf_basari_for_symbol(self, symbol: str) -> int:
+        """Aynı coin için aktif ht_pdf_basari_orani kayıtlarını cancelled yap."""
+        try:
+            cur = self.conn.cursor()
+            cur.execute(
+                '''
+                UPDATE ht_pdf_basari_orani
+                SET status = 'cancelled',
+                    close_time = datetime('now')
+                WHERE symbol = ?
+                  AND status NOT IN ('cancelled', 'closed')
+                ''',
+                (symbol,),
+            )
+            self.conn.commit()
+            return int(cur.rowcount or 0)
+        except Exception as e:
+            print(f"❌ cancel_ht_pdf_basari_for_symbol hatası: {e}")
+            return 0
+
     def list_haluk_messages(
         self,
         *,

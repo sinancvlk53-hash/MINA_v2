@@ -37,6 +37,7 @@ FILES = [
     "mina_makro_watcher.py",
     "mina_binance_retry.py",
     "mina_orphan_orders.py",
+    "mina_ht_pdf_supersede.py",
     "backend/config.py",
     "scripts/reconcile_atom_derr.py",
     "backend/ghost_positions.py",
