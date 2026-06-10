@@ -31,7 +31,7 @@ LOG_PATH = os.path.join(_ROOT, "signal_bot", "yayin_analiz.log")
 YTDLP = os.getenv("YTDLP_BIN", "/usr/local/bin/yt-dlp")
 DENO = os.getenv("DENO_BIN", "/root/.deno/bin/deno")
 WHISPER_MODEL = os.getenv("WHISPER_MODEL", "base")
-CLAUDE_MODEL = os.getenv("HALUK_YAYIN_ANALIZ_MODEL", "claude-opus-4-5")
+CLAUDE_MODEL = os.getenv("HALUK_YAYIN_ANALIZ_MODEL", "claude-sonnet-4-6")
 
 INITIAL_WAIT_SEC = int(os.getenv("YAYIN_ANALIZ_INITIAL_WAIT", "300"))
 POLL_INTERVAL_SEC = int(os.getenv("YAYIN_ANALIZ_POLL_SEC", "1800"))

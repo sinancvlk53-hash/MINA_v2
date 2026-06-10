@@ -1135,7 +1135,12 @@ def parse_haluk_telegram(text: str) -> Tuple[List[Dict[str, Any]], bool]:
 
 def parse_haluk_pdf_path(pdf_path: str) -> Tuple[List[Dict[str, Any]], bool]:
     """Mevcut haluk_pdf_parser ile entegrasyon."""
+    from signal_bot.haluk_pdf_processed import is_pdf_processed, mark_pdf_processed
     from signal_bot.haluk_pdf_parser import parse_haluk_pdf
+
+    if is_pdf_processed(pdf_path):
+        print(f"[HALUK PDF] ATLA (zaten işlendi): {os.path.basename(pdf_path)}")
+        return [], False
 
     result = parse_haluk_pdf(pdf_path)
     records: List[Dict[str, Any]] = []
@@ -1148,6 +1153,7 @@ def parse_haluk_pdf_path(pdf_path: str) -> Tuple[List[Dict[str, Any]], bool]:
             status="rejected",
             reject_reason=f"haber şalteri: {result.pause_keyword}",
         ))
+        mark_pdf_processed(pdf_path)
         return records, True
 
     for m in result.macro_filters:
@@ -1190,6 +1196,7 @@ def parse_haluk_pdf_path(pdf_path: str) -> Tuple[List[Dict[str, Any]], bool]:
             reject_reason=None,
         ))
 
+    mark_pdf_processed(pdf_path)
     return records, result.system_pause
 
 

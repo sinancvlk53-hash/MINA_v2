@@ -50,6 +50,8 @@ FILES = [
     "signal_bot/signal_parser.py",
     "signal_bot/haluk_pdf_parser.py",
     "signal_bot/haluk_pdf_visual.py",
+    "signal_bot/haluk_pdf_processed.py",
+    "signal_bot/haluk_yayin_analiz.py",
     "signal_bot/macro_levels_store.py",
     "signal_bot/macro_prices.py",
     "signal_bot/signal_slot_bridge.py",

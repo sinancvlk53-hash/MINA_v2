@@ -27,7 +27,7 @@ VISUAL_MACRO_SYMBOLS = (
 )
 
 CLAUDE_MODEL = os.getenv("HALUK_VISUAL_MODEL", "claude-sonnet-4-6")
-MAX_PAGES = int(os.getenv("HALUK_VISUAL_MAX_PAGES", "24"))
+MAX_PAGES = int(os.getenv("HALUK_VISUAL_MAX_PAGES", "10"))
 RENDER_DPI = int(os.getenv("HALUK_VISUAL_DPI", "144"))
 
 VISION_PROMPT = """Bu görüntü Haluk Hoca'nın kripto/makro analiz PDF'inin bir sayfasıdır.

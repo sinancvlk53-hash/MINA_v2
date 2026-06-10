@@ -322,8 +322,15 @@ def handle_reply(message, signals):
 
 def process_new_pdf(pdf_path: str):
     """PDF'i haluk_pdf_parser ile işle → raw_signal_queue → onay akışı."""
+    from signal_bot.haluk_pdf_processed import is_pdf_processed
+
+    basename = os.path.basename(pdf_path)
+    if is_pdf_processed(pdf_path):
+        print(f"[PDF] ATLA (listener zaten işledi): {basename}")
+        return
+
     pdf_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
-    bot.send_message(CHAT_ID, f"📥 Yeni PDF alındı, analiz ediliyor...\n`{os.path.basename(pdf_path)}`",
+    bot.send_message(CHAT_ID, f"📥 Yeni PDF alındı, analiz ediliyor...\n`{basename}`",
                      parse_mode='Markdown')
     try:
         records, pause = parse_haluk_pdf_path(pdf_path)

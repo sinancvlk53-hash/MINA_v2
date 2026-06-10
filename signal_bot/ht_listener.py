@@ -201,7 +201,7 @@ def _vision_sync(img_b64: str, mime: str) -> list:
     """Senkron Claude Vision çağrısı (run_in_executor içinde çalışır)."""
     try:
         resp = claude.messages.create(
-            model='claude-opus-4-5',
+            model='claude-sonnet-4-6',
             max_tokens=512,
             messages=[{
                 'role': 'user',
