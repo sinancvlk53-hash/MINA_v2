@@ -157,10 +157,19 @@ BU ARAÇ YOKSA → {"signals": []}
 ARAÇ VARSA:
 - symbol: grafik başlığındaki coin (BTCUSDT → BTC, ETHUSDT → ETH)
 - direction: "LONG" veya "SHORT"
-- entry: giriş çizgisi fiyatı (iki renk arasındaki çizgi)
-- tp: hedef fiyat (yeşil bölgenin üst ucu LONG için, kırmızı bölgenin alt ucu SHORT için)
-- stop: stop fiyatı (kırmızı bölgenin alt ucu LONG için, yeşil bölgenin üst ucu SHORT için)
 - is_scalp: grafik üzerinde "scalp" yazıyorsa true, yoksa false
+
+İKİ YÖNLÜ SİNYAL:
+- Aynı grafikte hem yeşil hem kırmızı kutu varsa ikisini de ayrı sinyal olarak yaz
+- Yeşil kutu → LONG sinyali
+- Kırmızı kutu → SHORT sinyali
+- Her ikisi için ayrı entry/tp/stop çıkar
+
+GİRİŞ ÇİZGİSİ KURALI (Position Tool):
+- entry LONG için → yeşil ve kırmızı kutunun birleştiği çizgi (alt kırmızının üstü)
+- entry SHORT için → kırmızı ve yeşil kutunun birleştiği çizgi (üst kırmızının altı)
+- tp → yeşil kutunun dış ucu (LONG için üst, SHORT için alt)
+- stop → kırmızı kutunun dış ucu (LONG için alt, SHORT için üst)
 
 Sadece geçerli JSON döndür:
 {"signals": [{"symbol": "BTC", "direction": "LONG",

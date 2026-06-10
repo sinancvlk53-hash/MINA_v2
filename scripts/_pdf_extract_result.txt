@@ -1,0 +1,46 @@
+MuPDF error: format error: No common ancestor in structure tree
+
+MuPDF error: format error: No common ancestor in structure tree
+
+MuPDF error: format error: No common ancestor in structure tree
+
+MuPDF error: format error: No common ancestor in structure tree
+
+MuPDF error: format error: No common ancestor in structure tree
+
+MuPDF error: format error: No common ancestor in structure tree
+
+[HALUK VISUAL] sinyal sayfa 1: BTCUSDT LONG entry=61576.0
+[HALUK VISUAL] sinyal sayfa 3: BNBUSDT LONG entry=593.23
+[HALUK VISUAL] sinyal sayfa 4: XLMUSDT SHORT entry=0.2218
+[HALUK VISUAL] sinyal sayfa 5: LINKUSDT SHORT entry=7.95
+[HALUK VISUAL] sinyal sayfa 5: XRPUSDT SHORT entry=1.118
+[HALUK VISUAL] sinyal sayfa 6: ZECUSDT SHORT entry=507.01
+[HALUK VISUAL] sinyal sayfa 6: HYPEUSDT SHORT entry=53.368
+✅ Journal DB kapatıldı
+✅ Journal DB kapatıldı
+✅ Journal DB kapatıldı
+[HT_SUPERSEDE] ht_pdf_basari_orani BNBUSDT: 1 kayıt cancelled
+✅ Journal DB kapatıldı
+✅ Journal DB kapatıldı
+✅ Journal DB kapatıldı
+✅ Journal DB kapatıldı
+✅ Journal DB kapatıldı
+✅ Journal DB kapatıldı
+✅ Journal DB kapatıldı
+✅ Journal DB kapatıldı
+✅ Journal DB kapatıldı
+✅ Journal DB kapatıldı
+✅ Journal DB kapatıldı
+[HALUK VISUAL] 7 sinyal → /root/MINA_v2/signal_bot/ht_signals_queue.json
+✅ Journal DB kapatıldı
+✅ Journal DB kapatıldı
+[HALUK VISUAL] Toplam 7 trading sinyali kaydedildi
+Toplam sinyal: 7
+{'symbol': 'BTCUSDT', 'direction': 'LONG', 'entry_price': 61576.0, 'tp_price': 64360.3, 'stop_price': 60184.5, 'source': 'haluk_pdf', 'status': 'approved', 'timestamp': '2026-06-10T20:46:37Z', 'pdf_file': 'tg_20260610_135400_11669.pdf'}
+{'symbol': 'BNBUSDT', 'direction': 'LONG', 'entry_price': 593.23, 'tp_price': 628.66, 'stop_price': 555.0, 'source': 'haluk_pdf', 'status': 'approved', 'timestamp': '2026-06-10T20:46:37Z', 'pdf_file': 'tg_20260610_135400_11669.pdf'}
+{'symbol': 'XLMUSDT', 'direction': 'SHORT', 'entry_price': 0.2218, 'tp_price': 0.1522, 'stop_price': 0.2464, 'source': 'haluk_pdf', 'status': 'approved', 'timestamp': '2026-06-10T20:46:37Z', 'pdf_file': 'tg_20260610_135400_11669.pdf'}
+{'symbol': 'LINKUSDT', 'direction': 'SHORT', 'entry_price': 7.95, 'tp_price': 6.956, 'stop_price': 8.897, 'source': 'haluk_pdf', 'status': 'approved', 'timestamp': '2026-06-10T20:46:37Z', 'pdf_file': 'tg_20260610_135400_11669.pdf'}
+{'symbol': 'XRPUSDT', 'direction': 'SHORT', 'entry_price': 1.118, 'tp_price': 1.0812, 'stop_price': 1.2271, 'source': 'haluk_pdf', 'status': 'approved', 'timestamp': '2026-06-10T20:46:37Z', 'pdf_file': 'tg_20260610_135400_11669.pdf'}
+{'symbol': 'ZECUSDT', 'direction': 'SHORT', 'entry_price': 507.01, 'tp_price': 325.28, 'stop_price': 629.15, 'source': 'haluk_pdf', 'status': 'approved', 'timestamp': '2026-06-10T20:46:37Z', 'pdf_file': 'tg_20260610_135400_11669.pdf'}
+{'symbol': 'HYPEUSDT', 'direction': 'SHORT', 'entry_price': 53.368, 'tp_price': 45.556, 'stop_price': 55.976, 'source': 'haluk_pdf', 'status': 'approved', 'timestamp': '2026-06-10T20:46:37Z', 'pdf_file': 'tg_20260610_135400_11669.pdf'}
