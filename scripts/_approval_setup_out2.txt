@@ -1,0 +1,2 @@
+﻿PUT C:\Users\User\Desktop\MINA_v2\ops\mina-approval-bot.service -> /etc/systemd/system/mina-approval-bot.service
+PUT C:\Users\User\Desktop\MINA_v2\signal_bot\approval_bot.py -> /root/MINA_v2/signal_bot/approval_bot.py

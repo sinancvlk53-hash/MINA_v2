@@ -55,22 +55,27 @@ Sayfa {page_num}. Grafik yoksa: {{"charts":[]}}"""
 
 TRADING_SIGNAL_PROMPT = """Bu görüntü Haluk Hoca'nın kripto analiz PDF'inin bir sayfasıdır.
 
-GÖREV: TradingView 'Long Position' veya 'Short Position' aracı ara.
-- Long Position: üstü YEŞİL, altı KIRMIZI kutu
-- Short Position: üstü KIRMIZI, altı YEŞİL kutu
+GÖREV: Sayfada TradingView pozisyon aracı ara.
 
-Bu araç yoksa → {{"signals": []}}
+POZİSYON ARACI TANIMI — bunlardan herhangi biri varsa sinyal say:
+- Üstü YEŞİL altı KIRMIZI dikdörtgen bölge → LONG
+- Üstü KIRMIZI altı YEŞİL dikdörtgen bölge → SHORT
+- Yeşil ve kırmızı renkli kutular üst alta veya yan yana → yön renge göre
+- Büyük küçük fark etmez, soluk da olsa, grafik içinde veya kenarında olsa da say
+- Sohbet mesajları veya yorumlar seni yanıltmasın, sadece grafige bak
 
-Araç varsa:
-- symbol: grafik başlığındaki coin adı (ETHUSDT → ETH)
+BU ARAÇ YOKSA → {{"signals": []}}
+
+ARAÇ VARSA:
+- symbol: grafik başlığındaki coin (BTCUSDT → BTC, ETHUSDT → ETH)
 - direction: "LONG" veya "SHORT"
-- entry: aracın giriş çizgisi fiyatı
-- tp: aracın hedef (üst/alt uç) fiyatı  
-- stop: aracın stop (karşı uç) fiyatı
+- entry: giriş çizgisi fiyatı (iki renk arasındaki çizgi)
+- tp: hedef fiyat (yeşil bölgenin üst ucu LONG için, kırmızı bölgenin alt ucu SHORT için)
+- stop: stop fiyatı (kırmızı bölgenin alt ucu LONG için, yeşil bölgenin üst ucu SHORT için)
 
 Sadece geçerli JSON döndür:
-{{"signals": [{{"symbol": "ETH", "direction": "LONG", 
-"entry": 2890.48, "tp": 2971.72, "stop": 2844.19}}]}}
+{{"signals": [{{"symbol": "BTC", "direction": "LONG",
+"entry": 61576.0, "tp": 64360.0, "stop": 60184.0}}]}}
 
 Sayfa {page_num}."""
 

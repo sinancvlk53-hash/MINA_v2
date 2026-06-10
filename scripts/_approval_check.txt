@@ -1,0 +1,41 @@
+﻿=== systemctl status ===
+Ôùï mina-approval-bot.service - MINA Approval Bot
+     Loaded: loaded (/etc/systemd/system/mina-approval-bot.service; enabled; preset: enabled)
+     Active: inactive (dead) since Wed 2026-06-10 19:35:29 UTC; 2s ago
+   Duration: 44.870s
+    Process: 862513 ExecStart=/root/MINA_v2/venv/bin/python /root/MINA_v2/signal_bot/approval_bot.py (code=killed, signal=TERM)
+   Main PID: 862513 (code=killed, signal=TERM)
+        CPU: 2.088s
+
+Jun 10 19:34:44 ubuntu-4gb-fsn1-3 systemd[1]: mina-approval-bot.service: Scheduled restart job, restart counter is at 7.
+Jun 10 19:34:44 ubuntu-4gb-fsn1-3 systemd[1]: Started mina-approval-bot.service - MINA Approval Bot.
+Jun 10 19:35:29 ubuntu-4gb-fsn1-3 systemd[1]: mina-approval-bot.service: Deactivated successfully.
+Jun 10 19:35:29 ubuntu-4gb-fsn1-3 systemd[1]: mina-approval-bot.service: Consumed 2.088s CPU time.
+
+=== ht_signals_queue ===
+(yok)
+
+=== journalctl ===
+Jun 10 19:34:11 ubuntu-4gb-fsn1-3 python[862431]: approval_bot zaten ├ğal─▒┼ş─▒yor (PID 16315). ├ç─▒k─▒l─▒yor.
+Jun 10 19:34:11 ubuntu-4gb-fsn1-3 systemd[1]: mina-approval-bot.service: Main process exited, code=exited, status=1/FAILURE
+Jun 10 19:34:11 ubuntu-4gb-fsn1-3 systemd[1]: mina-approval-bot.service: Failed with result 'exit-code'.
+Jun 10 19:34:11 ubuntu-4gb-fsn1-3 systemd[1]: mina-approval-bot.service: Consumed 1.267s CPU time.
+Jun 10 19:34:21 ubuntu-4gb-fsn1-3 systemd[1]: mina-approval-bot.service: Scheduled restart job, restart counter is at 5.
+Jun 10 19:34:21 ubuntu-4gb-fsn1-3 systemd[1]: Started mina-approval-bot.service - MINA Approval Bot.
+Jun 10 19:34:23 ubuntu-4gb-fsn1-3 python[862440]: approval_bot zaten ├ğal─▒┼ş─▒yor (PID 16315). ├ç─▒k─▒l─▒yor.
+Jun 10 19:34:23 ubuntu-4gb-fsn1-3 systemd[1]: mina-approval-bot.service: Main process exited, code=exited, status=1/FAILURE
+Jun 10 19:34:23 ubuntu-4gb-fsn1-3 systemd[1]: mina-approval-bot.service: Failed with result 'exit-code'.
+Jun 10 19:34:23 ubuntu-4gb-fsn1-3 systemd[1]: mina-approval-bot.service: Consumed 1.230s CPU time.
+Jun 10 19:34:33 ubuntu-4gb-fsn1-3 systemd[1]: mina-approval-bot.service: Scheduled restart job, restart counter is at 6.
+Jun 10 19:34:33 ubuntu-4gb-fsn1-3 systemd[1]: Started mina-approval-bot.service - MINA Approval Bot.
+Jun 10 19:34:34 ubuntu-4gb-fsn1-3 python[862447]: approval_bot zaten ├ğal─▒┼ş─▒yor (PID 16315). ├ç─▒k─▒l─▒yor.
+Jun 10 19:34:34 ubuntu-4gb-fsn1-3 systemd[1]: mina-approval-bot.service: Main process exited, code=exited, status=1/FAILURE
+Jun 10 19:34:34 ubuntu-4gb-fsn1-3 systemd[1]: mina-approval-bot.service: Failed with result 'exit-code'.
+Jun 10 19:34:34 ubuntu-4gb-fsn1-3 systemd[1]: mina-approval-bot.service: Consumed 1.278s CPU time.
+Jun 10 19:34:44 ubuntu-4gb-fsn1-3 systemd[1]: mina-approval-bot.service: Scheduled restart job, restart counter is at 7.
+Jun 10 19:34:44 ubuntu-4gb-fsn1-3 systemd[1]: Started mina-approval-bot.service - MINA Approval Bot.
+Jun 10 19:35:29 ubuntu-4gb-fsn1-3 systemd[1]: mina-approval-bot.service: Deactivated successfully.
+Jun 10 19:35:29 ubuntu-4gb-fsn1-3 systemd[1]: mina-approval-bot.service: Consumed 2.088s CPU time.
+
+=== Binance ===
+Acik: 2
