@@ -137,6 +137,11 @@ class MinaPositionManager:
             base['stop_loss_pct'] = 2.0
             base['tp_type'] = 'ht'
             return base
+        if mode == 'ht_pdf':
+            base['has_defense'] = False
+            base['stop_loss_pct'] = None
+            base['tp_type'] = 'ht_pdf'
+            return base
         if mode == 'defense':
             base['has_defense'] = True
             base['stop_loss_pct'] = None
@@ -770,6 +775,102 @@ class MinaPositionManager:
             order["_mina_order_type"] = order_type
         return order
 
+    def _place_ht_pdf_exit_orders(
+        self,
+        symbol: str,
+        side: str,
+        quantity: float,
+        tp_price: float,
+        stop_price: float,
+    ) -> bool:
+        """HT PDF — Hoca TP/stop seviyelerine borsa emirleri (4x hariç)."""
+        escape_side = SIDE_SELL if side == "LONG" else SIDE_BUY
+        qty = self._round_quantity(quantity, symbol)
+        tp_px = self._round_price(tp_price, symbol)
+        stop_px = self._round_price(stop_price, symbol)
+        try:
+            mark = float(self.client.futures_mark_price(symbol=symbol)["markPrice"])
+            if side == "LONG":
+                if tp_px <= mark:
+                    tp_px = self._round_price(mark * 1.001, symbol)
+                if stop_px >= mark:
+                    stop_px = self._round_price(mark * 0.999, symbol)
+            else:
+                if tp_px >= mark:
+                    tp_px = self._round_price(mark * 0.999, symbol)
+                if stop_px <= mark:
+                    stop_px = self._round_price(mark * 1.001, symbol)
+        except Exception:
+            pass
+
+        tp_order_id = None
+        stop_order_id = None
+        try:
+            tp_order = self.client.futures_create_order(
+                symbol=symbol,
+                side=escape_side,
+                type=ORDER_TYPE_TAKE_PROFIT_MARKET,
+                stopPrice=tp_px,
+                quantity=qty,
+                positionSide=side,
+                workingType="MARK_PRICE",
+            )
+            tp_order_id = tp_order.get("orderId")
+            print(f"   📄 HT PDF TP emri: {symbol} {side} @{tp_px} orderId={tp_order_id}")
+        except Exception as e1:
+            if self._order_error_code(e1) == -4120:
+                try:
+                    tp_order = self.client.futures_create_order(
+                        symbol=symbol,
+                        side=escape_side,
+                        type="LIMIT",
+                        price=tp_px,
+                        quantity=qty,
+                        timeInForce="GTC",
+                        positionSide=side,
+                    )
+                    tp_order_id = tp_order.get("orderId")
+                    print(f"   📄 HT PDF TP LIMIT fallback: {symbol} @{tp_px}")
+                except Exception as e2:
+                    print(f"   ❌ HT PDF TP hatası {symbol}: {e2}")
+                    return False
+            else:
+                print(f"   ❌ HT PDF TP hatası {symbol}: {e1}")
+                return False
+
+        try:
+            stop_order = self.client.futures_create_order(
+                symbol=symbol,
+                side=escape_side,
+                type=ORDER_TYPE_STOP_MARKET,
+                stopPrice=stop_px,
+                quantity=qty,
+                positionSide=side,
+                workingType="MARK_PRICE",
+            )
+            stop_order_id = stop_order.get("orderId")
+            print(f"   📄 HT PDF Stop emri: {symbol} {side} @{stop_px} orderId={stop_order_id}")
+        except Exception as e3:
+            print(f"   ❌ HT PDF Stop hatası {symbol}: {e3}")
+            if tp_order_id:
+                try:
+                    self.client.futures_cancel_order(symbol=symbol, orderId=tp_order_id)
+                except Exception:
+                    pass
+            return False
+
+        state = self.position_states.get(symbol, {})
+        state.update({
+            "ht_pdf_mode": True,
+            "ht_tp_price": tp_px,
+            "ht_stop_price": stop_px,
+            "ht_tp_order_id": tp_order_id,
+            "ht_stop_order_id": stop_order_id,
+        })
+        self.position_states[symbol] = state
+        self._save_state()
+        return True
+
     # ---------------------------------------------------------------------
     # Public decision API
     # ---------------------------------------------------------------------
@@ -834,6 +935,9 @@ class MinaPositionManager:
         if state is None:
             self.init_position_state(symbol, entry_price, side=side)
             state = self.position_states[symbol]
+
+        if state.get('ht_pdf_mode') or rules.get('tp_type') == 'ht_pdf':
+            return {'action': 'hold', 'reason': 'HT PDF — borsa TP/Stop emirleri aktif'}
 
         if rules['has_defense']:
             key = self._pos_key(symbol, side)
@@ -2288,6 +2392,8 @@ class MinaPositionManager:
         initial_margin: float,
         signal_source: Optional[str] = None,
         send_telegram: bool = True,
+        ht_tp_price: Optional[float] = None,
+        ht_stop_price: Optional[float] = None,
     ) -> None:
         """Pozisyon açıldığında journal'a kaydet + kaynak logu."""
         from mina_signal_source import (
@@ -2314,6 +2420,23 @@ class MinaPositionManager:
                 notify_position_open(symbol, side, leverage, entry_price, initial_margin, src)
             except Exception:
                 pass
+
+        if (
+            leverage != 4
+            and ht_tp_price is not None
+            and ht_stop_price is not None
+            and ht_tp_price > 0
+            and ht_stop_price > 0
+            and qty > 0
+        ):
+            self._place_ht_pdf_exit_orders(
+                symbol, side, qty, float(ht_tp_price), float(ht_stop_price)
+            )
+        elif leverage == 4 and ht_tp_price and ht_stop_price:
+            print(
+                f"   📄 HT PDF 4x: Hoca TP/stop kayıtlı, savunma modu aktif "
+                f"(tp={ht_tp_price} stop={ht_stop_price})"
+            )
 
         if not self.journal:
             return

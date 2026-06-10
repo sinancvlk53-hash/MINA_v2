@@ -112,6 +112,7 @@ function StrategyBadge({ mode }) {
     defense: 'Savunma',
     stop: 'Stop',
     ht: 'HT',
+    ht_pdf: 'HT PDF',
     full_manual: 'Manuel',
   }
   const clsMap = {

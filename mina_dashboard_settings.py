@@ -11,7 +11,7 @@ ROOT = os.environ.get("MINA_DATA_ROOT", os.path.dirname(os.path.abspath(__file__
 SETTINGS_FILE = os.path.join(ROOT, "dashboard_settings.json")
 MOTOR_PAUSE_FILE = os.path.join(ROOT, "motor_paused.flag")
 
-VALID_STRATEGY_MODES = frozenset({"defense", "stop", "ht", "full_manual"})
+VALID_STRATEGY_MODES = frozenset({"defense", "stop", "ht", "ht_pdf", "full_manual"})
 
 DEFAULT_LEVERAGE_STRATEGY: Dict[str, str] = {
     "1": "defense",

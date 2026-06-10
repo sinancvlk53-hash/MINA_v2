@@ -163,7 +163,10 @@ def process_pending_limit_fills(manager) -> int:
 
         margin = float(info.get("margin") or 0)
         leverage = int(info.get("leverage") or 4)
-        src = (info.get("meta") or {}).get("signal_source", "HT")
+        meta = info.get("meta") or {}
+        src = meta.get("signal_source", "HT")
+        ht_tp = meta.get("ht_tp_price")
+        ht_stop = meta.get("ht_stop_price")
         from signal_bot.signal_slot_bridge import _mark_consumed, load_queue, _seed_tracking
 
         _seed_tracking(manager, symbol, side, entry, margin)
@@ -175,9 +178,10 @@ def process_pending_limit_fills(manager) -> int:
             qty=amt,
             initial_margin=margin,
             signal_source=src,
+            ht_tp_price=ht_tp,
+            ht_stop_price=ht_stop,
         )
 
-        meta = info.get("meta") or {}
         fp = meta.get("fingerprint")
         if fp:
             queue = load_queue()

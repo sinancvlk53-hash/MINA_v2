@@ -68,6 +68,32 @@ def _haluk_reject_if(entry: Dict[str, Any], reason: str) -> None:
         _haluk_reject(str(entry.get("symbol") or ""), reason)
 
 
+def _is_haluk_pdf_entry(entry: Dict[str, Any]) -> bool:
+    s = str(entry.get("source") or "").lower()
+    return s == "haluk_pdf" or s.startswith("haluk_pdf:")
+
+
+def _haluk_pdf_ht_levels(entry: Dict[str, Any]) -> Tuple[Optional[float], Optional[float]]:
+    """haluk_pdf kaynağından Hoca TP/stop seviyelerini çıkar."""
+    if not _is_haluk_pdf_entry(entry):
+        return None, None
+    tp = entry.get("tp_price")
+    stop = entry.get("stop_price")
+    try:
+        tp_f = float(tp) if tp is not None else None
+    except (TypeError, ValueError):
+        tp_f = None
+    try:
+        stop_f = float(stop) if stop is not None else None
+    except (TypeError, ValueError):
+        stop_f = None
+    if tp_f is not None and tp_f <= 0:
+        tp_f = None
+    if stop_f is not None and stop_f <= 0:
+        stop_f = None
+    return tp_f, stop_f
+
+
 def _haluk_tp_prices(entry_price: float, side: str) -> Tuple[float, float]:
     if side == "LONG":
         return entry_price * 1.03, entry_price * 1.05
@@ -502,6 +528,7 @@ def open_signal_position(
 
     pos_key = mt.pos_key(symbol, side)
     src_code = queue_source_to_code(entry.get("source"))
+    ht_tp_price, ht_stop_price = _haluk_pdf_ht_levels(entry)
     if use_limit:
         register_pending_limit(
             pos_key,
@@ -516,6 +543,8 @@ def open_signal_position(
                 "label": scored.get("k2", {}).get("label"),
                 "fingerprint": scored.get("fingerprint"),
                 "signal_source": src_code,
+                "ht_tp_price": ht_tp_price,
+                "ht_stop_price": ht_stop_price,
             },
         )
         queue = queue or load_queue()
@@ -549,6 +578,7 @@ def open_signal_position(
 
     _seed_tracking(manager, symbol, side, entry_price, margin)
     haluk_open = _is_haluk_entry(entry)
+    ht_tp_price, ht_stop_price = _haluk_pdf_ht_levels(entry)
     manager.log_position_open(
         symbol=symbol,
         side=side,
@@ -558,6 +588,8 @@ def open_signal_position(
         initial_margin=margin,
         signal_source=src_code,
         send_telegram=not haluk_open,
+        ht_tp_price=ht_tp_price,
+        ht_stop_price=ht_stop_price,
     )
     if haluk_open:
         tp1, tp2 = _haluk_tp_prices(entry_price, side)
