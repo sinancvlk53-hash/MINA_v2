@@ -570,6 +570,16 @@ class MerterDCAManager:
                 return False
         except ImportError:
             pass
+        try:
+            from mina_orphan_orders import cancel_merter_orphan_orders
+
+            cancelled = cancel_merter_orphan_orders(
+                self._client_get(), self.state, log=_log
+            )
+            if cancelled:
+                _log(f"Orphan temizlik: {len(cancelled)} Merter limit iptal")
+        except Exception as e:
+            _log(f"Orphan temizlik uyarı: {e}")
         if not skip_filters and not self.passes_min_volume(symbol, signal_source):
             return False
         if initial_parts < 1 or initial_parts > PARTS_PER_YUVA:

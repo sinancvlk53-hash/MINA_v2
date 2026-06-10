@@ -156,6 +156,11 @@ def open_position(client, account, symbol, side, limit_price=None, stop_d1_price
             return False, "Motor pasif (dashboard ayarları)"
     except ImportError:
         pass
+    from mina_orphan_orders import haluk_entry_duplicate_reason
+
+    dup = haluk_entry_duplicate_reason(client, symbol, side)
+    if dup:
+        return False, dup
     bal    = account.get_usdt_balance()
     margin = round((bal / 10) * 0.20, 2)
 

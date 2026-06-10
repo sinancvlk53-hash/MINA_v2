@@ -16,3 +16,7 @@ tar -czf "$ARCHIVE" \
 
 find "$DEST" -name 'MINA_v2_*.tar.gz' -mtime +7 -delete
 echo "$(date -Iseconds) backup ok: $ARCHIVE"
+
+# Orphan emir temizliği (Merter state + stale Haluk PDF limitler)
+"${ROOT}/venv/bin/python" "${ROOT}/scripts/orphan_cleaner.py" \
+  >> "${ROOT}/signal_bot/orphan_cleaner.log" 2>&1 || true

@@ -112,8 +112,11 @@ def try_open_haluk_entry(entry: Dict[str, Any]) -> None:
     if not manager:
         return
 
-    if mt.pos_key(symbol, side) in _open_position_keys(manager.client):
-        _haluk_reject(symbol, "zaten açık pozisyon")
+    from mina_orphan_orders import haluk_entry_duplicate_reason
+
+    dup = haluk_entry_duplicate_reason(manager.client, symbol, side)
+    if dup:
+        _haluk_reject(symbol, dup)
         return
 
     open_signal_position(manager, scored, queue)
@@ -389,6 +392,7 @@ def open_signal_position(
     queue: Optional[Dict[str, Any]] = None,
 ) -> Optional[Dict[str, Any]]:
     """Seçilen sinyal için MARKET veya LIMIT giriş + tracking seed."""
+    entry = scored["entry"]
     try:
         from mina_dashboard_settings import is_motor_paused, is_new_entries_blocked
         if is_motor_paused():
@@ -402,7 +406,6 @@ def open_signal_position(
         pass
     from config import AccountManager
 
-    entry = scored["entry"]
     symbol = str(entry["symbol"])
     side = str(entry["direction"]).upper()
     signal_entry = entry.get("entry_price")
@@ -435,6 +438,15 @@ def open_signal_position(
             return None
     except ImportError:
         pass
+
+    if _is_haluk_entry(entry):
+        from mina_orphan_orders import haluk_entry_duplicate_reason
+
+        dup = haluk_entry_duplicate_reason(manager.client, symbol, side)
+        if dup:
+            print(f"[SLOT_BRIDGE] Reddedildi {symbol} {side}: {dup}")
+            _haluk_reject_if(entry, dup)
+            return None
 
     _prepare_symbol(manager.client, symbol)
     time.sleep(0.15)
