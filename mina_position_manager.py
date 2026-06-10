@@ -263,7 +263,8 @@ class MinaPositionManager:
                 )
                 row = cursor.fetchone()
                 if row:
-                    self.trade_ids[key] = int(row['id'])
+                    tid = int(row['id'])
+                    self.trade_ids[key] = tid
                 else:
                     from mina_signal_source import detect_orphan_signal_source, record_position_source
                     orphan_src = detect_orphan_signal_source(symbol, side)
@@ -280,6 +281,24 @@ class MinaPositionManager:
                     if tid > 0:
                         self.trade_ids[key] = tid
                         report['journal_opened'].append({'key': key, 'trade_id': tid, 'signal_source': orphan_src})
+
+                if tid > 0 and preserved_defense > self._defense_level_from_journal(symbol, side):
+                    st = self.position_states.get(symbol, {})
+                    entry_ref = float(initial_prices[key])
+                    defense_prices = {
+                        'D1': entry_ref * 0.95,
+                        'D2': entry_ref * 0.88,
+                        'D3': entry_ref * 0.75,
+                    }
+                    weighted_avg = float(st.get('weighted_avg_price') or entry)
+                    self.journal.log_defense_triggered(
+                        trade_id=tid,
+                        defense_level=preserved_defense,
+                        defense_prices=defense_prices,
+                        weighted_avg=weighted_avg,
+                    )
+                    if verbose:
+                        print(f"[SYNC] journal defense backfill: {key} D{preserved_defense} id={tid}")
 
             if verbose:
                 print(f"[SYNC] {key} entry={entry} mark={mark} margin={initial_margins[key]}")
@@ -1112,6 +1131,8 @@ class MinaPositionManager:
             self._save_state()
             if file_defense < 1:
                 self._persist_defense_level(symbol, side, 1)
+            target = int(state['defense_stage'])
+            self._backfill_journal_defense_if_needed(symbol, side, position, target)
             print(f"   ⏭️  D1 atlandı (idempotent): {symbol} stage={state['defense_stage']}")
             return True
 
@@ -1140,17 +1161,14 @@ class MinaPositionManager:
         self._save_state()
 
         # Journal'a D1 tetiklenmesini kaydet
-        defense_prices = {
-            'D1': position.get('entry_price', 0) * 0.95,
-            'D2': position.get('entry_price', 0) * 0.88,
-            'D3': position.get('entry_price', 0) * 0.75
-        }
+        defense_prices = self._defense_prices_for_entry(float(position.get('entry_price', 0) or 0))
         self.log_defense_activation(
             symbol=symbol,
             side=side,
             defense_level=1,
             defense_prices=defense_prices,
             weighted_avg=weighted_avg,
+            position=position,
         )
 
         print(f"   🛡️  D1 gerçekleştirildi: yeni ağırlıklı ortalama {self._round_price(weighted_avg)}")
@@ -1227,17 +1245,14 @@ class MinaPositionManager:
             self._save_state()
             
             # Journal'a D2 tetiklenmesini kaydet
-            defense_prices = {
-                'D1': position.get('entry_price', 0) * 0.95,
-                'D2': position.get('entry_price', 0) * 0.88,
-                'D3': position.get('entry_price', 0) * 0.75
-            }
+            defense_prices = self._defense_prices_for_entry(float(position.get('entry_price', 0) or 0))
             self.log_defense_activation(
                 symbol=symbol,
                 side=side,
                 defense_level=2,
                 defense_prices=defense_prices,
                 weighted_avg=weighted_avg,
+                position=position,
             )
             
             print(f"   🛡️  D2 yürütüldü: başa baş escape fiyatı {breakeven_price}")
@@ -1406,17 +1421,14 @@ class MinaPositionManager:
             self._save_state()
             
             # Journal'a D3 tetiklenmesini kaydet
-            defense_prices = {
-                'D1': position.get('entry_price', 0) * 0.95,
-                'D2': position.get('entry_price', 0) * 0.88,
-                'D3': position.get('entry_price', 0) * 0.75
-            }
+            defense_prices = self._defense_prices_for_entry(float(position.get('entry_price', 0) or 0))
             self.log_defense_activation(
                 symbol=symbol,
                 side=side,
                 defense_level=3,
                 defense_prices=defense_prices,
                 weighted_avg=weighted_avg,
+                position=position,
             )
             
             print(f"   🛡️  D3 tamamlandı: yeni TP kaçış emri {breakeven_price} fiyatına gönderildi")
@@ -2187,13 +2199,84 @@ class MinaPositionManager:
     # ─────────────────────────────────────────────────────────────
 
     def _trade_id_for(self, symbol: str, side: str) -> Optional[int]:
-        """pos_key ile trade_id; eski symbol-only kayıtlar için geriye dönük uyum."""
+        """pos_key ile trade_id; eski symbol-only kayıtlar + journal fallback."""
         key = self._pos_key(symbol, side)
         if key in self.trade_ids:
             return self.trade_ids[key]
         if symbol in self.trade_ids:
             return self.trade_ids[symbol]
+        row = self._open_trade_from_journal(symbol, side)
+        if row and row.get('id') is not None:
+            tid = int(row['id'])
+            self.trade_ids[key] = tid
+            return tid
         return None
+
+    def _ensure_trade_id(self, symbol: str, side: str, position: Dict) -> Optional[int]:
+        """Journal'da açık trade yoksa yetim pozisyon kaydı oluştur."""
+        tid = self._trade_id_for(symbol, side)
+        if tid is not None or not self.journal:
+            return tid
+
+        from mina_signal_source import detect_orphan_signal_source, record_position_source
+
+        orphan_src = detect_orphan_signal_source(symbol, side)
+        record_position_source(symbol, side, orphan_src)
+        leverage = int(position.get('leverage', 4) or 4)
+        entry = float(position.get('entry_price', 0) or 0)
+        qty = float(position.get('amount', 0) or 0)
+        margin = float(position.get('isolated_margin') or 0)
+        if margin <= 0 and entry > 0 and qty > 0:
+            margin = round((entry * qty) / max(leverage, 1), 4)
+
+        tid = self.journal.log_trade_open(
+            symbol=symbol,
+            side=side,
+            leverage=leverage,
+            entry_price=entry,
+            qty=qty,
+            initial_margin=margin,
+            signal_source=orphan_src,
+        )
+        if tid > 0:
+            self.trade_ids[self._pos_key(symbol, side)] = tid
+            print(f"📔 [Journal] Yetim pozisyon kaydı: {symbol} {side} id={tid}")
+            return tid
+        return None
+
+    def _defense_prices_for_entry(self, entry_price: float) -> Dict[str, float]:
+        return {
+            'D1': entry_price * 0.95,
+            'D2': entry_price * 0.88,
+            'D3': entry_price * 0.75,
+        }
+
+    def _backfill_journal_defense_if_needed(
+        self,
+        symbol: str,
+        side: str,
+        position: Dict,
+        target_level: int,
+    ) -> None:
+        if target_level <= 0:
+            return
+        if self._defense_level_from_journal(symbol, side) >= target_level:
+            return
+        state = self.position_states.get(symbol, {})
+        entry = self._get_initial_entry(
+            symbol, side, float(position.get('entry_price', 0) or 0)
+        )
+        weighted_avg = float(
+            state.get('weighted_avg_price') or position.get('entry_price', 0) or entry
+        )
+        self.log_defense_activation(
+            symbol=symbol,
+            side=side,
+            defense_level=target_level,
+            defense_prices=self._defense_prices_for_entry(entry),
+            weighted_avg=weighted_avg,
+            position=position,
+        )
 
     def log_position_open(
         self,
@@ -2267,10 +2350,17 @@ class MinaPositionManager:
             print(f"❌ Journal log_position_open hatası: {e}")
 
     def log_defense_activation(self, symbol: str, side: str, defense_level: int,
-                              defense_prices: Dict, weighted_avg: float) -> None:
+                              defense_prices: Dict, weighted_avg: float,
+                              position: Optional[Dict] = None) -> None:
         """Savunma tetiklendiğinde journal'a kaydet."""
         trade_id = self._trade_id_for(symbol, side)
+        if trade_id is None and position is not None:
+            trade_id = self._ensure_trade_id(symbol, side, position)
         if not self.journal or trade_id is None:
+            print(
+                f"⚠️  Journal defense yazılamadı (trade_id yok): "
+                f"{symbol} {side} D{defense_level}"
+            )
             return
 
         try:
