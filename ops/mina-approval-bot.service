@@ -1,0 +1,14 @@
+[Unit]
+Description=MINA Approval Bot
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/MINA_v2
+ExecStart=/root/MINA_v2/venv/bin/python /root/MINA_v2/signal_bot/approval_bot.py
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

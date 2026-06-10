@@ -13,16 +13,34 @@ sys.path.append(os.path.join(_ROOT, 'backend'))
 
 LOCK_FILE = os.path.join(os.path.dirname(__file__), 'approval_bot.lock')
 
+def _pid_alive(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    return True
+
 def _acquire_lock():
     if os.path.exists(LOCK_FILE):
+        stale = False
         try:
-            with open(LOCK_FILE) as f:
-                pid = f.read().strip()
-        except Exception:
-            pid = '?'
-        print(f"approval_bot zaten çalışıyor (PID {pid}). Çıkılıyor.")
-        sys.exit(1)
-    with open(LOCK_FILE, 'w') as f:
+            pid = int(open(LOCK_FILE, encoding='utf-8').read().strip())
+        except (OSError, ValueError):
+            stale = True
+        else:
+            if not _pid_alive(pid):
+                stale = True
+        if stale:
+            try:
+                os.remove(LOCK_FILE)
+            except OSError:
+                pass
+        else:
+            print(f"approval_bot zaten çalışıyor (PID {pid}). Çıkılıyor.")
+            sys.exit(1)
+    with open(LOCK_FILE, 'w', encoding='utf-8') as f:
         f.write(str(os.getpid()))
     atexit.register(_release_lock)
 

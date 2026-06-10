@@ -189,6 +189,11 @@ def main() -> None:
         print("PUT ops/mina-makro-watcher.service → /etc/systemd/system/")
         sftp.put(makro_unit, "/etc/systemd/system/mina-makro-watcher.service")
 
+    approval_unit = os.path.join(LOCAL, "ops", "mina-approval-bot.service")
+    if os.path.isfile(approval_unit):
+        print("PUT ops/mina-approval-bot.service → /etc/systemd/system/")
+        sftp.put(approval_unit, "/etc/systemd/system/mina-approval-bot.service")
+
     backup_local = os.path.join(LOCAL, "ops", "backup_mina.sh")
     if os.path.isfile(backup_local):
         print("PUT ops/backup_mina.sh")
@@ -244,6 +249,8 @@ def main() -> None:
         "systemctl restart mina-makro-watcher.service",
         "systemctl restart mina-haluk-yayin.service 2>/dev/null || true",
         "systemctl restart mina-ht-listener.service 2>/dev/null || true",
+        "systemctl enable mina-approval-bot.service 2>/dev/null || true",
+        "systemctl restart mina-approval-bot.service 2>/dev/null || true",
         f"{REMOTE}/venv/bin/python {REMOTE}/scripts/test_entry_orders.py 2>&1 | tail -8",
         f"{REMOTE}/venv/bin/python {REMOTE}/scripts/reconcile_derr_ghosts.py",
         "sleep 4",
