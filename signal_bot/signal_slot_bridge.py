@@ -458,8 +458,13 @@ def open_signal_position(
         _haluk_reject_if(entry, f"fiyat okunamadı: {e}")
         return None
 
-    order_type, limit_px = resolve_entry_order(side, signal_entry, mark)
+    order_type, limit_px = resolve_entry_order(
+        side, signal_entry, mark, signal_source=entry.get("source"),
+    )
     use_limit = order_type == ORDER_TYPE_LIMIT and limit_px is not None
+    if _is_haluk_entry(entry) and not use_limit:
+        _haluk_reject_if(entry, "haluk_pdf limit giriş fiyatı yok veya geçersiz")
+        return None
     exec_price = limit_px if use_limit else mark
 
     notional = margin * LEVERAGE

@@ -23,16 +23,29 @@ def _pending_ttl_h() -> float:
         return PENDING_TTL_H
 
 
+def _is_haluk_pdf_source(source: Optional[str]) -> bool:
+    s = str(source or "")
+    return s == "haluk_pdf" or s.upper().startswith("HALUK_PDF")
+
+
 def resolve_entry_order(
     side: str,
     entry_price: Optional[float],
     mark: float,
+    signal_source: Optional[str] = None,
 ) -> Tuple[str, Optional[float]]:
     """
     LONG: giriş < mark → LIMIT (GTC), aksi halde MARKET.
     SHORT: giriş > mark → LIMIT, aksi halde MARKET.
     Giriş fiyatı yoksa MARKET.
+
+    haluk_pdf / HALUK_PDF kaynağı: her zaman LIMIT (mark karşılaştırması yok).
     """
+    if _is_haluk_pdf_source(signal_source):
+        if entry_price is None or entry_price <= 0:
+            return ORDER_TYPE_LIMIT, None
+        return ORDER_TYPE_LIMIT, entry_price
+
     if entry_price is None or entry_price <= 0:
         return ORDER_TYPE_MARKET, None
     side = side.upper()
