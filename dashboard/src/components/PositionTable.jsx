@@ -75,12 +75,33 @@ function notionalUsdt(p) {
   return (p.amount ?? 0) * mark
 }
 
-function SourceBadge({ source, label }) {
-  if (!source) return null
-  const cls = source === 'HT' ? 'badge-src-ht' : source === 'MZ' ? 'badge-src-mz' : 'badge-src-manuel'
+function resolveSourceBadge(source, strategyMode) {
+  const sm = String(strategyMode || '').toLowerCase()
+  const src = String(source || '').toLowerCase()
+  if (sm === 'ht_pdf' || src.includes('haluk_pdf')) {
+    return { text: '📄 HT PDF', cls: 'badge-src-ht-pdf' }
+  }
+  if (src === 'ht' || src.includes('haluk') || source === 'HT') {
+    return { text: '📡 HT', cls: 'badge-src-ht' }
+  }
+  if (src.includes('merter') || source === 'MZ') {
+    return { text: '📊 Merter', cls: 'badge-src-mz' }
+  }
+  if (src.includes('manuel') || source === 'MANUEL') {
+    return { text: '✋ Manuel', cls: 'badge-src-manuel' }
+  }
+  if (source) {
+    return { text: source, cls: 'badge-src-manuel' }
+  }
+  return null
+}
+
+function SourceBadge({ source, label, strategyMode }) {
+  const badge = resolveSourceBadge(source, strategyMode)
+  if (!badge) return null
   return (
-    <span className={`badge-pill badge-src ${cls}`} title={label || source}>
-      {source}
+    <span className={`badge-pill badge-src ${badge.cls}`} title={label || source}>
+      {badge.text}
     </span>
   )
 }
@@ -202,7 +223,7 @@ function PositionCards({
               </div>
               <div className="pos-card-badges">
                 <SideBadge side={p.side} />
-                <SourceBadge source={p.signalSource} label={p.signalSourceLabel} />
+                <SourceBadge source={p.signalSource} label={p.signalSourceLabel} strategyMode={stratMode} />
                 <span className="badge-lev">{p.leverage}x</span>
                 <StrategyBadge mode={stratMode} />
                 {p.leverage === 4 && (
@@ -312,7 +333,7 @@ function PositionTableDesktop({
                   )}
                 </td>
                 <td>
-                  <SourceBadge source={p.signalSource} label={p.signalSourceLabel} />
+                  <SourceBadge source={p.signalSource} label={p.signalSourceLabel} strategyMode={stratMode} />
                 </td>
                 <td>
                   <SideBadge side={p.side} />

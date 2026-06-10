@@ -1,5 +1,11 @@
 import React from 'react'
 import { fmt } from '../utils/trading.js'
+import {
+  formatPdfTimestamp,
+  formatMacroSource,
+  formatMacroSnippet,
+  formatMacroDirection,
+} from '../utils/macroFormat.js'
 
 const PANEL_ORDER = [
   'TOTAL', 'OTHERS', 'BTC.D', 'USDT.D', 'BTCUSDT', 'ETHUSDT', 'XAUUSDT', 'XAGUSDT', 'BRENT', 'TOTAL2', 'TOTAL3',
@@ -28,9 +34,10 @@ function normalizeItem(raw, coin) {
     coin,
     supports: raw?.supports || [],
     resistances: raw?.resistances || [],
-    snippet: (raw?.snippet || raw?.text || '').trim(),
+    snippet: formatMacroSnippet((raw?.snippet || raw?.text || '').trim()),
     direction: raw?.direction ?? null,
     source: raw?.source ?? null,
+    updatedAt: raw?.updated_at ?? null,
     markPrice: raw?.markPrice ?? null,
     markDisplay: raw?.markDisplay ?? null,
   }
@@ -77,7 +84,7 @@ function LevelList({ title, values, cls, coin }) {
       <span className="macro-level-title">{title}</span>
       <div className="macro-level-tags">
         {values.map((v) => (
-          <span key={`${title}-${v}`} className={`macro-level-tag ${cls}`}>
+          <span key={`${title}-${v}`} className={`macro-level-box ${cls}`}>
             {formatLevel(coin, v)}
           </span>
         ))}
@@ -89,41 +96,39 @@ function LevelList({ title, values, cls, coin }) {
 function FundingCard({ funding }) {
   const display = funding?.display ?? '—'
   const alert = funding?.alert === true
-  const count = funding?.count ?? 0
+  const pct = Number(funding?.avgPct ?? funding?.avgRate ?? 0)
+  const arrow = pct > 0.0001 ? '↑' : pct < -0.0001 ? '↓' : '→'
+
   return (
-    <div className={`macro-card macro-card-filled macro-funding-card ${alert ? 'macro-card-zone-resist' : 'macro-card-zone-ok'}`}>
+    <div className={`macro-card macro-card-filled macro-funding-card macro-funding-simple ${alert ? 'macro-card-zone-resist' : 'macro-card-zone-ok'}`}>
       <div className="macro-card-head">
-        <strong>Funding (8s ort.)</strong>
-        <span className="field-hint">{count ? `${count} coin` : 'yükleniyor'}</span>
+        <strong>Funding</strong>
       </div>
-      <div className={`macro-live-price macro-funding-value ${alert ? 'text-red' : ''}`}>
-        {display}
+      <div className={`macro-funding-row ${alert ? 'text-red' : 'text-green'}`}>
+        <span className="macro-funding-rate">{display}</span>
+        <span className="macro-funding-arrow" aria-hidden>{arrow}</span>
       </div>
-      {alert ? (
-        <div className="macro-zone-alert">+%0.1 üzeri — aşırı pozitif funding</div>
-      ) : (
-        <p className="macro-snippet macro-snippet-empty">Majör 8 coin ortalaması</p>
-      )}
     </div>
   )
 }
 
 function MacroCard({ item }) {
   const label = PANEL_LABELS[item.coin] || item.coin.replace(/USDT$/, '')
-  const dir = item.direction === 'UP' ? '↑ Yukarı' : item.direction === 'DOWN' ? '↓ Aşağı' : null
+  const dirInfo = formatMacroDirection(item.direction)
   const hasData = item.snippet || item.supports?.length || item.resistances?.length
   const { zone, message } = proximityZone(item.markPrice, item.supports, item.resistances)
   const zoneClass = zone === 'resist' ? 'macro-card-zone-resist' : zone === 'support' ? 'macro-card-zone-support' : 'macro-card-zone-ok'
+  const sourceLabel = formatMacroSource(item.source) || (item.updatedAt ? formatPdfTimestamp(item.updatedAt) : null)
 
   return (
     <div className={`macro-card ${hasData ? 'macro-card-filled' : 'macro-card-empty'} ${zoneClass}`}>
       <div className="macro-card-head">
         <strong>{label}</strong>
         <div className="macro-card-meta">
-          {dir && <span className="field-hint">{dir}</span>}
-          {item.source && (
-            <span className="macro-source-tag">
-              {String(item.source).replace(/^HALUK_/i, '').replace(/^haluk_/i, '')}
+          {dirInfo && <span className={`macro-dir-tag ${dirInfo.cls}`}>{dirInfo.text}</span>}
+          {sourceLabel && (
+            <span className="macro-source-tag" title="Son güncelleme">
+              {sourceLabel}
             </span>
           )}
         </div>
@@ -135,7 +140,7 @@ function MacroCard({ item }) {
       ) : null}
       {message && <div className="macro-zone-alert">{message}</div>}
       {item.snippet ? (
-        <p className="macro-snippet">{item.snippet}</p>
+        <p className="macro-snippet macro-snippet-notes">{item.snippet}</p>
       ) : (
         <p className="macro-snippet macro-snippet-empty">PDF veya Telegram notu bekleniyor</p>
       )}
@@ -169,6 +174,7 @@ export default function MacroLevelsPanel({
         .filter((i) => i.supports?.length || i.resistances?.length)
     : []
 
+  const pdfWhen = formatPdfTimestamp(halukPdfTimestamp)
   const title = isTab ? 'Makro Rejim' : compact ? 'Makro Seviyeler' : 'Haluk Makro Panel'
   const subtitle = isTab
     ? 'TOTAL · BTC.D · USDT.D · Funding'
@@ -182,9 +188,9 @@ export default function MacroLevelsPanel({
         <div>
           <span className="panel-title">{title}</span>
           <span className="panel-subtitle">{subtitle}</span>
-          {isTab && halukPdfTimestamp && (
+          {isTab && pdfWhen && (
             <span className="panel-subtitle macro-pdf-ts">
-              Son PDF: {String(halukPdfTimestamp).replace('T', ' ').slice(0, 16)}
+              Son PDF: {pdfWhen}
             </span>
           )}
         </div>
@@ -210,7 +216,7 @@ export default function MacroLevelsPanel({
               </div>
             </>
           )}
-          <div className="macro-section-label">Haluk notları</div>
+          <div className="macro-section-label">Hoca&apos;nın notları</div>
           <div className="macro-grid macro-grid-wide">
             {PANEL_ORDER
               .map((c) => normalizeItem(byCoin[c], c))

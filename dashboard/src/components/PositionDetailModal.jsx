@@ -7,7 +7,7 @@ function DefenseProgress({ pos, slotSize }) {
   if (!def) return <p className="modal-muted">4x dışı — defans sistemi yok</p>
 
   const { entryPrice, markPrice } = pos
-  const { d1Price, d2Price, d3Price, isLong } = def
+  const { d1Price, d2Price, d3Price, hardStop, isLong } = def
 
   const rangeTop = entryPrice
   const rangeBot = d3Price
@@ -29,7 +29,7 @@ function DefenseProgress({ pos, slotSize }) {
       <div className="def-progress-labels">
         <span>Giriş ${fmt(entryPrice, 4)}</span>
         <span>Piyasa Fiyatı ${fmt(markPrice, 4)}</span>
-        <span>Hard ${fmt(d3Price, 4)}</span>
+        <span>Hard Stop ${fmt(def.hardStop, 4)}</span>
       </div>
       <div className="def-progress-track">
         <div className="def-band band-entry" style={{ width: `${Math.min(d1Pct, 100)}%` }} />
@@ -40,7 +40,8 @@ function DefenseProgress({ pos, slotSize }) {
       <div className="def-progress-legend">
         <span><i className="dot dot-yellow" /> D1</span>
         <span><i className="dot dot-orange" /> D2</span>
-        <span><i className="dot dot-red" /> D3 / Hard</span>
+        <span><i className="dot dot-red" /> D3</span>
+        <span><i className="dot dot-red" /> Hard Stop</span>
       </div>
     </div>
   )
@@ -119,10 +120,15 @@ export default function PositionDetailModal({ pos, onClose, data }) {
                   <span className="detail-price text-red">${fmt(def.d2Price, 4)}</span>
                   <span className="detail-usdt">+{fmt(def.d2Usdt, 2)} USDT · TP dondur</span>
                 </div>
-                <div className="detail-card">
-                  <span className="detail-label">D3 / Hard (-25%)</span>
+                <div className="detail-card detail-card-d3">
+                  <span className="detail-label">🚨 D3 Savunma — Son Hamle</span>
                   <span className="detail-price text-red">${fmt(def.d3Price, 4)}</span>
                   <span className="detail-usdt">+{fmt(def.d3Usdt, 2)} USDT · Hayalet SFP</span>
+                </div>
+                <div className="detail-card detail-card-hard">
+                  <span className="detail-label">⛔ Hard Stop — Zorla Kapandı</span>
+                  <span className="detail-price text-red">${fmt(def.hardStop, 4)}</span>
+                  <span className="detail-note">D3 atlanırsa anında kapat</span>
                 </div>
               </div>
               <DefenseProgress pos={pos} slotSize={slotSize} />

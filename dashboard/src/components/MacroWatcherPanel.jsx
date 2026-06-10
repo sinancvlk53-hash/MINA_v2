@@ -1,25 +1,25 @@
 import React from 'react'
 
 const GRID_ORDER = [
-  { key: 'TOTAL', label: 'TOTAL' },
-  { key: 'TOTAL2', label: 'TOTAL2' },
-  { key: 'TOTAL3', label: 'TOTAL3' },
-  { key: 'OTHERS', label: 'OTHERS' },
-  { key: 'BTC.D', label: 'BTC.D' },
-  { key: 'USDT.D', label: 'USDT.D' },
-  { key: 'ETH.D', label: 'ETH.D' },
-  { key: 'BTC', label: 'BTC' },
-  { key: 'ETH', label: 'ETH' },
-  { key: 'ETH_BTC', label: 'ETH/BTC' },
-  { key: 'BTC_FUNDING', label: 'BTC Fund.' },
-  { key: 'ETH_FUNDING', label: 'ETH Fund.' },
-  { key: 'BTC_OI', label: 'BTC OI' },
-  { key: 'BTC_LS', label: 'BTC L/S' },
-  { key: 'XAU', label: 'Altın' },
-  { key: 'FEAR_GREED', label: 'F&G' },
-  { key: 'DXY', label: 'DXY' },
-  { key: 'USOIL', label: 'Petrol' },
-  { key: 'SPX', label: 'S&P500' },
+  { key: 'TOTAL', label: 'TOTAL', hint: 'Toplam kripto piyasa değeri' },
+  { key: 'TOTAL2', label: 'TOTAL2', hint: 'BTC hariç toplam piyasa' },
+  { key: 'TOTAL3', label: 'TOTAL3', hint: 'BTC + ETH hariç piyasa' },
+  { key: 'OTHERS', label: 'OTHERS', hint: 'Altcoin piyasa payı' },
+  { key: 'BTC.D', label: 'BTC.D', hint: 'Bitcoin dominansı' },
+  { key: 'USDT.D', label: 'USDT.D', hint: 'Stablecoin dominansı — risk iştahı' },
+  { key: 'ETH.D', label: 'ETH.D', hint: 'Ethereum dominansı' },
+  { key: 'BTC', label: 'BTC', hint: 'Bitcoin fiyatı' },
+  { key: 'ETH', label: 'ETH', hint: 'Ethereum fiyatı' },
+  { key: 'ETH_BTC', label: 'ETH/BTC', hint: 'Altcoin sezonu göstergesi' },
+  { key: 'BTC_FUNDING', label: 'BTC Fund.', hint: 'BTC perpetual funding oranı' },
+  { key: 'ETH_FUNDING', label: 'ETH Fund.', hint: 'ETH perpetual funding oranı' },
+  { key: 'BTC_OI', label: 'BTC OI', hint: 'Açık pozisyon hacmi' },
+  { key: 'BTC_LS', label: 'BTC L/S', hint: 'Long / Short oranı' },
+  { key: 'XAU', label: 'Altın', hint: 'Altın fiyatı — risk-off göstergesi' },
+  { key: 'FEAR_GREED', label: 'F&G', hint: 'Korku & Açgözlülük endeksi' },
+  { key: 'DXY', label: 'DXY', hint: 'Dolar endeksi' },
+  { key: 'USOIL', label: 'Petrol', hint: 'Ham petrol fiyatı' },
+  { key: 'SPX', label: 'S&P500', hint: 'ABD hisse endeksi' },
 ]
 
 const SOURCE_LABELS = {
@@ -59,11 +59,24 @@ function permClass(key) {
   return 'macro-perm-reduced'
 }
 
-function MetricCell({ label, data }) {
+function riskScoreHint(score) {
+  if (score >= 5) return 'Düşük risk — piyasa genel olarak destekleyici'
+  if (score >= 3) return 'Orta risk — seçici giriş, dikkatli pozisyon'
+  return 'Yüksek risk — savunma modu önerilir'
+}
+
+function macroScoreHint(score) {
+  if (score >= 30) return 'Güçlü makro rüzgar — long lehine'
+  if (score <= -30) return 'Zayıf makro — short / nakit lehine'
+  return 'Nötr makro — yön net değil'
+}
+
+function MetricCell({ label, hint, data }) {
   if (!data) {
     return (
       <div className="makro-metric-cell makro-metric-empty">
         <span className="makro-metric-label">{label}</span>
+        <span className="makro-metric-hint">{hint}</span>
         <span className="makro-metric-value">—</span>
       </div>
     )
@@ -73,6 +86,7 @@ function MetricCell({ label, data }) {
   return (
     <div className={`makro-metric-cell ${data.stale ? 'makro-metric-stale' : ''}`}>
       <span className="makro-metric-label">{label}</span>
+      <span className="makro-metric-hint">{hint}</span>
       <span className="makro-metric-value">
         {data.display ?? data.value ?? '—'}
         <span className={`makro-metric-arrow makro-dir-${data.direction || 'flat'}`}>
@@ -80,7 +94,7 @@ function MetricCell({ label, data }) {
         </span>
       </span>
       {chgText && <span className={`makro-metric-chg ${chg >= 0 ? 'text-green' : 'text-red'}`}>{chgText}</span>}
-      {data.stale && <span className="makro-stale-tag">eski</span>}
+      {data.stale && <span className="makro-stale-tag">eski veri</span>}
     </div>
   )
 }
@@ -94,7 +108,6 @@ export default function MacroWatcherPanel({ watcher = null }) {
   const permLabel = w.tradePermissionLabel || '🟡 RİSKLİ'
   const combos = w.combinations || []
   const sources = w.sources || {}
-  const updatedAt = w.updatedAt
 
   const srcEntries = Object.entries(sources)
   const okCount = srcEntries.filter(([, v]) => v === 'ok').length
@@ -105,20 +118,26 @@ export default function MacroWatcherPanel({ watcher = null }) {
         <div>
           <span className="panel-title">Makro İzleyici</span>
           <span className="panel-subtitle">Piyasa rejimi · 15 dk güncelleme</span>
-          {updatedAt && (
-            <span className="panel-subtitle makro-updated">
-              Son: {String(updatedAt).replace('T', ' ').slice(0, 16)}
-            </span>
-          )}
         </div>
         <div className="makro-score-badges">
-          <span className={`makro-score-badge ${riskColor(risk)}`} title="Risk Skoru (0-6)">
+          <span
+            className={`makro-score-badge ${riskColor(risk)}`}
+            title={`Risk skoru (0–6): ${riskScoreHint(risk)}`}
+          >
             Risk {risk}/6
           </span>
-          <span className={`makro-score-badge ${macroColor(macro)}`} title="Macro Skor (-100/+100)">
-            Macro {macro >= 0 ? '+' : ''}{macro}
+          <span
+            className={`makro-score-badge ${macroColor(macro)}`}
+            title={`Makro skor (-100/+100): ${macroScoreHint(macro)}`}
+          >
+            Makro {macro >= 0 ? '+' : ''}{macro}
           </span>
         </div>
+      </div>
+
+      <div className="makro-score-explainer">
+        <span>{riskScoreHint(risk)}</span>
+        <span>{macroScoreHint(macro)}</span>
       </div>
 
       <div className={`makro-permission-banner ${permClass(permKey)}`}>
@@ -127,8 +146,8 @@ export default function MacroWatcherPanel({ watcher = null }) {
       </div>
 
       <div className="makro-grid">
-        {GRID_ORDER.map(({ key, label }) => (
-          <MetricCell key={key} label={label} data={metrics[key]} />
+        {GRID_ORDER.map(({ key, label, hint }) => (
+          <MetricCell key={key} label={label} hint={hint} data={metrics[key]} />
         ))}
       </div>
 
@@ -145,7 +164,7 @@ export default function MacroWatcherPanel({ watcher = null }) {
 
       <div className="makro-sources">
         <div className="makro-section-title">
-          Kaynak Sağlığı ({okCount}/{srcEntries.length} ok)
+          Kaynak Sağlığı ({okCount}/{srcEntries.length} aktif)
         </div>
         <div className="makro-source-tags">
           {srcEntries.map(([k, v]) => (
