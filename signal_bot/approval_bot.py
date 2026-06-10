@@ -439,6 +439,70 @@ Sadece JSON array döndür, başka hiçbir şey yazma.
 # HT sinyal kuyruğu izleyici
 # ---------------------------------------------------------------------------
 
+def _is_haluk_pdf_source(source) -> bool:
+    s = str(source or "")
+    return s == "haluk_pdf" or s.upper().startswith("HALUK_PDF")
+
+
+def _normalize_queue_signal(sig: dict) -> dict:
+    """ht_signals_queue haluk_pdf (symbol/direction) ve legacy coin/side birleştir."""
+    out = dict(sig)
+    out["coin"] = sig.get("coin") or sig.get("symbol") or ""
+    out["side"] = sig.get("side") or sig.get("direction") or ""
+    entry = sig.get("entry")
+    if entry in (None, "", "—"):
+        ep = sig.get("entry_price")
+        if ep is not None:
+            entry = str(ep)
+    out["entry"] = entry or "—"
+    stop = sig.get("stop")
+    if stop in (None, "", "—"):
+        sp = sig.get("stop_price")
+        if sp is not None:
+            stop = str(sp)
+    out["stop"] = stop or "—"
+    out.setdefault("leverage_label", "4x")
+    return out
+
+
+def _auto_execute_haluk_pdf_signals(signals: list, pdf_time: str = "") -> None:
+    """haluk_pdf kaynaklı sinyaller — Telegram onayı beklemeden aç."""
+    if not signals:
+        return
+    config = BinanceConfig()
+    client = config.get_client()
+    account = AccountManager(client)
+    results = []
+    for raw in signals:
+        s = _normalize_queue_signal(raw)
+        symbol = s.get("coin") or s.get("symbol")
+        side = s.get("side") or s.get("direction")
+        if not symbol or side not in ("LONG", "SHORT"):
+            results.append(f"❌ {symbol or '?'}: geçersiz sembol/yön")
+            continue
+        ok, detail = open_position(
+            client,
+            account,
+            symbol,
+            side,
+            limit_price=s.get("entry"),
+            stop_d1_price=s.get("stop"),
+        )
+        icon = "✅" if ok else "❌"
+        results.append(f"{icon} {symbol} {side}: {detail}")
+        time.sleep(0.4)
+
+    header = "📄 *Haluk PDF — otomatik onay*\n"
+    if pdf_time:
+        header += f"⏰ {pdf_time}\n"
+    summary = "\n".join(results)
+    try:
+        bot.send_message(CHAT_ID, header + summary, parse_mode="Markdown")
+    except Exception as exc:
+        print(f"[QUEUE] haluk_pdf Telegram özeti: {exc}")
+    print(f"[QUEUE] haluk_pdf otomatik açılış: {len(signals)} sinyal")
+
+
 def _consume_queue_file(path: str, default_source: str = 'HT'):
     if not os.path.exists(path):
         return
@@ -448,10 +512,29 @@ def _consume_queue_file(path: str, default_source: str = 'HT'):
     # Yeni format: entries[] (signal_parser)
     entries = data.get('entries', [])
     if entries:
-        pending = [e for e in entries if e.get('status') == 'approved' and e.get('symbol') not in ('SYSTEM',)]
-        if pending:
-            signals = [
-                {
+        haluk_auto = []
+        manual = []
+        consumed_symbols = set()
+        for e in entries:
+            if e.get('symbol') == 'SYSTEM':
+                continue
+            src = e.get('source')
+            sym = e.get('symbol')
+            if _is_haluk_pdf_source(src):
+                consumed_symbols.add(sym)
+                haluk_auto.append({
+                    'coin': e['symbol'],
+                    'side': e['direction'],
+                    'entry': str(e.get('entry_price') or '—'),
+                    'stop': str(e.get('stop_price') or '—'),
+                    'leverage': e.get('leverage'),
+                    'leverage_label': f"{e.get('leverage')}x" if e.get('leverage') else '4x',
+                    'd1_price': e.get('stop_price'),
+                    'source': src,
+                })
+            elif e.get('status') == 'approved':
+                consumed_symbols.add(sym)
+                manual.append({
                     'coin': e['symbol'],
                     'side': e['direction'],
                     'entry': str(e.get('entry_price') or '—'),
@@ -460,13 +543,21 @@ def _consume_queue_file(path: str, default_source: str = 'HT'):
                     'leverage_label': f"{e.get('leverage')}x",
                     'd1_price': e.get('stop_price'),
                     'source': e.get('source'),
-                }
-                for e in pending
-            ]
-            src = 'HT' if any('haluk' in str(s.get('source', '')) for s in signals) else 'PDF'
-            print(f"[QUEUE] {len(signals)} sinyal (entries) ← {path}")
-            ask_approval(signals, pdf_time=data.get('updated_at', ''), source=src)
-        data['entries'] = [e for e in entries if e.get('status') != 'approved' or e.get('symbol') == 'SYSTEM']
+                })
+
+        if haluk_auto:
+            print(f"[QUEUE] {len(haluk_auto)} haluk_pdf otomatik (entries) ← {path}")
+            _auto_execute_haluk_pdf_signals(haluk_auto, pdf_time=data.get('updated_at', ''))
+
+        if manual:
+            src = 'HT' if any('haluk' in str(s.get('source', '')) for s in manual) else 'PDF'
+            print(f"[QUEUE] {len(manual)} sinyal (entries) ← {path}")
+            ask_approval(manual, pdf_time=data.get('updated_at', ''), source=src)
+
+        data['entries'] = [
+            e for e in entries
+            if e.get('symbol') not in consumed_symbols or e.get('symbol') == 'SYSTEM'
+        ]
         if data['entries']:
             with open(path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
@@ -480,10 +571,29 @@ def _consume_queue_file(path: str, default_source: str = 'HT'):
         return
     signals = data.get('signals', [])
     source_info = data.get('source', default_source)
-    if signals:
+    if not signals:
+        return
+
+    haluk_auto = []
+    manual = []
+    for s in signals:
+        src = s.get('source') or source_info
+        if _is_haluk_pdf_source(src) or _is_haluk_pdf_source(source_info):
+            item = dict(s)
+            item['status'] = 'approved'
+            item['source'] = item.get('source') or 'haluk_pdf'
+            haluk_auto.append(_normalize_queue_signal(item))
+        else:
+            manual.append(s)
+
+    if haluk_auto:
+        print(f"[QUEUE] {len(haluk_auto)} haluk_pdf otomatik ← {path}")
+        _auto_execute_haluk_pdf_signals(haluk_auto, pdf_time=source_info)
+
+    if manual:
         src = 'HT' if 'HT' in str(source_info).upper() else 'PDF'
-        print(f"[QUEUE] {len(signals)} sinyal ← {path}")
-        ask_approval(signals, pdf_time=source_info, source=src)
+        print(f"[QUEUE] {len(manual)} sinyal ← {path}")
+        ask_approval(manual, pdf_time=source_info, source=src)
 
 
 def _ht_queue_checker():

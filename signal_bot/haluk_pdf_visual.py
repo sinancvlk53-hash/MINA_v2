@@ -333,7 +333,7 @@ def _raw_signal_to_queue_record(sig: Dict[str, Any], pdf_path: str) -> Optional[
         "tp_price": tp,
         "stop_price": stop,
         "source": "haluk_pdf",
-        "status": "pending",
+        "status": "approved",
         "timestamp": ts,
         "pdf_file": pdf_name,
     }
