@@ -43,6 +43,7 @@ FILES = [
     "backend/ghost_positions.py",
     "backend/position_manager.py",
     "signal_bot/listener.py",
+    "signal_bot/pdf_listener.py",
     "signal_bot/haluk_message_store.py",
     "signal_bot/binance_listings.py",
     "signal_bot/binance_listings_watcher.py",
@@ -243,6 +244,8 @@ def main() -> None:
     restart_cmds = systemd_cmds + [
         f"{REMOTE}/venv/bin/pip install -q pymupdf pdfplumber yfinance 2>/dev/null || true",
         f"{REMOTE}/venv/bin/python {REMOTE}/scripts/migrate_haluk_yayin_db.py",
+        "systemctl stop mina-pdf-listener.service 2>/dev/null || true",
+        "systemctl disable mina-pdf-listener.service 2>/dev/null || true",
         listener_clean + "systemctl restart mina-engine.service",
         "systemctl restart mina-merter-dca.service",
         "systemctl restart mina-queue-watcher.service 2>/dev/null || true",

@@ -239,6 +239,114 @@ def open_position(client, account, symbol, side, limit_price=None, stop_d1_price
     return True, f"OrderID:{order['orderId']} Qty:{qty} {type_str}"
 
 
+def _round_price(client, symbol: str, price: float) -> float:
+    prec = get_price_precision(client, symbol)
+    return round(price, prec)
+
+
+def _round_qty(client, symbol: str, qty: float) -> float:
+    prec = get_precision(client, symbol)
+    return round(qty, prec)
+
+
+def _send_urgent_telegram(text: str) -> None:
+    try:
+        bot.send_message(CHAT_ID, text, parse_mode="Markdown")
+    except Exception as exc:
+        print(f"[QUEUE] acil Telegram hatası: {exc}")
+
+
+def _place_haluk_pdf_tp_stop(
+    client,
+    account,
+    symbol: str,
+    side: str,
+    *,
+    tp_price=None,
+    stop_price=None,
+) -> None:
+    """HT PDF — pozisyon açıldıktan sonra TP/Stop emirlerini borsaya gönder."""
+    tp_val = _parse_price(tp_price)
+    stop_val = _parse_price(stop_price)
+    if tp_val is None and stop_val is None:
+        return
+
+    sym = symbol if str(symbol).endswith("USDT") else f"{symbol}USDT"
+    pside = "LONG" if side == "LONG" else "SHORT"
+    escape_side = SIDE_SELL if side == "LONG" else SIDE_BUY
+
+    try:
+        bal = account.get_usdt_balance()
+        margin = round((bal / 10) * 0.20, 2)
+        ticker = client.futures_symbol_ticker(symbol=sym)
+        mark = float(ticker["price"])
+        qty = _round_qty(client, sym, (margin * LEVERAGE) / mark)
+    except Exception as exc:
+        _send_urgent_telegram(
+            f"⚠️ *{sym}* pozisyonu açıldı ama TP/Stop borsaya *GİTMEDİ*!\n"
+            f"Miktar hesaplanamadı: {exc}\nManuel kontrol et!"
+        )
+        return
+
+    failed = []
+
+    if tp_val is not None and tp_val > 0:
+        tp_px = _round_price(client, sym, tp_val)
+        try:
+            try:
+                mark_px = float(client.futures_mark_price(symbol=sym)["markPrice"])
+                if side == "LONG" and tp_px <= mark_px:
+                    tp_px = _round_price(client, sym, mark_px * 1.001)
+                elif side == "SHORT" and tp_px >= mark_px:
+                    tp_px = _round_price(client, sym, mark_px * 0.999)
+            except Exception:
+                pass
+            client.futures_create_order(
+                symbol=sym,
+                side=escape_side,
+                type=ORDER_TYPE_TAKE_PROFIT_MARKET,
+                stopPrice=tp_px,
+                quantity=qty,
+                positionSide=pside,
+                workingType="MARK_PRICE",
+            )
+            print(f"[QUEUE] HT PDF TP emri: {sym} {side} @{tp_px}")
+        except Exception as exc:
+            print(f"[QUEUE] HT PDF TP hatası {sym}: {exc}")
+            failed.append(f"TP ({exc})")
+
+    if stop_val is not None and stop_val > 0:
+        stop_px = _round_price(client, sym, stop_val)
+        try:
+            try:
+                mark_px = float(client.futures_mark_price(symbol=sym)["markPrice"])
+                if side == "LONG" and stop_px >= mark_px:
+                    stop_px = _round_price(client, sym, mark_px * 0.999)
+                elif side == "SHORT" and stop_px <= mark_px:
+                    stop_px = _round_price(client, sym, mark_px * 1.001)
+            except Exception:
+                pass
+            client.futures_create_order(
+                symbol=sym,
+                side=escape_side,
+                type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                stopPrice=stop_px,
+                quantity=qty,
+                positionSide=pside,
+                workingType="MARK_PRICE",
+            )
+            print(f"[QUEUE] HT PDF Stop emri: {sym} {side} @{stop_px}")
+        except Exception as exc:
+            print(f"[QUEUE] HT PDF Stop hatası {sym}: {exc}")
+            failed.append(f"Stop ({exc})")
+
+    if failed:
+        _send_urgent_telegram(
+            f"⚠️ *{sym}* pozisyonu açıldı ama TP/Stop borsaya *GİTMEDİ*!\n"
+            f"Hata: {', '.join(failed)}\nManuel kontrol et!"
+        )
+
+
 # ---------------------------------------------------------------------------
 # Ana onay akışı
 # ---------------------------------------------------------------------------
@@ -517,6 +625,17 @@ def _auto_execute_haluk_pdf_signals(signals: list, pdf_time: str = "") -> None:
         )
         icon = "✅" if ok else "❌"
         results.append(f"{icon} {symbol} {side}: {detail}")
+        if ok:
+            tp_px = raw.get("tp_price") or raw.get("tp")
+            stop_px = raw.get("stop_price") or raw.get("stop") or s.get("stop")
+            _place_haluk_pdf_tp_stop(
+                client,
+                account,
+                symbol,
+                side,
+                tp_price=tp_px,
+                stop_price=stop_px,
+            )
         time.sleep(0.4)
 
     header = "📄 *Haluk PDF — otomatik onay*\n"
@@ -554,6 +673,8 @@ def _consume_queue_file(path: str, default_source: str = 'HT'):
                     'side': e['direction'],
                     'entry': str(e.get('entry_price') or '—'),
                     'stop': str(e.get('stop_price') or '—'),
+                    'tp_price': e.get('tp_price'),
+                    'stop_price': e.get('stop_price'),
                     'leverage': e.get('leverage'),
                     'leverage_label': f"{e.get('leverage')}x" if e.get('leverage') else '4x',
                     'd1_price': e.get('stop_price'),

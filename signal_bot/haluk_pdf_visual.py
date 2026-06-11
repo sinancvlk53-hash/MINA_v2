@@ -95,6 +95,19 @@ Sadece geçerli JSON döndür:
 
 Sayfa {page_num}."""
 
+VERIFY_PROMPT = """
+Bir önceki analizde şu sinyaller bulundu: {signals}
+
+Şimdi sadece YÖN doğrulaması yap:
+Her sinyal için grafiğe tekrar bak.
+- LONG için: yeşil alan kırmızıdan BÜYÜK olmalı
+- SHORT için: kırmızı alan yeşilden BÜYÜK olmalı
+
+Eğer yön yanlışsa düzelt.
+Eğer emin değilsen o sinyali listeden çıkar.
+Sadece JSON döndür: {{"verified_signals": [...]}}
+"""
+
 
 def _anthropic_client():
     import anthropic
@@ -196,15 +209,64 @@ def _normalize_levels(values: Any) -> List[float]:
     return sorted(set(out))
 
 
+def _signal_match_key(sig: Dict[str, Any]) -> tuple:
+    sym = _normalize_ht_symbol(str(sig.get("symbol") or sig.get("coin") or ""))
+    direction = str(sig.get("direction") or sig.get("side") or "").upper()
+    return sym, direction
+
+
+def _verify_trading_signals(
+    client,
+    png_bytes: bytes,
+    initial_signals: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """İkinci Claude çağrısı — yön doğrulama; çelişen coin atlanır."""
+    if not initial_signals:
+        return []
+
+    signals_json = json.dumps(initial_signals, ensure_ascii=False)
+    prompt = VERIFY_PROMPT.format(signals=signals_json)
+    verify_text = _vision_call(client, png_bytes, prompt)
+    verified = _parse_claude_json(verify_text, empty={"verified_signals": []})
+    verified_list = verified.get("verified_signals") or []
+
+    verified_keys: set = set()
+    for v in verified_list:
+        if not isinstance(v, dict):
+            continue
+        key = _signal_match_key(v)
+        if key[0] and key[1] in ("LONG", "SHORT"):
+            verified_keys.add(key)
+
+    confirmed: List[Dict[str, Any]] = []
+    for sig in initial_signals:
+        if not isinstance(sig, dict):
+            continue
+        key = _signal_match_key(sig)
+        sym, direction = key
+        if not sym or direction not in ("LONG", "SHORT"):
+            continue
+        if key in verified_keys:
+            confirmed.append(sig)
+        else:
+            print(
+                f"[HALUK VISUAL] doğrulama atladı: {sym} {direction} "
+                f"(verify={list(verified_keys)})"
+            )
+    return confirmed
+
+
 def analyze_page_image(client, png_bytes: bytes, page_num: int) -> Dict[str, Any]:
-    """Tek sayfa PNG → makro charts + trading signals (ayrı vision çağrıları)."""
+    """Tek sayfa PNG → makro charts + çift doğrulamalı trading signals."""
     macro_text = _vision_call(client, png_bytes, VISION_PROMPT.format(page_num=page_num))
     signal_text = _vision_call(client, png_bytes, TRADING_SIGNAL_PROMPT.format(page_num=page_num))
     macro = _parse_claude_json(macro_text, empty={"charts": []})
     trading = _parse_claude_json(signal_text, empty={"signals": []})
+    raw_signals = trading.get("signals") or []
+    verified_signals = _verify_trading_signals(client, png_bytes, raw_signals)
     return {
         "charts": macro.get("charts") or [],
-        "signals": trading.get("signals") or [],
+        "signals": verified_signals,
     }
 
 

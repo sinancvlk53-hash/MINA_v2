@@ -1,0 +1,14 @@
+﻿python : Traceback (most recent call last):
+At C:\Users\User\AppData\Local\Temp\ps-script-dfbcbd0a-89cc-4816-8ee4-3cfc4b113c62.ps1:104 char:1
++ python "c:\Users\User\Desktop\MINA_v2\scripts\_remote_pdf_rontgen.py" ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "c:\Users\User\Desktop\MINA_v2\scripts\_remote_pdf_rontgen.py", line 81, in <module>
+    main()
+    ~~~~^^
+  File "c:\Users\User\Desktop\MINA_v2\scripts\_remote_pdf_rontgen.py", line 75, in main
+    with open(OUT, "w", encoding="utf-8") as f:
+         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [Errno 13] Permission denied: 'c:\\Users\\User\\Desktop\\MINA_v2\\scripts\\_pdf_rontgen_output.txt'

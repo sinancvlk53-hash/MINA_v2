@@ -1,7 +1,6 @@
 import asyncio
 import os
 import sys
-import threading
 from datetime import datetime
 from telethon import TelegramClient, events
 from telethon.tl.types import DocumentAttributeFilename
@@ -40,13 +39,8 @@ async def handler(event):
 
     await client.download_media(msg, file=filepath)
     print(f"[PDF] Yeni PDF indirildi: {filename}")
-
-    # Onay akışını ayrı thread'de başlat (asyncio'yu bloklamamak için)
-    try:
-        from signal_bot.approval_bot import process_new_pdf
-        threading.Thread(target=process_new_pdf, args=(filepath,), daemon=True).start()
-    except Exception as e:
-        print(f"[PDF] Onay botu hatası: {e}")
+    # PDF işleme yalnızca listener.py (mina-listener) üzerinden — çift pipeline kapalı.
+    print("[PDF] İşleme atlandı — mina-listener devralır (pdf_listener devre dışı).")
 
 
 async def main():

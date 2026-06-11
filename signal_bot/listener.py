@@ -30,7 +30,6 @@ from signal_bot.signal_parser import (
     enqueue_records,
     parse_haluk_telegram,
     parse_merter,
-    parse_pdf_and_enqueue,
 )
 
 
@@ -155,14 +154,27 @@ def _dispatch_haluk_text(text: str, msg_id: int) -> None:
 
 
 async def _dispatch_haluk_pdf(event: events.NewMessage.Event, msg_id: int) -> None:
+    from signal_bot.haluk_pdf_processed import is_pdf_processed, mark_pdf_processed
+
     pdf_dir = os.path.join(SIGNAL_BOT_DIR, "pdfs")
     os.makedirs(pdf_dir, exist_ok=True)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     filepath = os.path.join(pdf_dir, f"tg_{ts}_{msg_id}.pdf")
     await event.message.download_media(file=filepath)
     _log(f"[HALUK PDF] indirildi: {filepath}")
-    records = parse_pdf_and_enqueue(filepath)
-    _log(f"[HALUK PDF] → {len(records)} kayıt")
+
+    if is_pdf_processed(filepath):
+        _log(f"[HALUK PDF] ATLA (processed_pdfs.json): {os.path.basename(filepath)}")
+        return
+
+    try:
+        from signal_bot.haluk_pdf_visual import extract_trading_signals
+
+        signals = extract_trading_signals(filepath)
+        mark_pdf_processed(filepath)
+        _log(f"[HALUK PDF] → {len(signals)} visual trading sinyali")
+    except Exception as exc:
+        _log(f"[HALUK PDF] extract_trading_signals hatası: {exc}")
 
 
 def _make_merter_client() -> TelegramClient:
