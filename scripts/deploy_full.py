@@ -38,6 +38,7 @@ FILES = [
     "mina_binance_retry.py",
     "mina_orphan_orders.py",
     "mina_ht_pdf_supersede.py",
+    "requirements.txt",
     "backend/config.py",
     "scripts/reconcile_atom_derr.py",
     "backend/ghost_positions.py",
@@ -223,6 +224,14 @@ def main() -> None:
             f.write(append)
         print(f"APPEND {env_remote}: {', '.join(dash_missing)}")
 
+    if "GEMINI_API_KEY=" not in env_body:
+        append = "\n# Gemini Vision doğrulama (haluk_pdf_visual)\nGEMINI_API_KEY= # buraya ekle\n"
+        with sftp.open(env_remote, "a") as f:
+            if env_body and not env_body.endswith("\n"):
+                f.write("\n")
+            f.write(append)
+        print(f"APPEND {env_remote}: GEMINI_API_KEY placeholder")
+
     sftp.close()
 
     systemd_cmds = [
@@ -242,7 +251,7 @@ def main() -> None:
     )
 
     restart_cmds = systemd_cmds + [
-        f"{REMOTE}/venv/bin/pip install -q pymupdf pdfplumber yfinance 2>/dev/null || true",
+        f"{REMOTE}/venv/bin/pip install -q pymupdf pdfplumber yfinance google-generativeai Pillow 2>/dev/null || true",
         f"{REMOTE}/venv/bin/python {REMOTE}/scripts/migrate_haluk_yayin_db.py",
         "systemctl stop mina-pdf-listener.service 2>/dev/null || true",
         "systemctl disable mina-pdf-listener.service 2>/dev/null || true",

@@ -215,6 +215,95 @@ def _signal_match_key(sig: Dict[str, Any]) -> tuple:
     return sym, direction
 
 
+def _notify_direction_conflict(symbol: str, claude_dir: str, gemini_dir: str) -> None:
+    display = symbol.replace("USDT", "") if symbol else "?"
+    msg = (
+        f"⚠️ {display} yön çelişkisi: Claude={claude_dir} Gemini={gemini_dir} — sinyal atlandı"
+    )
+    try:
+        from tools.telegram_bot import send_notification
+        send_notification(msg)
+    except Exception as exc:
+        print(f"[HALUK VISUAL] Telegram çelişki bildirimi: {exc}")
+    print(f"[HALUK VISUAL] {msg}")
+
+
+def _gemini_verify(png_bytes: bytes, signals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Gemini-2.0-Flash ile sinyal yönlerini doğrula."""
+    key = (os.getenv("GEMINI_API_KEY") or "").strip()
+    if not key or key.startswith("#"):
+        return signals
+
+    try:
+        import io
+
+        import google.generativeai as genai
+        from PIL import Image
+
+        genai.configure(api_key=key)
+        model = genai.GenerativeModel("gemini-2.0-flash")
+
+        prompt = f"""
+Bu grafikte şu sinyaller tespit edildi: {json.dumps(signals, ensure_ascii=False)}
+Her sinyal için sadece YÖN doğrulaması yap:
+- LONG: yeşil alan kırmızıdan büyük mü?
+- SHORT: kırmızı alan yeşilden büyük mü?
+Emin değilsen o sinyali listeden çıkar.
+Sadece JSON döndür: {{"verified": [sinyal listesi]}}
+"""
+        img = Image.open(io.BytesIO(png_bytes))
+        response = model.generate_content([prompt, img])
+        text = (response.text or "").strip()
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+        if match:
+            data = json.loads(match.group())
+            verified = data.get("verified")
+            if isinstance(verified, list):
+                return verified
+    except Exception as exc:
+        print(f"[HALUK VISUAL] Gemini doğrulama hatası (Claude sonucu kullanılıyor): {exc}")
+    return signals
+
+
+def _gemini_direction_map(verified: List[Dict[str, Any]]) -> Dict[str, set]:
+    out: Dict[str, set] = defaultdict(set)
+    for v in verified:
+        if not isinstance(v, dict):
+            continue
+        sym, direction = _signal_match_key(v)
+        if sym and direction in ("LONG", "SHORT"):
+            out[sym].add(direction)
+    return out
+
+
+def _finalize_with_gemini(
+    png_bytes: bytes,
+    claude_confirmed: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """Claude doğrulaması + Gemini bağımsız doğrulama — hemfikir olmayan sinyal atlanır."""
+    key = (os.getenv("GEMINI_API_KEY") or "").strip()
+    if not key or key.startswith("#"):
+        return claude_confirmed
+
+    gemini_list = _gemini_verify(png_bytes, claude_confirmed)
+    gemini_map = _gemini_direction_map(gemini_list)
+
+    final: List[Dict[str, Any]] = []
+    for sig in claude_confirmed:
+        if not isinstance(sig, dict):
+            continue
+        sym, claude_dir = _signal_match_key(sig)
+        if not sym or claude_dir not in ("LONG", "SHORT"):
+            continue
+        gemini_dirs = gemini_map.get(sym, set())
+        if claude_dir in gemini_dirs:
+            final.append(sig)
+        else:
+            gemini_dir = next(iter(gemini_dirs), "ATLANDI")
+            _notify_direction_conflict(sym, claude_dir, gemini_dir)
+    return final
+
+
 def _verify_trading_signals(
     client,
     png_bytes: bytes,
@@ -257,13 +346,14 @@ def _verify_trading_signals(
 
 
 def analyze_page_image(client, png_bytes: bytes, page_num: int) -> Dict[str, Any]:
-    """Tek sayfa PNG → makro charts + çift doğrulamalı trading signals."""
+    """Tek sayfa PNG → makro + Claude çift doğrulama + Gemini doğrulama."""
     macro_text = _vision_call(client, png_bytes, VISION_PROMPT.format(page_num=page_num))
     signal_text = _vision_call(client, png_bytes, TRADING_SIGNAL_PROMPT.format(page_num=page_num))
     macro = _parse_claude_json(macro_text, empty={"charts": []})
     trading = _parse_claude_json(signal_text, empty={"signals": []})
     raw_signals = trading.get("signals") or []
-    verified_signals = _verify_trading_signals(client, png_bytes, raw_signals)
+    claude_confirmed = _verify_trading_signals(client, png_bytes, raw_signals)
+    verified_signals = _finalize_with_gemini(png_bytes, claude_confirmed)
     return {
         "charts": macro.get("charts") or [],
         "signals": verified_signals,
