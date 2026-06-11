@@ -1,0 +1,1192 @@
+========== 1. haluk_yayin_analiz.py ==========
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""Haluk Hoca canlı yayın — yt-dlp indir, Whisper, Claude özet, Telegram."""
+from __future__ import annotations
+
+import json
+import os
+import re
+import subprocess
+import sys
+import threading
+import time
+from datetime import datetime, timezone, timedelta
+from typing import Any, Dict, List, Optional, Set
+
+_ROOT = os.environ.get("MINA_DATA_ROOT", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(_ROOT, ".env"))
+
+HIST = os.path.join(_ROOT, "signal_bot", "history")
+TRANSCRIPT_DIR = os.path.join(HIST, "transcripts")
+COOKIES = os.path.join(HIST, "youtube_cookies.txt")
+MP3_PATH = os.path.join(HIST, "son_yayin.mp3")
+STATE_PATH = os.path.join(HIST, "yayin_analiz_state.json")
+LOG_PATH = os.path.join(_ROOT, "signal_bot", "yayin_analiz.log")
+
+YTDLP = os.getenv("YTDLP_BIN", "/usr/local/bin/yt-dlp")
+DENO = os.getenv("DENO_BIN", "/root/.deno/bin/deno")
+WHISPER_MODEL = os.getenv("WHISPER_MODEL", "base")
+CLAUDE_MODEL = os.getenv("HALUK_YAYIN_ANALIZ_MODEL", "claude-sonnet-4-6")
+
+INITIAL_WAIT_SEC = int(os.getenv("YAYIN_ANALIZ_INITIAL_WAIT", "300"))
+POLL_INTERVAL_SEC = int(os.getenv("YAYIN_ANALIZ_POLL_SEC", "1800"))
+
+TR_TZ = timezone(timedelta(hours=3))
+
+YOUTUBE_YAYIN_RE = re.compile(
+    r"https?://(?:www\.)?(?:youtube\.com/live/[\w-]+(?:\?[^\s\])>]*)?"
+    r"|youtu\.be/[\w-]+(?:\?[^\s\])>]*)?)",
+    re.I,
+)
+
+CRYPTO_TITLE_KEYWORDS = (
+    "bitcoin", "btc", "eth", "kripto", "crypto",
+    "altcoin", "analiz", "piyasa", "borsa",
+    "long", "short", "coin", "token", "chart",
+    "yayın özeti", "teknik",
+)
+
+SKIP_TITLE_KEYWORDS = (
+    "gündem", "sohbet", "röportaj", "podcast",
+    "vlog", "daily", "hayat", "yemek", "gezi",
+    "müzik", "film", "spor",
+)
+
+_whisper_model = None
+_whisper_lock = threading.Lock()
+_active_urls: Set[str] = set()
+_active_lock = threading.Lock()
+
+
+def _log(msg: str) -> None:
+    line = f"[{datetime.now(TR_TZ).strftime('%Y-%m-%d %H:%M:%S')}] {msg}"
+    print(line, flush=True)
+    try:
+        os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
+        with open(LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(line + "\n")
+    except OSError:
+        pass
+
+
+def extract_youtube_yayin_urls(text: str) -> List[str]:
+    if not text:
+        return []
+    found: List[str] = []
+    seen: Set[str] = set()
+    for m in YOUTUBE_YAYIN_RE.finditer(text):
+        url = m.group(0).rstrip(".,;)")
+        if url not in seen:
+            seen.add(url)
+            found.append(url)
+    return found
+
+
+def _video_id(url: str) -> str:
+    m = re.search(r"youtu\.be/([\w-]+)", url)
+    if m:
+        return m.group(1)[:11]
+    m = re.search(r"live/([\w-]+)", url)
+    if m:
+        return m.group(1)[:11]
+    m = re.search(r"[?&]v=([\w-]+)", url)
+    if m:
+        return m.group(1)[:11]
+    return url[-11:]
+
+
+def _read_state() -> Dict[str, Any]:
+    if not os.path.isfile(STATE_PATH):
+        return {"processed_messages": [], "processed_urls": []}
+    try:
+        with open(STATE_PATH, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return {"processed_messages": [], "processed_urls": []}
+
+
+def _write_state(state: Dict[str, Any]) -> None:
+    os.makedirs(HIST, exist_ok=True)
+    with open(STATE_PATH, "w", encoding="utf-8") as f:
+        json.dump(state, f, ensure_ascii=False, indent=2)
+
+
+def _already_processed(message_id: Optional[int], url: str) -> bool:
+    state = _read_state()
+    if message_id and message_id in state.get("processed_messages", []):
+        return True
+    if url in state.get("processed_urls", []):
+        return True
+    return False
+
+
+def _mark_processed(message_id: Optional[int], url: str) -> None:
+    state = _read_state()
+    msgs = state.setdefault("processed_messages", [])
+    urls = state.setdefault("processed_urls", [])
+    if message_id and message_id not in msgs:
+        msgs.append(message_id)
+    if url not in urls:
+        urls.append(url)
+    _write_state(state)
+
+
+def _send_telegram(text: str) -> bool:
+    try:
+        from tools.telegram_bot import send_notification
+        return bool(send_notification(text))
+    except Exception as exc:
+        _log(f"Telegram hatası: {exc}")
+        return False
+
+
+def _yt_dlp_base_cmd() -> List[str]:
+    cmd = [YTDLP]
+    if os.path.isfile(COOKIES):
+        cmd.extend(["--cookies", COOKIES])
+    if os.path.isfile(DENO):
+        cmd.extend(["--js-runtimes", f"deno:{DENO}", "--remote-components", "ejs:github"])
+    return cmd
+
+
+def _fetch_video_title(youtube_url: str) -> Optional[str]:
+    cmd = _yt_dlp_base_cmd() + ["--print", "%(title)s", "--skip-download", youtube_url]
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        title = (r.stdout or "").strip()
+        if r.returncode == 0 and title:
+            return title
+        if r.stderr:
+            _log(f"Başlık alınamadı stderr: {r.stderr[-500:]}")
+    except Exception as exc:
+        _log(f"Başlık alınamadı: {exc}")
+    return None
+
+
+def _is_crypto_related_title(title: str) -> bool:
+    t = title.casefold()
+    for kw in SKIP_TITLE_KEYWORDS:
+        if kw.casefold() in t:
+            return False
+    for kw in CRYPTO_TITLE_KEYWORDS:
+        if kw.casefold() in t:
+            return True
+    return False
+
+
+def _check_title_or_skip(url: str, message_id: Optional[int]) -> bool:
+    """True = kripto ile ilgili, işleme devam. False = atla."""
+    title = _fetch_video_title(url)
+    if not title:
+        _log(f"Başlık okunamadı, güvenli atlama: {url}")
+        _mark_processed(message_id, url)
+        return False
+    if not _is_crypto_related_title(title):
+        _log(f"Kripto dışı video atlandı: {title}")
+        _mark_processed(message_id, url)
+        return False
+    _log(f"Kripto yayın onaylandı: {title}")
+    return True
+
+
+def is_stream_live(youtube_url: str) -> bool:
+    cmd = _yt_dlp_base_cmd() + ["--print", "%(is_live)s", youtube_url]
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        val = (r.stdout or "").strip().lower()
+        if val in ("true", "1", "yes"):
+            return True
+        if val in ("false", "0", "no"):
+            return False
+    except Exception as exc:
+        _log(f"is_live kontrol hatası: {exc}")
+    return False
+
+
+def _download_mp3(youtube_url: str) -> str:
+    os.makedirs(HIST, exist_ok=True)
+    cmd = _yt_dlp_base_cmd() + [
+        "-x", "--audio-format", "mp3",
+        "-o", MP3_PATH,
+        youtube_url,
+    ]
+    _log(f"İndiriliyor: {youtube_url}")
+    r = subprocess.run(cmd, capture_output=True, text=True, timeout=3600)
+    if r.returncode != 0:
+        _log(f"yt-dlp stderr: {r.stderr[-2000:]}")
+        if os.path.isfile(MP3_PATH) and os.path.getsize(MP3_PATH) > 10_000:
+            _log(f"İndirme başarısız — mevcut MP3 kullanılıyor: {MP3_PATH}")
+            return MP3_PATH
+        _send_telegram(f"❌ Yayın indirilemedi:\n{youtube_url}\n\nCookie güncelleme gerekebilir.")
+        raise RuntimeError(f"yt-dlp exit {r.returncode}")
+
+    if os.path.isfile(MP3_PATH):
+        return MP3_PATH
+    for name in os.listdir(HIST):
+        if name.startswith("son_yayin.") and name.endswith(".mp3"):
+            path = os.path.join(HIST, name)
+            if path != MP3_PATH:
+                os.replace(path, MP3_PATH)
+            return MP3_PATH
+    raise RuntimeError("MP3 dosyası oluşmadı")
+
+
+def _get_whisper_model():
+    global _whisper_model
+    with _whisper_lock:
+        if _whisper_model is None:
+            import whisper
+            _log(f"Whisper model yükleniyor: {WHISPER_MODEL}")
+            _whisper_model = whisper.load_model(WHISPER_MODEL)
+        return _whisper_model
+
+
+def _transcribe(mp3_path: str) -> str:
+    model = _get_whisper_model()
+    _log(f"Transkript: {mp3_path}")
+    result = model.transcribe(mp3_path, language="tr", verbose=False, fp16=False)
+    text = (result.get("text") or "").strip()
+    if not text:
+        raise RuntimeError("Whisper boş transkript döndü")
+    return text
+
+
+def _transcript_fallback_message(transkript: str) -> str:
+    snippet = transkript[:2000]
+    suffix = "..." if len(transkript) > 2000 else ""
+    return (
+        "📺 Haluk Hoca Yayın Transkripti\n"
+        "(Claude analizi geçici olarak devre dışı)\n\n"
+        f"{snippet}{suffix}"
+    )
+
+
+def _claude_analiz_prompt(transkript: str, *, final: bool) -> str:
+    kind_note = ""
+    if not final:
+        kind_note = "\n(Bu bir ARA özet — yayın devam ediyor; şu ana kadarki transkripti analiz et.)\n"
+    return f"""Sen bir kripto analiz asistanısın.
+Aşağıdaki transkripti analiz et.{kind_note}
+
+BÖLÜM 1 — GENEL PİYASA GÖRÜŞÜ:
+Hoca piyasa hakkında ne düşünüyor?
+BTC, ETH, TOTAL için ne dedi?
+Yön yukarı mı aşağı mı?
+
+BÖLÜM 2 — COİN SİNYALLERİ:
+Hoca hangi coinleri AL dedi?
+Hangi coinleri SAT/SHORT dedi?
+Her coin için şu şablona uy (coin yoksa "Bu bölümde coin sinyali yok" yaz):
+COIN: [sembol]
+YÖN: LONG veya SHORT
+GİRİŞ: [seviye veya bilinmiyor]
+HEDEF: [seviye veya bilinmiyor]
+STOP: [seviye veya yok]
+NOT: [hoca ne dedi]
+---
+
+BÖLÜM 3 — KRİTİK SEVİYELER:
+Önemli destek/direnç seviyeleri neler?
+Kırılırsa ne olur?
+
+BÖLÜM 4 — UYARILAR:
+Hoca özellikle neye dikkat etmemizi söyledi?
+Risk faktörleri neler?
+
+BÖLÜM 5 — ÖZET:
+2-3 cümleyle genel özet.
+
+Transkript:
+{transkript[:12000]}"""
+
+
+_COIN_SIGNAL_BLOCK_RE = re.compile(
+    r"COIN:\s*(?P<coin>[^\n]+)\s*\n"
+    r"YÖN:\s*(?P<direction>[^\n]+)\s*\n"
+    r"GİRİŞ:\s*(?P<entry>[^\n]+)\s*\n"
+    r"HEDEF:\s*(?P<target>[^\n]+)\s*\n"
+    r"STOP:\s*(?P<stop>[^\n]+)\s*\n"
+    r"NOT:\s*(?P<note>[^\n]+)",
+    re.I,
+)
+
+
+def _extract_bolum2(ozet: str) -> str:
+    m = re.search(r"BÖLÜM\s*2[^\n]*\n(.*?)BÖLÜM\s*3", ozet, re.I | re.S)
+    if m:
+        return m.group(1)
+    m = re.search(r"BÖLÜM\s*2[^\n]*\n(.*)", ozet, re.I | re.S)
+    return m.group(1) if m else ""
+
+
+def _parse_coin_signals(ozet: str) -> List[Dict[str, str]]:
+    bolum2 = _extract_bolum2(ozet)
+    if not bolum2 or re.search(r"coin sinyali yok", bolum2, re.I):
+        return []
+    signals: List[Dict[str, str]] = []
+    for m in _COIN_SIGNAL_BLOCK_RE.finditer(bolum2):
+        coin = m.group("coin").strip()
+        if not coin or coin.lower() in ("yok", "none", "-"):
+            continue
+        signals.append({
+            "coin": coin,
+            "direction": m.group("direction").strip(),
+            "entry": m.group("entry").strip(),
+            "target": m.group("target").strip(),
+            "stop": m.group("stop").strip(),
+            "note": m.group("note").strip(),
+        })
+    return signals
+
+
+def _format_coin_signal_message(sig: Dict[str, str]) -> str:
+    return (
+        "🚨 Haluk Hoca Coin Sinyali\n"
+        f"{sig['coin']} {sig['direction']}\n"
+        f"Giriş: {sig['entry']}\n"
+        f"Hedef: {sig['target']}\n"
+        f"Stop: {sig['stop']}\n"
+        f"Not: {sig['note']}"
+    )
+
+
+def _send_coin_signal_telegrams(ozet: str) -> int:
+    signals = _parse_coin_signals(ozet)
+    sent = 0
+    for sig in signals:
+        if _send_telegram(_format_coin_signal_message(sig)):
+            sent += 1
+            _log(f"Coin sinyali gönderildi: {sig['coin']} {sig['direction']}")
+    return sent
+
+
+def _analyze_claude(transkript: str, *, final: bool = False) -> str:
+    prompt = _claude_analiz_prompt(transkript, final=final)
+
+    import anthropic
+    client = anthropic.Anthropic()
+    resp = client.messages.create(
+        model=CLAUDE_MODEL,
+        max_tokens=4000,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return resp.content[0].text
+
+
+def _save_transcript(youtube_url: str, transkript: str, message_id: Optional[int] = None) -> str:
+    os.makedirs(TRANSCRIPT_DIR, exist_ok=True)
+    vid = _video_id(youtube_url)
+    ts = datetime.now(TR_TZ).strftime("%Y%m%d_%H%M")
+    name = f"yayin_{vid}"
+    if message_id:
+        name = f"{message_id}_{name}"
+    path = os.path.join(TRANSCRIPT_DIR, f"{name}_{ts}.txt")
+    header = (
+        f"# url: {youtube_url}\n"
+        f"# message_id: {message_id or ''}\n"
+        f"# created: {datetime.now(TR_TZ).isoformat()}\n\n"
+    )
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(header + transkript)
+    _log(f"Transkript kaydedildi: {path}")
+    return path
+
+
+def analiz_et(
+    youtube_url: str,
+    *,
+    message_id: Optional[int] = None,
+    skip_wait: bool = False,
+    watch_mode: bool = True,
+) -> None:
+    """Tek URL için tam analiz döngüsü."""
+    url = youtube_url.strip()
+    if _already_processed(message_id, url) and not skip_wait:
+        _log(f"ATLA (zaten işlendi): msg={message_id} url={url}")
+        return
+
+    with _active_lock:
+        if url in _active_urls:
+            _log(f"ATLA (aktif işlem var): {url}")
+            return
+        _active_urls.add(url)
+
+    try:
+        if not _check_title_or_skip(url, message_id):
+            return
+
+        if watch_mode and not skip_wait:
+            _run_watch_loop(url, message_id)
+        else:
+            _run_single_pass(url, message_id, final=True)
+            _mark_processed(message_id, url)
+    finally:
+        with _active_lock:
+            _active_urls.discard(url)
+
+
+def _run_single_pass(
+    url: str,
+    message_id: Optional[int],
+    *,
+    final: bool,
+    interim_no: int = 0,
+) -> tuple[str, str]:
+    mp3 = _download_mp3(url)
+    transkript = _transcribe(mp3)
+    if final:
+        _save_transcript(url, transkript, message_id)
+    try:
+        ozet = _analyze_claude(transkript, final=final)
+        if final:
+            label = "📺 Haluk Hoca Yayın Özeti (Final)\n\n"
+        else:
+            label = f"📺 Haluk Yayın — Ara Özet #{interim_no}\n\n"
+        _send_telegram(label + ozet)
+        if final:
+            n = _send_coin_signal_telegrams(ozet)
+            if n:
+                _log(f"Toplam {n} coin sinyali Telegram'a gönderildi")
+    except Exception as exc:
+        _log(f"Claude API hatası (transkript fallback): {exc}")
+        _send_telegram(_transcript_fallback_message(transkript))
+        ozet = ""
+    return transkript, ozet
+
+
+def _run_watch_loop(url: str, message_id: Optional[int]) -> None:
+    _log(f"5 dk bekleniyor: {url}")
+    time.sleep(INITIAL_WAIT_SEC)
+
+    _send_telegram(f"⏳ Yayın analiz ediliyor...\n{url}")
+
+    last_len = 0
+    interim_no = 0
+    live_seen = False
+
+    while True:
+        try:
+            live = is_stream_live(url)
+            if live:
+                live_seen = True
+
+            transkript, _ = _run_single_pass(
+                url, message_id,
+                final=not live,
+                interim_no=interim_no + 1 if live else 0,
+            )
+            tlen = len(transkript)
+
+            if not live:
+                _log(f"Yayın bitti — final özet gönderildi: {url}")
+                _mark_processed(message_id, url)
+                break
+
+            if tlen > last_len + 100:
+                last_len = tlen
+                interim_no += 1
+
+            _log(f"Canlı devam — {POLL_INTERVAL_SEC}s sonra tekrar: {url}")
+            time.sleep(POLL_INTERVAL_SEC)
+
+        except Exception as exc:
+            _log(f"Döngü hatası: {exc}")
+            if live_seen and not is_stream_live(url):
+                try:
+                    _run_single_pass(url, message_id, final=True)
+                    _mark_processed(message_id, url)
+                except Exception as exc2:
+                    _log(f"Final deneme hatası: {exc2}")
+                break
+            time.sleep(300)
+
+
+def extract_youtube_urls(text: str) -> List[str]:
+    """listener.py uyumluluğu."""
+    return extract_youtube_yayin_urls(text)
+
+
+def schedule_yayin_analiz(youtube_url: str, message_id: Optional[int] = None) -> None:
+    """listener.py — arka planda analiz başlat."""
+    if _already_processed(message_id, youtube_url):
+        _log(f"schedule ATLA: msg={message_id} url={youtube_url}")
+        return
+
+    if not _check_title_or_skip(youtube_url, message_id):
+        return
+
+    _send_telegram(
+        f"⏳ Haluk yayın linki alındı — 5 dk sonra analiz başlayacak.\n{youtube_url}"
+    )
+
+    t = threading.Thread(
+        target=analiz_et,
+        args=(youtube_url,),
+        kwargs={"message_id": message_id, "watch_mode": True},
+        daemon=True,
+        name=f"yayin-analiz-{message_id or _video_id(youtube_url)}",
+    )
+    t.start()
+    _log(f"schedule başlatıldı: msg={message_id} url={youtube_url}")
+
+
+def main() -> None:
+    args = sys.argv[1:]
+    if not args:
+        print("Kullanım: haluk_yayin_analiz.py [--test] <youtube_url>")
+        sys.exit(1)
+
+    test_mode = False
+    if args[0] == "--test":
+        test_mode = True
+        args = args[1:]
+
+    if not args:
+        print("URL gerekli")
+        sys.exit(1)
+
+    url = args[0]
+    if test_mode:
+        os.environ["YAYIN_ANALIZ_INITIAL_WAIT"] = "0"
+        os.environ["YAYIN_ANALIZ_POLL_SEC"] = "0"
+        analiz_et(url, skip_wait=True, watch_mode=False)
+    else:
+        analiz_et(url)
+
+
+if __name__ == "__main__":
+    main()
+
+========== 2. haluk_video_transcriber.py ==========
+# -*- coding: utf-8 -*-
+"""Haluk video indirme + Whisper transkript yardımcıları."""
+from __future__ import annotations
+
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from datetime import datetime, timezone, timedelta
+from typing import Any, Dict, Optional
+
+_ROOT = os.environ.get("MINA_DATA_ROOT", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+
+from telethon.tl.types import DocumentAttributeVideo
+
+WHISPER_MODEL = os.environ.get("WHISPER_MODEL", "base")
+VIDEO_LIST_JSON = os.path.join(_ROOT, "signal_bot", "history", "haluk_video_list.json")
+TRANSCRIPT_DIR = os.path.join(_ROOT, "signal_bot", "history", "transcripts")
+LOG_FILE = os.path.join(_ROOT, "signal_bot", "history", "transcribe_all.log")
+
+TRANSCRIBE_PRIORITY = [
+    "Eğitim Videoları",
+    "Teknik Analiz",
+    "Fib Serisi",
+    "Tahmin Et Serisi",
+    "Al Sat Kararları",
+    "Piyasa Videoları",
+    "Yayın Özeti",
+    "Upbit/Binance Listelemeleri",
+    "Diğer",
+]
+
+TR_TZ = timezone(timedelta(hours=3))
+
+
+def transcript_path(message_id: int) -> str:
+    return os.path.join(TRANSCRIPT_DIR, f"{message_id}.txt")
+
+
+def has_transcript(message_id: int) -> bool:
+    p = transcript_path(message_id)
+    if not os.path.isfile(p):
+        return False
+    try:
+        return os.path.getsize(p) > 50
+    except OSError:
+        return False
+
+
+def read_transcript(message_id: int) -> Optional[str]:
+    p = transcript_path(message_id)
+    if not os.path.isfile(p):
+        return None
+    try:
+        with open(p, encoding="utf-8") as f:
+            raw = f.read()
+    except OSError:
+        return None
+    # Header satırlarını atla (# ile başlayan)
+    lines = []
+    for ln in raw.splitlines():
+        if ln.startswith("#"):
+            continue
+        lines.append(ln)
+    text = "\n".join(lines).strip()
+    return text or None
+
+
+def _log(msg: str) -> None:
+    line = f"[{datetime.now(TR_TZ).strftime('%Y-%m-%d %H:%M:%S')}] {msg}"
+    print(line, flush=True)
+    os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
+    try:
+        with open(LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(line + "\n")
+    except OSError:
+        pass
+
+
+def title_from_text(text: str) -> str:
+    if not text:
+        return ""
+    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    if not lines:
+        return ""
+    return re.sub(r"\s+", " ", lines[0])[:500]
+
+
+def is_video_message(msg) -> bool:
+    if getattr(msg, "video", None):
+        return True
+    if getattr(msg, "video_note", None):
+        return True
+    doc = getattr(msg, "document", None)
+    if not doc:
+        return False
+    mime = getattr(doc, "mime_type", "") or ""
+    if mime.startswith("video/"):
+        return True
+    for attr in getattr(doc, "attributes", []) or []:
+        if isinstance(attr, DocumentAttributeVideo):
+            return True
+    return False
+
+
+def video_to_wav(video_path: str, wav_path: str) -> None:
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg:
+        raise RuntimeError("ffmpeg bulunamadı")
+    subprocess.run(
+        [ffmpeg, "-y", "-i", video_path, "-vn", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1", wav_path],
+        check=True,
+        capture_output=True,
+    )
+
+
+def transcribe_whisper(wav_path: str, model_name: Optional[str] = None) -> str:
+    model_name = model_name or WHISPER_MODEL
+    try:
+        import whisper
+    except ImportError:
+        subprocess.run([sys.executable, "-m", "pip", "install", "-q", "openai-whisper"], check=True)
+        import whisper
+
+    model = whisper.load_model(model_name)
+    result = model.transcribe(wav_path, language="tr", fp16=False)
+    text = (result.get("text") or "").strip()
+    if not text:
+        raise RuntimeError("Whisper boş transkript döndü")
+    return text
+
+
+def save_transcript(
+    message_id: int,
+    transcript: str,
+    *,
+    title: str = "",
+    date_str: str = "",
+    category: str = "",
+) -> str:
+    os.makedirs(TRANSCRIPT_DIR, exist_ok=True)
+    path = transcript_path(message_id)
+    header = (
+        f"# message_id: {message_id}\n"
+        f"# title: {title}\n"
+        f"# date: {date_str}\n"
+        f"# category: {category}\n"
+        f"# model: whisper-{WHISPER_MODEL}\n"
+        f"# created: {datetime.now(TR_TZ).strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+    )
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(header + transcript + "\n")
+    return path
+
+
+async def download_and_transcribe_message(
+    client,
+    channel_id: int,
+    message_id: int,
+    *,
+    title: str = "",
+    date_str: str = "",
+    category: str = "",
+) -> str:
+    """Video indir → transkript → dosyaya kaydet. Mevcut transkript varsa atla."""
+    if has_transcript(message_id):
+        _log(f"ATLA {message_id} — transkript mevcut")
+        return read_transcript(message_id) or ""
+
+    msg = await client.get_messages(channel_id, ids=message_id)
+    if not msg or not is_video_message(msg):
+        raise RuntimeError(f"Video mesaj bulunamadı: {message_id}")
+
+    text = (msg.text or msg.message or "").strip()
+    title = title or title_from_text(text)
+    if not date_str and msg.date:
+        date_str = msg.date.astimezone(TR_TZ).strftime("%Y-%m-%d %H:%M")
+
+    with tempfile.TemporaryDirectory(prefix=f"haluk_vid_{message_id}_") as tmp:
+        video_path = await client.download_media(msg, file=os.path.join(tmp, "video"))
+        if not video_path or not os.path.isfile(video_path):
+            raise RuntimeError(f"İndirme başarısız: {message_id}")
+
+        size_kb = os.path.getsize(video_path) // 1024
+        _log(f"İNDİR {message_id} ({size_kb} KB) — {title[:60]}")
+        wav_path = os.path.join(tmp, "audio.wav")
+        video_to_wav(video_path, wav_path)
+        transcript = transcribe_whisper(wav_path)
+        # video tmp içinde — otomatik silinir
+
+    path = save_transcript(
+        message_id, transcript, title=title, date_str=date_str, category=category,
+    )
+    _log(f"KAYIT {message_id} → {path} ({len(transcript)} karakter)")
+    return transcript
+
+
+def load_video_list() -> Dict[str, Any]:
+    import json
+    with open(VIDEO_LIST_JSON, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def sort_videos_by_priority(videos: list) -> list:
+    rank = {c: i for i, c in enumerate(TRANSCRIBE_PRIORITY)}
+
+    def key(v):
+        cat = v.get("category") or "Diğer"
+        return (rank.get(cat, 999), v.get("date_utc") or "")
+
+    return sorted(videos, key=key)
+
+========== 3. listener.py ==========
+# -*- coding: utf-8 -*-
+"""
+MINA v2 — Birleşik Telegram Sinyal Dinleyici (Katman 1)
+
+Merter ve Haluk Hoca ayrı Telethon oturumları ile dinlenir:
+  - session.session     → Merter (TELEGRAM_MERTER_SESSION)
+  - session_ht.session  → Haluk  (TELEGRAM_HALUK_SESSION)
+
+Her yeni mesaj → signal_parser → raw_signal_queue.json
+"""
+
+from __future__ import annotations
+
+import asyncio
+import atexit
+import os
+import sys
+from datetime import datetime
+
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _ROOT)
+
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(_ROOT, ".env"))
+
+from telethon import TelegramClient, events
+
+from signal_bot.signal_parser import (
+    enqueue_records,
+    parse_haluk_telegram,
+    parse_merter,
+    parse_pdf_and_enqueue,
+)
+
+
+def _env_int(name: str, default: int = 0) -> int:
+    raw = os.getenv(name, str(default)).strip()
+    try:
+        return int(raw)
+    except ValueError:
+        return default
+
+
+API_ID = _env_int("TELEGRAM_API_ID", 0)
+API_HASH = os.getenv("TELEGRAM_API_HASH", "").strip()
+MERTER_CHANNEL_ID = _env_int("TELEGRAM_MERTER_CHANNEL_ID", 0)
+HALUK_CHANNEL_ID = _env_int("TELEGRAM_HALUK_CHANNEL_ID", 0)
+
+# Oturum dosyaları proje kökünde (Telethon .session uzantısını kendisi ekler)
+MERTER_SESSION = os.path.join(
+    _ROOT, os.getenv("TELEGRAM_MERTER_SESSION", "session").strip()
+)
+HALUK_SESSION = os.path.join(
+    _ROOT, os.getenv("TELEGRAM_HALUK_SESSION", "session_ht").strip()
+)
+
+SIGNAL_BOT_DIR = os.path.dirname(os.path.abspath(__file__))
+LOCK_FILE = os.path.join(SIGNAL_BOT_DIR, "listener.lock")
+LOG_FILE = os.path.join(SIGNAL_BOT_DIR, "signals_log.txt")
+
+
+def _pid_alive(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    return True
+
+
+def _acquire_lock() -> None:
+    if os.path.exists(LOCK_FILE):
+        stale = False
+        try:
+            pid = int(open(LOCK_FILE, encoding="utf-8").read().strip())
+        except (OSError, ValueError):
+            stale = True
+        else:
+            if not _pid_alive(pid):
+                stale = True
+        if stale:
+            try:
+                os.remove(LOCK_FILE)
+            except OSError:
+                pass
+        else:
+            print(f"listener zaten çalışıyor (PID {pid}). Çıkılıyor.")
+            sys.exit(1)
+    with open(LOCK_FILE, "w", encoding="utf-8") as f:
+        f.write(str(os.getpid()))
+    atexit.register(lambda: os.remove(LOCK_FILE) if os.path.exists(LOCK_FILE) else None)
+
+
+def _log(line: str) -> None:
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    msg = f"[{ts}] {line}"
+    print(msg, flush=True)
+    try:
+        with open(LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(msg + "\n")
+    except OSError:
+        pass
+
+
+def _validate_config() -> None:
+    if not API_ID or not API_HASH:
+        print("HATA: TELEGRAM_API_ID ve TELEGRAM_API_HASH .env içinde tanımlı olmalı.")
+        sys.exit(1)
+    if not MERTER_CHANNEL_ID and not HALUK_CHANNEL_ID:
+        print("HATA: En az bir kanal ID gerekli (MERTER veya HALUK).")
+        sys.exit(1)
+
+
+def _dispatch_merter(text: str, msg_id: int) -> None:
+    preview = text[:200].replace("\n", " ")
+    _log(f"[MERTER] İLK MESAJ / YENİ | id={msg_id} | metin: {preview}")
+
+    try:
+        from signal_bot.merter_dca_manager import get_merter_dca_manager
+        if get_merter_dca_manager().handle_message(text):
+            _log("[MERTER] → merter_dca_manager işledi (EI/RSI 1x DCA)")
+            return
+    except Exception as e:
+        _log(f"[MERTER] DCA hatası (devam): {e}")
+
+    records = parse_merter(text)
+    if records:
+        enqueue_records(records)
+        _log(f"[MERTER] → {len(records)} kayıt kuyruğa yazıldı (K2/K3: queue_watcher)")
+    else:
+        _log(f"[MERTER] parse sonucu boş")
+
+
+def _dispatch_haluk_text(text: str, msg_id: int) -> None:
+    preview = text[:200].replace("\n", " ")
+    _log(f"[HALUK] İLK MESAJ / YENİ | id={msg_id} | metin: {preview}")
+
+    try:
+        from signal_bot.haluk_yayin_analiz import extract_youtube_urls, schedule_yayin_analiz
+
+        for yt_url in extract_youtube_urls(text):
+            _log(f"[HALUK YAYIN] YouTube linki → analiz kuyruğu | id={msg_id} | {yt_url}")
+            schedule_yayin_analiz(yt_url, message_id=msg_id)
+    except Exception as e:
+        _log(f"[HALUK YAYIN] analiz tetikleme hatası: {e}")
+
+    records, pause = parse_haluk_telegram(text)
+    if records:
+        enqueue_records(records)
+        _log(f"[HALUK] → {len(records)} kayıt (pause={pause})")
+    else:
+        _log(f"[HALUK] parse sonucu boş")
+
+
+async def _dispatch_haluk_pdf(event: events.NewMessage.Event, msg_id: int) -> None:
+    pdf_dir = os.path.join(SIGNAL_BOT_DIR, "pdfs")
+    os.makedirs(pdf_dir, exist_ok=True)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filepath = os.path.join(pdf_dir, f"tg_{ts}_{msg_id}.pdf")
+    await event.message.download_media(file=filepath)
+    _log(f"[HALUK PDF] indirildi: {filepath}")
+    records = parse_pdf_and_enqueue(filepath)
+    _log(f"[HALUK PDF] → {len(records)} kayıt")
+
+
+def _make_merter_client() -> TelegramClient:
+    return TelegramClient(MERTER_SESSION, API_ID, API_HASH)
+
+
+def _make_haluk_client() -> TelegramClient:
+    return TelegramClient(HALUK_SESSION, API_ID, API_HASH)
+
+
+async def _run_merter_listener() -> None:
+    client = _make_merter_client()
+
+    @client.on(events.NewMessage(chats=MERTER_CHANNEL_ID))
+    async def handler(event: events.NewMessage.Event) -> None:
+        text = (event.message.text or event.message.message or "").strip()
+        if not text:
+            return
+        _dispatch_merter(text, event.message.id)
+
+    await client.start()
+    _log(f"[MERTER] dinleniyor ch={MERTER_CHANNEL_ID} session={MERTER_SESSION}.session")
+    await client.run_until_disconnected()
+
+
+async def _run_haluk_listener() -> None:
+    client = _make_haluk_client()
+
+    @client.on(events.NewMessage(chats=HALUK_CHANNEL_ID))
+    async def handler(event: events.NewMessage.Event) -> None:
+        doc = event.message.document
+        if doc and getattr(doc, "mime_type", None) == "application/pdf":
+            await _dispatch_haluk_pdf(event, event.message.id)
+            return
+        text = (event.message.text or event.message.message or "").strip()
+        if not text:
+            return
+        _dispatch_haluk_text(text, event.message.id)
+
+    await client.start()
+    _log(f"[HALUK] dinleniyor ch={HALUK_CHANNEL_ID} session={HALUK_SESSION}.session")
+    await client.run_until_disconnected()
+
+
+async def main() -> None:
+    _acquire_lock()
+    _validate_config()
+
+    _log("=" * 60)
+    _log("MINA listener — ayrı oturumlar (Merter + Haluk)")
+    _log(f"  API_ID      : {API_ID}")
+    _log(f"  Merter      : ch={MERTER_CHANNEL_ID} session={MERTER_SESSION}.session")
+    _log(f"  Haluk       : ch={HALUK_CHANNEL_ID} session={HALUK_SESSION}.session")
+    _log("=" * 60)
+
+    tasks = []
+    if MERTER_CHANNEL_ID:
+        tasks.append(asyncio.create_task(_run_merter_listener()))
+    if HALUK_CHANNEL_ID:
+        tasks.append(asyncio.create_task(_run_haluk_listener()))
+
+    await asyncio.gather(*tasks)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
+========== 4. whisper/model grep ==========
+/root/MINA_v2/signal_bot/haluk_pdf_parser.py:206:    base = coin.replace("USDT", "").upper()
+/root/MINA_v2/signal_bot/haluk_pdf_parser.py:207:    return 5 if base in LEVERAGE_5X_COINS else 2
+/root/MINA_v2/signal_bot/haluk_pdf_parser.py:370:    coin_base = sec.coin.replace("USDT", "").upper()
+/root/MINA_v2/signal_bot/haluk_pdf_parser.py:372:    if coin_base in MACRO_FILTER_COINS:
+/root/MINA_v2/signal_bot/haluk_pdf_parser.py:375:            "coin": coin_base,
+/root/MINA_v2/signal_bot/haluk_pdf_parser.py:487:    source_label = f"HALUK_PDF:{os.path.basename(pdf_path)}"
+/root/MINA_v2/signal_bot/haluk_pdf_parser.py:495:            visual_source = f"HALUK_PDF_VISUAL:{os.path.basename(pdf_path)}"
+/root/MINA_v2/signal_bot/haluk_pdf_parser.py:524:    return parse_haluk_document(text, source_label=f"HALUK_TEXT:{os.path.basename(path)}")
+/root/MINA_v2/signal_bot/signal_parser.py:170:    base = symbol.replace("USDT", "").upper()
+/root/MINA_v2/signal_bot/signal_parser.py:171:    return 5 if base in LEVERAGE_5X_BASES else 2
+/root/MINA_v2/signal_bot/signal_parser.py:224:        base = m.group(1).upper()
+/root/MINA_v2/signal_bot/signal_parser.py:225:        if base in COIN_ALIASES:
+/root/MINA_v2/signal_bot/signal_parser.py:226:            base = COIN_ALIASES[base]
+/root/MINA_v2/signal_bot/signal_parser.py:227:        return f"{base}USDT"
+/root/MINA_v2/signal_bot/signal_parser.py:929:        base = m.group(1)
+/root/MINA_v2/signal_bot/signal_parser.py:930:        if base in CHAT_COIN_BASES:
+/root/MINA_v2/signal_bot/signal_parser.py:931:            sym = normalize_symbol(base)
+/root/MINA_v2/signal_bot/signal_parser.py:1142:        print(f"[HALUK PDF] ATLA (zaten işlendi): {os.path.basename(pdf_path)}")
+/root/MINA_v2/signal_bot/signal_parser.py:1231:    base = os.path.basename(pdf_path)
+/root/MINA_v2/signal_bot/signal_parser.py:1232:    m = re.match(r"tg_(\d{8})_(\d{6})", base)
+/root/MINA_v2/signal_bot/signal_parser.py:1341:            rec["pdf_path"] = os.path.basename(pdf_path)
+/root/MINA_v2/signal_bot/signal_parser.py:1377:            "source": f"haluk_pdf:{os.path.basename(pdf_path)}",
+/root/MINA_v2/signal_bot/haluk_video_transcriber.py:20:WHISPER_MODEL = os.environ.get("WHISPER_MODEL", "base")
+/root/MINA_v2/signal_bot/haluk_video_transcriber.py:121:def transcribe_whisper(wav_path: str, model_name: Optional[str] = None) -> str:
+/root/MINA_v2/signal_bot/haluk_video_transcriber.py:122:    model_name = model_name or WHISPER_MODEL
+/root/MINA_v2/signal_bot/haluk_video_transcriber.py:124:        import whisper
+/root/MINA_v2/signal_bot/haluk_video_transcriber.py:126:        subprocess.run([sys.executable, "-m", "pip", "install", "-q", "openai-whisper"], check=True)
+/root/MINA_v2/signal_bot/haluk_video_transcriber.py:127:        import whisper
+/root/MINA_v2/signal_bot/haluk_video_transcriber.py:129:    model = whisper.load_model(model_name)
+/root/MINA_v2/signal_bot/haluk_video_transcriber.py:130:    result = model.transcribe(wav_path, language="tr", fp16=False)
+
+========== 5. cookie grep + ls ==========
+/root/MINA_v2/signal_bot/haluk_yayin_analiz.py:26:COOKIES = os.path.join(HIST, "youtube_cookies.txt")
+/root/MINA_v2/signal_bot/haluk_yayin_analiz.py:151:        cmd.extend(["--cookies", COOKIES])
+-rw-r--r-- 1 root root 1680 Jun 11 14:17 /root/MINA_v2/signal_bot/history/youtube_cookies.txt
+
+========== 6. yayin_analiz_state.json ==========
+{
+    "processed_messages": [
+        11594,
+        11631,
+        11635,
+        11641,
+        11646,
+        11647,
+        11667,
+        11685,
+        11686,
+        11702
+    ],
+    "processed_urls": [
+        "https://youtube.com/live/kpnYLBT-H24",
+        "https://youtube.com/live/HZyzLAi2xqc",
+        "https://youtube.com/live/MqPgGPM3rqM",
+        "https://youtube.com/live/WeaT8kbc2fw",
+        "https://youtube.com/live/XFs70ILF_S4",
+        "https://youtube.com/live/f7zzn46VYp0",
+        "https://youtube.com/live/k5beFSGIdYw",
+        "https://youtube.com/live/fSSPJTiEF8k",
+        "https://youtu.be/slJG9zV77UY",
+        "https://youtube.com/live/1SE4xZ9CUhI",
+        "https://youtube.com/live/pWpfyK1u8lY"
+    ]
+}
+
+========== 7. sqlite schema ==========
+=== MEVCUT TABLOLAR VE ŞEMALARI ===
+
+[Tablo: trades]
+  - ID:0 İsim:id Tip:INTEGER
+  - ID:1 İsim:symbol Tip:TEXT
+  - ID:2 İsim:side Tip:TEXT
+  - ID:3 İsim:leverage Tip:INTEGER
+  - ID:4 İsim:open_time Tip:TIMESTAMP
+  - ID:5 İsim:open_price Tip:REAL
+  - ID:6 İsim:open_qty Tip:REAL
+  - ID:7 İsim:open_notional Tip:REAL
+  - ID:8 İsim:initial_margin Tip:REAL
+  - ID:9 İsim:defense_triggered Tip:INTEGER
+  - ID:10 İsim:defense_prices Tip:TEXT
+  - ID:11 İsim:weighted_avg_price Tip:REAL
+  - ID:12 İsim:close_time Tip:TIMESTAMP
+  - ID:13 İsim:close_price Tip:REAL
+  - ID:14 İsim:close_qty Tip:REAL
+  - ID:15 İsim:close_reason Tip:TEXT
+  - ID:16 İsim:pnl_percent Tip:REAL
+  - ID:17 İsim:pnl_usdt Tip:REAL
+  - ID:18 İsim:roe_percent Tip:REAL
+  - ID:19 İsim:status Tip:TEXT
+  - ID:20 İsim:created_at Tip:TIMESTAMP
+  - ID:21 İsim:signal_source Tip:TEXT
+
+[Tablo: sqlite_sequence]
+  - ID:0 İsim:name Tip:
+  - ID:1 İsim:seq Tip:
+
+[Tablo: signal_decisions]
+  - ID:0 İsim:id Tip:INTEGER
+  - ID:1 İsim:scenario_label Tip:TEXT
+  - ID:2 İsim:created_at Tip:TIMESTAMP
+  - ID:3 İsim:merter_symbol Tip:TEXT
+  - ID:4 İsim:merter_direction Tip:TEXT
+  - ID:5 İsim:trading_session Tip:TEXT
+  - ID:6 İsim:has_sfp Tip:INTEGER
+  - ID:7 İsim:total_direction Tip:TEXT
+  - ID:8 İsim:k1_json Tip:TEXT
+  - ID:9 İsim:k2_verdict Tip:TEXT
+  - ID:10 İsim:k2_brightness Tip:INTEGER
+  - ID:11 İsim:k2_label Tip:TEXT
+  - ID:12 İsim:k2_reason Tip:TEXT
+  - ID:13 İsim:k3_action Tip:TEXT
+  - ID:14 İsim:k3_reason Tip:TEXT
+  - ID:15 İsim:final_label Tip:TEXT
+
+[Tablo: haluk_messages]
+  - ID:0 İsim:id Tip:INTEGER
+  - ID:1 İsim:timestamp Tip:TEXT
+  - ID:2 İsim:message_id Tip:INTEGER
+  - ID:3 İsim:raw_text Tip:TEXT
+  - ID:4 İsim:message_type Tip:TEXT
+  - ID:5 İsim:coins_mentioned Tip:TEXT
+  - ID:6 İsim:direction Tip:TEXT
+  - ID:7 İsim:price_levels Tip:TEXT
+  - ID:8 İsim:analysis_summary Tip:TEXT
+  - ID:9 İsim:created_at Tip:TIMESTAMP
+
+[Tablo: haluk_predictions]
+  - ID:0 İsim:id Tip:INTEGER
+  - ID:1 İsim:message_id Tip:INTEGER
+  - ID:2 İsim:tarih Tip:TEXT
+  - ID:3 İsim:tahmin Tip:TEXT
+  - ID:4 İsim:hedef_tarih Tip:TEXT
+  - ID:5 İsim:sonuc Tip:TEXT
+  - ID:6 İsim:reminded Tip:INTEGER
+  - ID:7 İsim:created_at Tip:TIMESTAMP
+
+[Tablo: haluk_yayin_summaries]
+  - ID:0 İsim:message_id Tip:INTEGER
+  - ID:1 İsim:video_date Tip:TEXT
+  - ID:2 İsim:summary_sent_at Tip:TIMESTAMP
+
+[Tablo: follower_trades]
+  - ID:0 İsim:id Tip:INTEGER
+  - ID:1 İsim:follower_id Tip:TEXT
+  - ID:2 İsim:follower_name Tip:TEXT
+  - ID:3 İsim:master_trade_id Tip:INTEGER
+  - ID:4 İsim:symbol Tip:TEXT
+  - ID:5 İsim:side Tip:TEXT
+  - ID:6 İsim:leverage Tip:INTEGER
+  - ID:7 İsim:open_time Tip:TIMESTAMP
+  - ID:8 İsim:open_price Tip:REAL
+  - ID:9 İsim:open_qty Tip:REAL
+  - ID:10 İsim:initial_margin Tip:REAL
+  - ID:11 İsim:close_time Tip:TIMESTAMP
+  - ID:12 İsim:close_price Tip:REAL
+  - ID:13 İsim:close_qty Tip:REAL
+  - ID:14 İsim:close_reason Tip:TEXT
+  - ID:15 İsim:pnl_usdt Tip:REAL
+  - ID:16 İsim:status Tip:TEXT
+  - ID:17 İsim:created_at Tip:TIMESTAMP
+
+[Tablo: ht_pdf_basari_orani]
+  - ID:0 İsim:id Tip:INTEGER
+  - ID:1 İsim:symbol Tip:TEXT
+  - ID:2 İsim:direction Tip:TEXT
+  - ID:3 İsim:entry_price Tip:REAL
+  - ID:4 İsim:tp_price Tip:REAL
+  - ID:5 İsim:stop_price Tip:REAL
+  - ID:6 İsim:pdf_file Tip:TEXT
+  - ID:7 İsim:source Tip:TEXT
+  - ID:8 İsim:status Tip:TEXT
+  - ID:9 İsim:result Tip:TEXT
+  - ID:10 İsim:result_price Tip:REAL
+  - ID:11 İsim:open_time Tip:TEXT
+  - ID:12 İsim:close_time Tip:TEXT
+  - ID:13 İsim:created_at Tip:TEXT

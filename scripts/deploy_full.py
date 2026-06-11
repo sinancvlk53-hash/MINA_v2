@@ -54,6 +54,9 @@ FILES = [
     "signal_bot/haluk_pdf_visual.py",
     "signal_bot/haluk_pdf_processed.py",
     "signal_bot/haluk_yayin_analiz.py",
+    "signal_bot/haluk_yayin_db.py",
+    "signal_bot/haluk_coin_price_tracker.py",
+    "signal_bot/haluk_yayin_watcher.py",
     "signal_bot/macro_levels_store.py",
     "signal_bot/macro_prices.py",
     "signal_bot/signal_slot_bridge.py",
@@ -66,6 +69,7 @@ FILES = [
     "scripts/reconcile_derr_ghosts.py",
     "scripts/test_entry_orders.py",
     "scripts/migrate_haluk_messages.py",
+    "scripts/migrate_haluk_yayin_db.py",
     "scripts/analyze_haluk_history.py",
     "tools/telegram_bot.py",
     "dashboard/dashboard_ws.py",
@@ -238,6 +242,7 @@ def main() -> None:
 
     restart_cmds = systemd_cmds + [
         f"{REMOTE}/venv/bin/pip install -q pymupdf pdfplumber yfinance 2>/dev/null || true",
+        f"{REMOTE}/venv/bin/python {REMOTE}/scripts/migrate_haluk_yayin_db.py",
         listener_clean + "systemctl restart mina-engine.service",
         "systemctl restart mina-merter-dca.service",
         "systemctl restart mina-queue-watcher.service 2>/dev/null || true",
