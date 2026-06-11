@@ -205,6 +205,20 @@ class TradingJournal:
                 CREATE INDEX IF NOT EXISTS idx_ht_pdf_status
                 ON ht_pdf_basari_orani(status, symbol)
             ''')
+            ht_pdf_extra = (
+                ("baz_fiyat", "REAL"),
+                ("fiyat_1s", "REAL"),
+                ("fiyat_4s", "REAL"),
+                ("fiyat_24s", "REAL"),
+                ("result_time", "TEXT"),
+            )
+            existing_ht = {
+                row[1]
+                for row in cursor.execute("PRAGMA table_info(ht_pdf_basari_orani)").fetchall()
+            }
+            for col, typ in ht_pdf_extra:
+                if col not in existing_ht:
+                    cursor.execute(f"ALTER TABLE ht_pdf_basari_orani ADD COLUMN {col} {typ}")
             
             self.conn.commit()
             

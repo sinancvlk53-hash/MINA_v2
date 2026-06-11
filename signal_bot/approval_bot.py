@@ -636,6 +636,16 @@ def _auto_execute_haluk_pdf_signals(signals: list, pdf_time: str = "") -> None:
                 tp_price=tp_px,
                 stop_price=stop_px,
             )
+            try:
+                from signal_bot.ht_pdf_price_monitor import set_baz_fiyat_for_symbol
+
+                sym = normalize_ht_symbol(symbol)
+                ticker = client.futures_symbol_ticker(symbol=sym)
+                baz = float(ticker["price"])
+                if set_baz_fiyat_for_symbol(sym, side, baz):
+                    print(f"[QUEUE] baz_fiyat kaydedildi: {sym} {side} → {baz}")
+            except Exception as exc:
+                print(f"[QUEUE] baz_fiyat kaydı hatası: {exc}")
         time.sleep(0.4)
 
     header = "📄 *Haluk PDF — otomatik onay*\n"

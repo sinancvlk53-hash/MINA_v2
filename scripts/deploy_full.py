@@ -58,6 +58,7 @@ FILES = [
     "signal_bot/haluk_yayin_analiz.py",
     "signal_bot/haluk_yayin_db.py",
     "signal_bot/haluk_coin_price_tracker.py",
+    "signal_bot/ht_pdf_price_monitor.py",
     "signal_bot/haluk_yayin_watcher.py",
     "signal_bot/macro_levels_store.py",
     "signal_bot/macro_prices.py",
@@ -72,6 +73,7 @@ FILES = [
     "scripts/test_entry_orders.py",
     "scripts/migrate_haluk_messages.py",
     "scripts/migrate_haluk_yayin_db.py",
+    "scripts/migrate_ht_pdf_price_columns.py",
     "scripts/analyze_haluk_history.py",
     "tools/telegram_bot.py",
     "dashboard/dashboard_ws.py",
@@ -253,6 +255,7 @@ def main() -> None:
     restart_cmds = systemd_cmds + [
         f"{REMOTE}/venv/bin/pip install -q pymupdf pdfplumber yfinance google-generativeai Pillow 2>/dev/null || true",
         f"{REMOTE}/venv/bin/python {REMOTE}/scripts/migrate_haluk_yayin_db.py",
+        f"{REMOTE}/venv/bin/python {REMOTE}/scripts/migrate_ht_pdf_price_columns.py",
         "systemctl stop mina-pdf-listener.service 2>/dev/null || true",
         "systemctl disable mina-pdf-listener.service 2>/dev/null || true",
         listener_clean + "systemctl restart mina-engine.service",

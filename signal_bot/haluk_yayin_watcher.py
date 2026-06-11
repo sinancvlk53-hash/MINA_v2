@@ -14,6 +14,7 @@ if _ROOT not in sys.path:
 from signal_bot.haluk_predictions import init_predictions_table, send_prediction_reminders
 from signal_bot.haluk_yayin_db import init_yayin_tables
 from signal_bot.haluk_coin_price_tracker import check_pending_coin_prices
+from signal_bot.ht_pdf_price_monitor import check_pending_signals
 
 CHECK_SEC = int(os.environ.get("HALUK_PRED_CHECK_SEC", "300"))
 
@@ -35,6 +36,12 @@ def main() -> None:
                 print(f"[HALUK YAYIN WATCHER] {p} coin fiyat güncellendi", flush=True)
         except Exception as exc:
             print(f"[HALUK YAYIN WATCHER] fiyat takip hatası: {exc}", flush=True)
+        try:
+            h = check_pending_signals()
+            if h:
+                print(f"[HALUK YAYIN WATCHER] {h} ht_pdf sinyal sonuçlandı", flush=True)
+        except Exception as exc:
+            print(f"[HALUK YAYIN WATCHER] ht_pdf price monitor hatası: {exc}", flush=True)
         time.sleep(CHECK_SEC)
 
 
