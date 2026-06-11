@@ -5,6 +5,7 @@ import base64
 import json
 import os
 import re
+import sqlite3
 import sys
 from datetime import datetime
 
@@ -13,20 +14,43 @@ sys.path.append(_ROOT)
 from dotenv import load_dotenv
 load_dotenv(os.path.join(_ROOT, '.env'))
 
+# Telethon session + journal sqlite — locked önleme
+_sqlite_connect = sqlite3.connect
+
+
+def _sqlite_connect_timeout(database, *args, **kwargs):
+    kwargs.setdefault("timeout", 30)
+    conn = _sqlite_connect(database, *args, **kwargs)
+    try:
+        conn.execute("PRAGMA busy_timeout=30000")
+    except sqlite3.Error:
+        pass
+    return conn
+
+
+sqlite3.connect = _sqlite_connect_timeout
+
 import anthropic
 from telethon import TelegramClient, events
 
-api_id   = 38446219
-api_hash = '72a15e6baf9f4f79893dd122258e8bea'
-HT_GROUP_ID = -1003062732797
+api_id   = int(os.getenv('TELEGRAM_API_ID', '38446219'))
+api_hash = os.getenv('TELEGRAM_API_HASH', '72a15e6baf9f4f79893dd122258e8bea')
+HT_GROUP_ID = int(os.getenv('TELEGRAM_HALUK_CHANNEL_ID', '-1003062732797'))
 
 QUEUE_FILE = os.path.join(os.path.dirname(__file__), 'ht_signals_queue.json')
 LOCK_FILE  = os.path.join(os.path.dirname(__file__), 'ht_listener.lock')
+JOURNAL_DB = os.path.join(_ROOT, 'mina_trading_journal.db')
+SESSION_PATH = os.path.join(_ROOT, 'session_ht2')
 
 UPDATE_TRAP    = ['UPDATE', 'RETEST', 'DURUM']
 FILTER_COINS   = ['TOTAL', 'OTHERS', 'BRENT', 'XCU', 'USDT']
 
-client = TelegramClient('session_ht', api_id, api_hash)
+
+def _journal_conn() -> sqlite3.Connection:
+    return sqlite3.connect(JOURNAL_DB, timeout=30, check_same_thread=False)
+
+
+client = TelegramClient(SESSION_PATH, api_id, api_hash)
 claude = anthropic.Anthropic()
 
 
@@ -343,7 +367,7 @@ async def handler(event):
 async def main():
     _acquire_lock()
     await client.start()
-    print(f'HT sinyal dinleyici başladı (PID {os.getpid()}) — metin + görsel izleniyor...')
+    print(f'HT sinyal dinleyici başladı (PID {os.getpid()}) session={SESSION_PATH} — metin + görsel izleniyor...')
     await client.run_until_disconnected()
 
 

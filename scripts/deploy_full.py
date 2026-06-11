@@ -271,7 +271,19 @@ def main() -> None:
         "systemctl enable mina-makro-watcher.service 2>/dev/null || true",
         "systemctl restart mina-makro-watcher.service",
         "systemctl restart mina-haluk-yayin.service 2>/dev/null || true",
-        "systemctl restart mina-ht-listener.service 2>/dev/null || true",
+        "systemctl stop mina-ht-listener.service 2>/dev/null || true",
+        f"cp -a {REMOTE}/session_ht.session {REMOTE}/session_ht2.session 2>/dev/null || true",
+        f"cp -a {REMOTE}/session_ht.session-journal {REMOTE}/session_ht2.session-journal 2>/dev/null || true",
+        f"cd {REMOTE} && {REMOTE}/venv/bin/python -c \""
+        "from dotenv import load_dotenv; load_dotenv(); import os; "
+        "from telethon.sync import TelegramClient; "
+        "api_id=int(os.getenv('TELEGRAM_API_ID')); api_hash=os.getenv('TELEGRAM_API_HASH'); "
+        "p=os.path.join('/root/MINA_v2','session_ht2'); "
+        "c=TelegramClient(p,api_id,api_hash); c.connect(); "
+        "print('session_ht2 OK', c.is_user_authorized()); c.disconnect()\"",
+        "systemctl start mina-ht-listener.service 2>/dev/null || true",
+        "sleep 2",
+        "systemctl status mina-ht-listener.service --no-pager 2>&1 | head -15",
         "systemctl enable mina-approval-bot.service 2>/dev/null || true",
         "systemctl restart mina-approval-bot.service 2>/dev/null || true",
         f"{REMOTE}/venv/bin/python {REMOTE}/scripts/test_entry_orders.py 2>&1 | tail -8",
