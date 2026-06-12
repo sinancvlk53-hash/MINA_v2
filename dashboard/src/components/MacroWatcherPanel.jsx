@@ -1,5 +1,40 @@
 import React from 'react'
 
+function TrafficLight({ score, label }) {
+  const color = score <= 3 ? 'green' : score <= 6 ? 'yellow' : 'red'
+  const bg = {
+    green: 'rgba(34,197,94,0.15)',
+    yellow: 'rgba(234,179,8,0.15)',
+    red: 'rgba(239,68,68,0.15)',
+  }[color]
+  const border = {
+    green: '#22c55e', yellow: '#eab308', red: '#ef4444',
+  }[color]
+
+  const advice = {
+    green: 'Piyasa sağlıklı — giriş uygun',
+    yellow: 'Temkinli ol — seçici gir',
+    red: 'Yeni giriş yapma — bekle',
+  }[color]
+
+  return (
+    <div style={{
+      padding: '12px 16px',
+      borderRadius: '8px',
+      marginBottom: '16px',
+      background: bg,
+      border: `1px solid ${border}`,
+    }}>
+      <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
+        Makro İklim Puanı: {score}/10 — {label}
+      </div>
+      <div style={{ fontSize: '0.85rem', opacity: 0.8, marginTop: '4px' }}>
+        {advice}
+      </div>
+    </div>
+  )
+}
+
 const GRID_ORDER = [
   { key: 'TOTAL', label: 'TOTAL', hint: 'Toplam kripto piyasa değeri' },
   { key: 'TOTAL2', label: 'TOTAL2', hint: 'BTC hariç toplam piyasa' },
@@ -114,6 +149,10 @@ export default function MacroWatcherPanel({ watcher = null }) {
 
   return (
     <div className="panel panel-makro-watcher">
+      <TrafficLight
+        score={w.macroWeightedScore ?? 5}
+        label={w.macroWeightedLabel ?? '⚠️ DİKKATLİ'}
+      />
       <div className="panel-head">
         <div>
           <span className="panel-title">Makro İzleyici</span>

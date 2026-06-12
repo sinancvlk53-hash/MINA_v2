@@ -446,6 +446,78 @@ def compute_scores(metrics: dict, combos: List[str]) -> Tuple[int, int]:
     return health, macro
 
 
+def compute_weighted_score(metrics: dict) -> int:
+    """
+    Ağırlıklı makro iklim puanı — 0 (iyi) ile 10 (kötü) arası.
+    Düşük puan = piyasa sağlıklı = giriş uygun.
+    """
+    score = 5.0  # başlangıç nötr
+
+    def _chg(key: str, alt_key: str = "") -> float:
+        row = metrics.get(key) or (metrics.get(alt_key) if alt_key else {}) or {}
+        v = row.get("change_pct", row.get("change24h", 0))
+        try:
+            return float(v or 0)
+        except (TypeError, ValueError):
+            return 0.0
+
+    def _val(key: str, default: float = 0) -> float:
+        row = metrics.get(key) or {}
+        v = row.get("value", default)
+        try:
+            return float(v if v is not None else default)
+        except (TypeError, ValueError):
+            return default
+
+    # Fear & Greed (%30 ağırlık)
+    fg = _val("FEAR_GREED", 50)
+    if fg <= 20:
+        score += 1.5   # aşırı korku = riskli
+    elif fg <= 35:
+        score += 0.75
+    elif fg >= 75:
+        score -= 1.5   # açgözlülük = fırsat biter
+    elif fg >= 60:
+        score -= 0.75
+
+    # BTC.D (%25 ağırlık)
+    btcd_chg = _chg("BTC.D", "BTC_D")
+    if btcd_chg > 0.3:
+        score += 1.25   # BTC dominant → altcoin riski
+    elif btcd_chg < -0.3:
+        score -= 1.25  # altcoin sezonu
+
+    # TOTAL trend (%20 ağırlık)
+    total_chg = _chg("TOTAL")
+    if total_chg < -3:
+        score += 1.0   # piyasa düşüşte
+    elif total_chg < -1:
+        score += 0.5
+    elif total_chg > 2:
+        score -= 1.0   # piyasa yükseliyor
+    elif total_chg > 0:
+        score -= 0.5
+
+    # Funding Rate (%15 ağırlık)
+    funding = _val("BTC_FUNDING", 0)
+    if funding > 0.05:
+        score += 0.75  # aşırı long pozisyon
+    elif funding < -0.01:
+        score += 0.375  # aşırı short
+    elif 0 <= funding <= 0.02:
+        score -= 0.375  # sağlıklı
+
+    # DXY (%10 ağırlık)
+    dxy_chg = _chg("DXY")
+    if dxy_chg > 0.5:
+        score += 0.5   # dolar güçleniyor = kripto riski
+    elif dxy_chg < -0.5:
+        score -= 0.5
+
+    # 0-10 arası sınırla
+    return max(0, min(10, round(score)))
+
+
 def trade_permission(macro_score: int) -> Tuple[str, str]:
     if macro_score >= 30:
         return "FULL_RISK", "🟢 FULL RISK"
@@ -646,6 +718,8 @@ def load_dashboard_payload() -> dict:
             "metrics": {},
             "riskScore": 0,
             "macroScore": 0,
+            "macroWeightedScore": 5,
+            "macroWeightedLabel": "⚠️ DİKKATLİ",
             "tradePermission": "REDUCED_RISK",
             "tradePermissionLabel": "🟡 RİSKLİ",
             "combinations": [],
@@ -653,10 +727,18 @@ def load_dashboard_payload() -> dict:
             "updatedAt": None,
             "stale": True,
         }
+    metrics = state.get("metrics") or {}
+    weighted_score = compute_weighted_score(metrics)
     return {
-        "metrics": state.get("metrics") or {},
+        "metrics": metrics,
         "riskScore": state.get("risk_score", 0),
         "macroScore": state.get("macro_score", 0),
+        "macroWeightedScore": weighted_score,
+        "macroWeightedLabel": (
+            "✅ UYGUN" if weighted_score <= 3 else
+            "⚠️ DİKKATLİ" if weighted_score <= 6 else
+            "🚨 RİSKLİ"
+        ),
         "tradePermission": state.get("trade_permission", "REDUCED_RISK"),
         "tradePermissionLabel": state.get("trade_permission_label", "🟡 RİSKLİ"),
         "combinations": state.get("combinations") or [],
