@@ -66,6 +66,7 @@ LEVERAGE     = 4
 HT_QUEUE_FILE = os.path.join(os.path.dirname(__file__), 'ht_signals_queue.json')
 RAW_QUEUE_FILE = os.path.join(os.path.dirname(__file__), 'raw_signal_queue.json')
 JOURNAL_DB = os.path.join(_ROOT, 'mina_trading_journal.db')
+MAKRO_STALE_SEC = int(os.getenv('MAKRO_STALE_SEC', str(30 * 60)))
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -634,6 +635,87 @@ def get_approved_signals(after: str) -> list:
     return out
 
 
+def _get_macro_context() -> dict:
+    """makro_watcher_state.json snapshot — risk skoru, macro skor, veri yaşı."""
+    from mina_makro_core import load_dashboard_payload
+
+    payload = load_dashboard_payload()
+    updated_at = payload.get('updatedAt')
+    age_sec = None
+    base_stale = bool(payload.get('stale'))
+    if updated_at:
+        try:
+            ts = str(updated_at)
+            if ts.endswith('Z'):
+                ts = ts[:-1] + '+00:00'
+            dt = datetime.datetime.fromisoformat(ts)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=datetime.timezone.utc)
+            now_utc = datetime.datetime.now(datetime.timezone.utc)
+            age_sec = int((now_utc - dt.astimezone(datetime.timezone.utc)).total_seconds())
+        except Exception as exc:
+            print(f'[QUEUE] makro updated_at parse hatası: {exc}')
+            base_stale = True
+    stale = (
+        base_stale
+        or age_sec is None
+        or age_sec > MAKRO_STALE_SEC
+    )
+    return {
+        'risk_score': int(payload.get('riskScore') or 0),
+        'macro_score': int(payload.get('macroScore') or 0),
+        'trade_permission': payload.get('tradePermission'),
+        'trade_permission_label': payload.get('tradePermissionLabel'),
+        'combinations': (payload.get('combinations') or [])[:5],
+        'sources': payload.get('sources') or {},
+        'updated_at': updated_at,
+        'data_age_sec': age_sec,
+        'stale': stale,
+    }
+
+
+def _write_macro_context_to_journal(journal_id: int, macro: dict) -> None:
+    if not journal_id:
+        return
+    try:
+        conn = sqlite3.connect(JOURNAL_DB)
+        conn.execute(
+            '''
+            UPDATE ht_pdf_basari_orani
+            SET macro_context = ?,
+                macro_risk_score = ?,
+                macro_data_age_sec = ?
+            WHERE id = ?
+            ''',
+            (
+                json.dumps(macro, ensure_ascii=False),
+                macro.get('risk_score'),
+                macro.get('data_age_sec'),
+                journal_id,
+            ),
+        )
+        conn.commit()
+        conn.close()
+    except Exception as exc:
+        print(f'[QUEUE] macro_context journal yazma hatası id={journal_id}: {exc}')
+
+
+def _notify_macro_stale(symbol: str, side: str, macro: dict) -> None:
+    age = macro.get('data_age_sec')
+    age_txt = f'{age}s' if age is not None else 'bilinmiyor'
+    label = macro.get('trade_permission_label') or macro.get('trade_permission') or '—'
+    msg = (
+        f'⚠️ *Makro veri eski* — {symbol} {side}\n'
+        f'Yaş: {age_txt} (eşik: {MAKRO_STALE_SEC}s)\n'
+        f'Risk: {macro.get("risk_score")}/6 | {label}\n'
+        f'Pozisyon açıldı; makro snapshot journal\'a yazıldı.'
+    )
+    try:
+        bot.send_message(CHAT_ID, msg, parse_mode='Markdown')
+    except Exception as exc:
+        print(f'[QUEUE] makro stale Telegram: {exc}')
+
+
 def cancel_old_signals(symbol: str, before: str) -> int:
     """before'dan eski approved kayıtları iptal et; son 60 sn içindeki batch'e dokunma."""
     conn = sqlite3.connect(JOURNAL_DB)
@@ -686,6 +768,11 @@ def _auto_execute_haluk_pdf_signals(signals: list, pdf_time: str = "") -> None:
     config = BinanceConfig()
     client = config.get_client()
     account = AccountManager(client)
+    macro_ctx = _get_macro_context()
+    print(
+        f"[QUEUE] makro snapshot risk={macro_ctx.get('risk_score')}/6 "
+        f"age={macro_ctx.get('data_age_sec')}s stale={macro_ctx.get('stale')}"
+    )
     results = []
     for raw in db_signals:
         s = _normalize_queue_signal(raw)
@@ -696,6 +783,7 @@ def _auto_execute_haluk_pdf_signals(signals: list, pdf_time: str = "") -> None:
             continue
         sym = normalize_ht_symbol(symbol)
         cancel_old_signals(sym, cutoff_old)
+        journal_id = raw.get('journal_id')
         ok, detail = open_position(
             client,
             account,
@@ -707,6 +795,9 @@ def _auto_execute_haluk_pdf_signals(signals: list, pdf_time: str = "") -> None:
         icon = "✅" if ok else "❌"
         results.append(f"{icon} {symbol} {side}: {detail}")
         if ok:
+            _write_macro_context_to_journal(journal_id, macro_ctx)
+            if macro_ctx.get('stale'):
+                _notify_macro_stale(symbol, side, macro_ctx)
             tp_px = raw.get("tp_price") or raw.get("tp")
             stop_px = raw.get("stop_price") or raw.get("stop") or s.get("stop")
             _place_haluk_pdf_tp_stop(
