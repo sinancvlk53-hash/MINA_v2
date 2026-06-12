@@ -5,8 +5,10 @@ import json
 import time
 import re
 import datetime
+import sqlite3
 import atexit
 import threading
+from datetime import timedelta
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(_ROOT)
 sys.path.append(os.path.join(_ROOT, 'backend'))
@@ -63,6 +65,7 @@ CHAT_ID      = int(os.getenv('TELEGRAM_CHAT_ID'))
 LEVERAGE     = 4
 HT_QUEUE_FILE = os.path.join(os.path.dirname(__file__), 'ht_signals_queue.json')
 RAW_QUEUE_FILE = os.path.join(os.path.dirname(__file__), 'raw_signal_queue.json')
+JOURNAL_DB = os.path.join(_ROOT, 'mina_trading_journal.db')
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -596,17 +599,95 @@ def _normalize_queue_signal(sig: dict) -> dict:
     return out
 
 
+def get_approved_signals(after: str) -> list:
+    """Son after zamanından sonra oluşturulmuş approved ht_pdf kayıtları (coin başına en yeni)."""
+    conn = sqlite3.connect(JOURNAL_DB)
+    rows = conn.execute(
+        """
+        SELECT symbol, direction, entry_price, tp_price, stop_price, created_at, id
+        FROM ht_pdf_basari_orani
+        WHERE status = 'approved' AND created_at >= ?
+        ORDER BY created_at DESC
+        """,
+        (after,),
+    ).fetchall()
+    conn.close()
+    seen: set = set()
+    out: list = []
+    for symbol, direction, entry_price, tp_price, stop_price, created_at, journal_id in rows:
+        if symbol in seen:
+            continue
+        seen.add(symbol)
+        out.append({
+            "coin": symbol,
+            "symbol": symbol,
+            "side": direction,
+            "direction": direction,
+            "entry": str(entry_price) if entry_price is not None else "—",
+            "entry_price": entry_price,
+            "tp_price": tp_price,
+            "stop_price": stop_price,
+            "stop": str(stop_price) if stop_price is not None else "—",
+            "created_at": created_at,
+            "journal_id": journal_id,
+        })
+    return out
+
+
+def cancel_old_signals(symbol: str, before: str) -> int:
+    """before'dan eski approved kayıtları iptal et; son 60 sn içindeki batch'e dokunma."""
+    conn = sqlite3.connect(JOURNAL_DB)
+    cur = conn.execute(
+        """
+        UPDATE ht_pdf_basari_orani
+        SET status='cancelled', result='superseded', close_time=datetime('now')
+        WHERE symbol=?
+          AND status='approved'
+          AND created_at < ?
+        """,
+        (symbol, before),
+    )
+    n = int(cur.rowcount or 0)
+    conn.commit()
+    conn.close()
+    if n:
+        print(f"[QUEUE] cancel_old_signals {symbol}: {n} eski kayıt superseded")
+    return n
+
+
 def _auto_execute_haluk_pdf_signals(signals: list, pdf_time: str = "") -> None:
     """haluk_pdf kaynaklı sinyaller — Telegram onayı beklemeden aç."""
     if not signals:
         return
-    from mina_ht_pdf_supersede import normalize_ht_symbol, supersede_ht_pdf_coin
+    from mina_ht_pdf_supersede import normalize_ht_symbol
+
+    now = datetime.datetime.utcnow()
+    cutoff_new = (now - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
+    cutoff_old = (now - timedelta(seconds=60)).strftime("%Y-%m-%d %H:%M:%S")
+
+    db_signals = get_approved_signals(cutoff_new)
+    if not db_signals:
+        print("[QUEUE] haluk_pdf: son 30 dk içinde approved journal kaydı yok, atlandı")
+        return
+
+    queue_syms = {
+        normalize_ht_symbol(s.get("coin") or s.get("symbol"))
+        for s in signals
+        if s.get("coin") or s.get("symbol")
+    }
+    db_signals = [
+        s for s in db_signals
+        if normalize_ht_symbol(s.get("symbol")) in queue_syms
+    ]
+    if not db_signals:
+        print("[QUEUE] haluk_pdf: kuyruk/journal eşleşmesi yok, atlandı")
+        return
 
     config = BinanceConfig()
     client = config.get_client()
     account = AccountManager(client)
     results = []
-    for raw in signals:
+    for raw in db_signals:
         s = _normalize_queue_signal(raw)
         symbol = s.get("coin") or s.get("symbol")
         side = s.get("side") or s.get("direction")
@@ -614,7 +695,7 @@ def _auto_execute_haluk_pdf_signals(signals: list, pdf_time: str = "") -> None:
             results.append(f"❌ {symbol or '?'}: geçersiz sembol/yön")
             continue
         sym = normalize_ht_symbol(symbol)
-        supersede_ht_pdf_coin(sym, client, log=print)
+        cancel_old_signals(sym, cutoff_old)
         ok, detail = open_position(
             client,
             account,
@@ -656,7 +737,7 @@ def _auto_execute_haluk_pdf_signals(signals: list, pdf_time: str = "") -> None:
         bot.send_message(CHAT_ID, header + summary, parse_mode="Markdown")
     except Exception as exc:
         print(f"[QUEUE] haluk_pdf Telegram özeti: {exc}")
-    print(f"[QUEUE] haluk_pdf otomatik açılış: {len(signals)} sinyal")
+    print(f"[QUEUE] haluk_pdf otomatik açılış: {len(db_signals)} sinyal")
 
 
 def _consume_queue_file(path: str, default_source: str = 'HT'):
