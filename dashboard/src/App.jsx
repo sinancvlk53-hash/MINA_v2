@@ -7,6 +7,7 @@ import PositionDetailModal from './components/PositionDetailModal.jsx'
 import PositionsOverlay from './components/PositionsOverlay.jsx'
 import DefensePanel from './components/DefensePanel.jsx'
 import MacroLevelsPanel from './components/MacroLevelsPanel.jsx'
+import MacroAnalysisPanel from './components/MacroAnalysisPanel.jsx'
 import MacroWatcherPanel from './components/MacroWatcherPanel.jsx'
 import HalukArchivePanel from './components/HalukArchivePanel.jsx'
 import SettingsPanel from './components/SettingsPanel.jsx'
@@ -53,6 +54,7 @@ export default function App() {
   }
 
   const showOrder = activeTab === 'order'
+  const showMain = showOrder
   const showMacro = activeTab === 'macro'
   const showDefense = activeTab === 'defense'
   const showSettings = activeTab === 'settings'
@@ -81,6 +83,7 @@ export default function App() {
             futuresSymbols={futuresSymbols}
             markPrices={markPrices}
           />
+          {showMain && <MacroAnalysisPanel levels={macroLevels} />}
         </aside>
 
         <section className={`col-center ${showMacro ? 'mobile-show' : 'mobile-hide'}`}>
