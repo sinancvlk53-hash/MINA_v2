@@ -68,6 +68,7 @@ FILES = [
     "signal_bot/approval_bot.py",
     "signal_bot/ht_listener.py",
     "signal_bot/news_watcher.py",
+    "signal_bot/macro_level_alert.py",
     "scripts/_snapshot.py",
     "scripts/manual_open.py",
     "scripts/orphan_cleaner.py",

@@ -687,6 +687,23 @@ def watcher_cycle() -> dict:
         print(f"[MAKRO] Haber tarama hatası: {e}")
 
     metrics, sources = fetch_all_metrics(prev)
+
+    try:
+        from signal_bot.macro_prices import fetch_macro_prices
+        from backend.config import BinanceConfig
+
+        macro_prices = fetch_macro_prices(BinanceConfig().get_client())
+    except Exception as e:
+        macro_prices = {}
+        print(f"[LEVEL ALERT] macro_prices: {e}")
+
+    try:
+        from signal_bot.macro_level_alert import check_level_alerts
+
+        check_level_alerts(macro_prices)
+    except Exception as e:
+        print(f"[LEVEL ALERT] {e}")
+
     combos = analyze_combinations(metrics)
     risk_score, macro_score = compute_scores(metrics, combos)
     perm_key, perm_label = trade_permission(macro_score)
