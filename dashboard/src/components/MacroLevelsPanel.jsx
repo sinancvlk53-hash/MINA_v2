@@ -104,7 +104,9 @@ function LevelBar({ item, spec }) {
         <span>{meta.loLabel}</span>
         <span>{meta.hiLabel}</span>
       </div>
-      <div className="level-bar-container">
+      <div className={`level-bar-container level-bar-zone-${meta.zone}`}>
+        {meta.zone === 'support' && <div className="level-bar-glow level-bar-glow-left" aria-hidden />}
+        {meta.zone === 'resist' && <div className="level-bar-glow level-bar-glow-right" aria-hidden />}
         <div
           className={`level-bar-fill ${fillClass}`}
           style={{ width: `${meta.dotPct}%` }}

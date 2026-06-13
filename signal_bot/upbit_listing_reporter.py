@@ -412,13 +412,6 @@ def watcher_cycle() -> Tuple[int, int]:
     sent = dispatch_alerts(uniq)
     save_state(state)
 
-    try:
-        from signal_bot.upbit_listing_trader import handle_listing_alerts, trader_cycle
-        if uniq:
-            handle_listing_alerts(uniq)
-        else:
-            trader_cycle()
-    except Exception as exc:
-        print(f"[UPBIT LISTING] Trader hatası: {exc}")
+    # AUTO_TRADE kapalı — SHORT pipeline devre dışı, yalnızca dispatch_alerts Telegram.
 
     return len(uniq), sent

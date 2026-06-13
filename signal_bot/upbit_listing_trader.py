@@ -26,6 +26,13 @@ PEAK_POLL_SEC = int(os.environ.get("UPBIT_TRADER_PEAK_POLL_SEC", "30"))
 FUNDING_HOURLY_MIN = float(os.environ.get("UPBIT_TRADER_FUNDING_HOURLY_MIN", "-1"))
 PENDING_MAX_SEC = int(os.environ.get("UPBIT_TRADER_PENDING_MAX_SEC", "3600"))
 
+# Otomatik SHORT kapalı — Upbit reporter yalnızca Telegram bildirimi gönderir.
+AUTO_TRADE = os.environ.get("UPBIT_TRADER_AUTO_TRADE", "0").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+)
+
 TR_TZ = timezone(timedelta(hours=3))
 
 
@@ -217,6 +224,8 @@ def is_upbit_listing_position(symbol: str, side: str) -> bool:
 
 
 def on_new_listings(alerts: List[Dict[str, Any]]) -> None:
+    if not AUTO_TRADE:
+        return
     if not alerts:
         return
     state = load_state()
@@ -268,6 +277,8 @@ def on_new_listings(alerts: List[Dict[str, Any]]) -> None:
 
 
 def _open_short(client, symbol: str, listing_price: float, peak: float) -> Optional[Dict[str, Any]]:
+    if not AUTO_TRADE:
+        return None
     try:
         client.futures_change_margin_type(symbol=symbol, marginType="ISOLATED")
     except Exception as exc:
@@ -523,6 +534,8 @@ def _process_active(state: Dict[str, Any]) -> None:
 
 
 def trader_cycle() -> None:
+    if not AUTO_TRADE:
+        return
     state = load_state()
     _process_pending(state)
     _process_active(state)
@@ -531,6 +544,8 @@ def trader_cycle() -> None:
 
 def handle_listing_alerts(alerts: List[Dict[str, Any]]) -> None:
     """Yeni listeleme uyarılarından trader pipeline başlat."""
+    if not AUTO_TRADE:
+        return
     on_new_listings(alerts)
     trader_cycle()
 

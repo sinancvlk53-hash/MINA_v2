@@ -41,14 +41,18 @@ function prepareListings(coins) {
 
 function ListingRow({ row }) {
   const ageH = row._ageH
-  const cls = ageH > 24 ? 'listing-row listing-stale' : 'listing-row listing-fresh'
+  const isStale = ageH > 24
+  const cls = isStale ? 'listing-row listing-stale' : 'listing-row listing-fresh'
   const when = formatTs(row.listedAt || row.firstMention)
 
   return (
     <li className={cls}>
-      <span className="listing-coin">{row.coin}</span>
+      <div className="listing-row-top">
+        <span className="listing-coin">{row.coin}</span>
+        {isStale && <span className="listing-stale-badge">Eski</span>}
+        <span className="listing-ago">{hoursAgoLabel(ageH)}</span>
+      </div>
       <span className="listing-time">{when}</span>
-      <span className="listing-ago">{hoursAgoLabel(ageH)}</span>
     </li>
   )
 }
