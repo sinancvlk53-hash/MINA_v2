@@ -26,8 +26,8 @@ function storedToken() {
 export default function useWebSocket(url) {
   const [data, setData] = useState(null)
   const [status, setStatus] = useState('connecting')
-  const [authenticated, setAuthenticated] = useState(false)
-  const [authRequired, setAuthRequired] = useState(true)
+  const [authenticated, setAuthenticated] = useState(true)
+  const [authRequired, setAuthRequired] = useState(false)
   const [loginError, setLoginError] = useState(null)
   const [actionMsg, setActionMsg] = useState(null)
   const [futuresSymbols, setFuturesSymbols] = useState([])
@@ -113,10 +113,6 @@ export default function useWebSocket(url) {
       ws.onclose = () => {
         if (!mountedRef.current) return
         setStatus('reconnecting')
-        if (!storedToken()) {
-          setAuthenticated(false)
-          setAuthRequired(true)
-        }
         reconnectRef.current = setTimeout(connect, 3000)
       }
 

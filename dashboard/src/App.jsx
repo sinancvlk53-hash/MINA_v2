@@ -13,7 +13,6 @@ import SettingsPanel from './components/SettingsPanel.jsx'
 import LogPanel from './components/LogPanel.jsx'
 import DesktopNav from './components/DesktopNav.jsx'
 import MobileNav from './components/MobileNav.jsx'
-import LoginScreen from './components/LoginScreen.jsx'
 import useWebSocket from './hooks/useWebSocket.js'
 import useMediaQuery from './hooks/useMediaQuery.js'
 
@@ -24,7 +23,6 @@ const WS_URL = 'ws://178.105.150.40:8765'
 export default function App() {
   const {
     data, status, sendMessage, actionMsg, clearAction, futuresSymbols, markPrices,
-    authenticated, authRequired, loginError, login, logout,
   } = useWebSocket(WS_URL)
   const [detailPos, setDetailPos] = useState(null)
   const [activeTab, setActiveTab] = useState('order')
@@ -59,24 +57,12 @@ export default function App() {
   const showDefense = activeTab === 'defense'
   const showSettings = activeTab === 'settings'
 
-  if (authRequired || !authenticated) {
-    return (
-      <LoginScreen
-        onLogin={login}
-        error={loginError}
-        status={status}
-        connecting={status === 'connecting'}
-      />
-    )
-  }
-
   return (
     <div className="app">
       <Header
         data={data}
         status={status}
         onPanic={handlePanic}
-        onLogout={logout}
         onPositionsClick={() => setPositionsOpen(true)}
       />
 
