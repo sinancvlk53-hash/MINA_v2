@@ -68,6 +68,10 @@ RAW_QUEUE_FILE = os.path.join(os.path.dirname(__file__), 'raw_signal_queue.json'
 JOURNAL_DB = os.path.join(_ROOT, 'mina_trading_journal.db')
 MAKRO_STALE_SEC = int(os.getenv('MAKRO_STALE_SEC', str(30 * 60)))
 
+from mina_trading_journal import TradingJournal
+
+journal = TradingJournal(db_path=JOURNAL_DB)
+
 bot = telebot.TeleBot(TOKEN)
 
 # ---------------------------------------------------------------------------
@@ -355,6 +359,22 @@ def _place_haluk_pdf_tp_stop(
 # Ana onay akışı
 # ---------------------------------------------------------------------------
 
+def _log_ht_signal_to_journal(signal, source):
+    try:
+        journal.log_ht_pdf_signal({
+            'symbol': signal.get('coin', signal.get('symbol', '')),
+            'direction': signal.get('side', signal.get('direction', '')),
+            'entry_price': signal.get('entry'),
+            'tp_price': signal.get('tp'),
+            'stop_price': signal.get('stop'),
+            'source': source,
+            'pdf_file': f'HT_GORSEL_{source}',
+            'status': 'approved',
+        })
+    except Exception as e:
+        print(f'[HT JOURNAL] yazma hatası: {e}')
+
+
 def ask_approval(signals: list, pdf_time: str = None, source: str = 'PDF'):
     """Sinyalleri Telegram'a gönder, cevap bekle."""
     if not signals:
@@ -400,10 +420,13 @@ def ask_approval(signals: list, pdf_time: str = None, source: str = 'PDF'):
     lines.append("\n✏️ Açmak istediklerini yaz:\n`1,3,5` veya `HEPSI` veya `HAYIR`")
     msg = bot.send_message(CHAT_ID, "\n".join(lines), parse_mode='Markdown')
 
-    bot.register_next_step_handler(msg, lambda m: handle_reply(m, signals))
+    source_info = pdf_time or source
+    bot.register_next_step_handler(
+        msg, lambda m: handle_reply(m, signals, source, source_info),
+    )
 
 
-def handle_reply(message, signals):
+def handle_reply(message, signals, source='PDF', source_info=''):
     # Komut gelirse next_step'i bypass et, normal handler'a ilet
     if message.text and message.text.startswith('/'):
         bot.process_new_messages([message])
@@ -423,7 +446,9 @@ def handle_reply(message, signals):
             selected = [i for i in selected if 0 <= i < len(signals)]
         except ValueError:
             bot.send_message(CHAT_ID, "⚠️ Geçersiz giriş. `1,3,5` ya da `HEPSI` ya da `HAYIR` yaz.")
-            bot.register_next_step_handler(message, lambda m: handle_reply(m, signals))
+            bot.register_next_step_handler(
+                message, lambda m: handle_reply(m, signals, source, source_info),
+            )
             return
 
     if not selected:
@@ -443,6 +468,8 @@ def handle_reply(message, signals):
         stop   = s.get('stop')
         ok, detail = open_position(client, account, symbol, side,
                                    limit_price=entry, stop_d1_price=stop)
+        if ok and source == 'HT':
+            _log_ht_signal_to_journal(s, source_info)
         icon = "✅" if ok else "❌"
         results.append(f"{icon} {symbol} {side}: {detail}")
         time.sleep(0.4)

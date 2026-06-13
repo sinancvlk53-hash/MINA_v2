@@ -309,6 +309,24 @@ def write_queue(signals: list, source_info: str):
                 notify_ht_signal_queued(sig, source_info=source_info)
             except Exception as exc:
                 print(f"[HT KUYRUK] Telegram bildirimi atlandı: {exc}")
+            try:
+                conn = _journal_conn()
+                conn.execute("""
+                    INSERT OR IGNORE INTO ht_pdf_basari_orani
+                    (symbol, direction, entry_price, tp_price, stop_price, source, status, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, 'pending', datetime('now'))
+                """, (
+                    sig.get('coin', sig.get('symbol', '')),
+                    sig.get('side', sig.get('direction', '')),
+                    sig.get('entry'),
+                    sig.get('tp'),
+                    sig.get('stop'),
+                    'HT_GORSEL',
+                ))
+                conn.commit()
+                conn.close()
+            except Exception as e:
+                print(f'[HT JOURNAL] {e}')
     except Exception as e:
         print(f'[HT KUYRUK] Yazma hatası: {e}')
 
