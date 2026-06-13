@@ -13,6 +13,7 @@ import requests
 
 ROOT = os.environ.get("MINA_DATA_ROOT", os.path.dirname(os.path.abspath(__file__)))
 STATE_PATH = os.path.join(ROOT, "signal_bot", "makro_watcher_state.json")
+NEWS_STATE_PATH = os.path.join(ROOT, "signal_bot", "news_watcher_state.json")
 WATCH_INTERVAL_SEC = int(os.environ.get("MAKRO_WATCH_SEC", str(15 * 60)))
 
 TR_TZ = timezone(timedelta(hours=3))
@@ -446,6 +447,15 @@ def compute_scores(metrics: dict, combos: List[str]) -> Tuple[int, int]:
     return health, macro
 
 
+def _load_news_risk() -> dict:
+    """news_watcher_state.json → son haber risk snapshot."""
+    try:
+        state = _read_json(NEWS_STATE_PATH, {})
+        return state.get("last_result") or {}
+    except Exception:
+        return {}
+
+
 def compute_weighted_score(metrics: dict) -> int:
     """
     Ağırlıklı makro iklim puanı — 0 (iyi) ile 10 (kötü) arası.
@@ -513,6 +523,18 @@ def compute_weighted_score(metrics: dict) -> int:
         score += 0.5   # dolar güçleniyor = kripto riski
     elif dxy_chg < -0.5:
         score -= 0.5
+
+    # Haber risk skoru (news_watcher — makro döngüsünde güncellenir)
+    news = _load_news_risk()
+    news_score = int(news.get("score", 0) or 0)
+    if news.get("alert") or news_score >= 9:
+        score += 1.5
+    elif news_score >= 7:
+        score += 1.0
+    elif news_score >= 6:
+        score += 0.5
+    elif news_score <= 2 and int(news.get("fetched", 0) or 0) > 0:
+        score -= 0.25
 
     # 0-10 arası sınırla
     return max(0, min(10, round(score)))
@@ -656,6 +678,13 @@ def build_morning_summary(state: dict) -> str:
 def watcher_cycle() -> dict:
     prev = _read_json(STATE_PATH, {})
     first_run = not prev.get("metrics")
+
+    try:
+        from signal_bot.news_watcher import run_news_watcher
+        run_news_watcher()
+        print("[MAKRO] Haber taraması tamamlandı")
+    except Exception as e:
+        print(f"[MAKRO] Haber tarama hatası: {e}")
 
     metrics, sources = fetch_all_metrics(prev)
     combos = analyze_combinations(metrics)
