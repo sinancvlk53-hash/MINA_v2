@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(ROOT, '.env'))
 
 import websockets
-from dashboard_auth import validate_login, create_session_token, verify_session_token
+from dashboard_auth import create_session_token
 from backend.config import BinanceConfig, AccountManager
 
 MERTER_STATE_PATH = os.path.join(ROOT, 'signal_bot/merter_dca_state.json')
@@ -1232,7 +1232,7 @@ async def send_upbit_trader_status(websocket, msg: dict):
 CONNECTED = set()
 
 def _is_authenticated(websocket) -> bool:
-    return bool(getattr(websocket, 'authenticated', False))
+    return True
 
 
 async def _send_full_snapshot(websocket):
@@ -1242,14 +1242,16 @@ async def _send_full_snapshot(websocket):
 
 
 async def handler(websocket):
-    websocket.authenticated = False
-    websocket.auth_user = None
+    websocket.authenticated = True
+    websocket.auth_user = 'guest'
     CONNECTED.add(websocket)
     log.info(f"+ client ({len(CONNECTED)} total)")
     try:
-        await websocket.send(json.dumps({'action': 'auth_required'}))
+        session = create_session_token('guest')
+        await websocket.send(json.dumps({'action': 'login_ok', **session}))
+        await _send_full_snapshot(websocket)
     except Exception as exc:
-        log.error("handler auth_required: %s", exc)
+        log.error("handler auto-auth: %s", exc)
 
     try:
         async for message in websocket:
@@ -1258,48 +1260,29 @@ async def handler(websocket):
                 action = msg.get('action')
 
                 if action == 'login':
-                    username = (msg.get('username') or '').strip()
-                    password = msg.get('password') or ''
-                    if validate_login(username, password):
-                        session = create_session_token(username)
-                        websocket.authenticated = True
-                        websocket.auth_user = username
-                        await websocket.send(json.dumps({'action': 'login_ok', **session}))
-                        await _send_full_snapshot(websocket)
-                    else:
-                        await websocket.send(json.dumps({
-                            'action': 'login_failed',
-                            'error': 'Kullanıcı adı veya şifre hatalı',
-                        }))
+                    username = (msg.get('username') or 'guest').strip() or 'guest'
+                    session = create_session_token(username)
+                    websocket.authenticated = True
+                    websocket.auth_user = username
+                    await websocket.send(json.dumps({'action': 'login_ok', **session}))
+                    await _send_full_snapshot(websocket)
                     continue
 
                 if action == 'auth':
-                    ok, user = verify_session_token(msg.get('token') or '')
-                    if ok:
-                        websocket.authenticated = True
-                        websocket.auth_user = user
-                        await websocket.send(json.dumps({'action': 'auth_ok', 'user': user}))
-                        await _send_full_snapshot(websocket)
-                    else:
-                        await websocket.send(json.dumps({
-                            'action': 'auth_failed',
-                            'error': 'Geçersiz veya süresi dolmuş oturum',
-                        }))
+                    websocket.authenticated = True
+                    websocket.auth_user = 'guest'
+                    session = create_session_token('guest')
+                    await websocket.send(json.dumps({'action': 'auth_ok', 'user': 'guest', **session}))
+                    await _send_full_snapshot(websocket)
                     continue
 
                 if action == 'logout':
-                    websocket.authenticated = False
-                    websocket.auth_user = None
+                    websocket.authenticated = True
+                    websocket.auth_user = 'guest'
                     await websocket.send(json.dumps({'action': 'logged_out'}))
                     continue
 
-                if not _is_authenticated(websocket):
-                    await websocket.send(json.dumps({
-                        'action': 'auth_required',
-                        'error': 'Oturum gerekli',
-                    }))
-                    continue
-
+                # Auth bypass — tüm istekler doğrudan işlenir
                 if action == 'close_all':
                     log.warning("PANIC triggered by client!")
                     await close_all(websocket)
