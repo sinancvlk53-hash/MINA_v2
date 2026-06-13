@@ -25,6 +25,16 @@ def _send(text: str) -> None:
         print(f"⚠️  Motor Telegram hatası: {exc}")
 
 
+def send_telegram(text: str) -> bool:
+    """Genel Telegram bildirimi (makro/news watcher vb.)."""
+    try:
+        from tools.telegram_bot import send_notification
+        return bool(send_notification(text))
+    except Exception as exc:
+        print(f"⚠️  Motor Telegram hatası: {exc}")
+        return False
+
+
 def notify_position_open(
     symbol: str,
     side: str,
