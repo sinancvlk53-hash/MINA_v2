@@ -528,7 +528,7 @@ def compute_weighted_score(metrics: dict) -> int:
     news = _load_news_risk()
     news_score = int(news.get("score", 0) or 0)
     if news.get("alert") or news_score >= 9:
-        score += 1.5
+        score += 2.5
     elif news_score >= 7:
         score += 1.0
     elif news_score >= 6:
