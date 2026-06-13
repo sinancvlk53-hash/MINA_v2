@@ -39,7 +39,6 @@ export default function App() {
     .filter((p) => Number(p.amount) > 0)
   const merterSlots = data?.merterSlots ?? {}
   const macroLevels = data?.macroLevels ?? []
-  const macroFunding = data?.macroFunding ?? null
   const macroWatcher = data?.macroWatcher ?? null
   const halukPdfTimestamp = data?.halukPdfTimestamp ?? null
   const logs = data?.logs ?? []
@@ -99,18 +98,20 @@ export default function App() {
         </aside>
 
         <section className={`col-center ${showMacro ? 'mobile-show' : 'mobile-hide'}`}>
-          <MacroWatcherPanel watcher={macroWatcher} />
-          <MacroLevelsPanel
-            levels={macroLevels}
-            funding={macroFunding}
-            halukPdfTimestamp={halukPdfTimestamp}
-            layout="tab"
-          />
-          <HalukArchivePanel
-            status={status}
-            sendMessage={sendMessage}
-            actionMsg={actionMsg}
-          />
+          {showMacro && (
+            <div className="macro-grid-3col">
+              <MacroWatcherPanel watcher={macroWatcher} />
+              <MacroLevelsPanel
+                levels={macroLevels}
+                halukPdfTimestamp={halukPdfTimestamp}
+              />
+              <HalukArchivePanel
+                status={status}
+                sendMessage={sendMessage}
+                actionMsg={actionMsg}
+              />
+            </div>
+          )}
         </section>
 
         <aside className={`col-right ${showDefense || showSettings ? 'mobile-show' : 'mobile-hide'}`}>

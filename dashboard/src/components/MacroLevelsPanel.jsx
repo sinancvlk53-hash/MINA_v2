@@ -1,238 +1,154 @@
 import React from 'react'
 import { fmt } from '../utils/trading.js'
-import {
-  formatPdfTimestamp,
-  formatMacroSource,
-  formatMacroSnippet,
-  formatMacroDirection,
-} from '../utils/macroFormat.js'
+import { formatPdfTimestamp, formatMacroSnippet } from '../utils/macroFormat.js'
 
-const PANEL_ORDER = [
-  'TOTAL', 'OTHERS', 'BTC.D', 'USDT.D', 'BTCUSDT', 'ETHUSDT', 'XAUUSDT', 'XAGUSDT', 'BRENT', 'TOTAL2', 'TOTAL3',
+const LEVEL_COINS = [
+  { coin: 'TOTAL', label: 'TOTAL', trillion: true },
+  { coin: 'OTHERS', label: 'OTHERS', billions: true },
+  { coin: 'BTCUSDT', label: 'BTC' },
+  { coin: 'ETHUSDT', label: 'ETH' },
+  { coin: 'XAUUSDT', label: 'XAU' },
+  { coin: 'XAGUSDT', label: 'XAG' },
 ]
-
-const PANEL_LABELS = {
-  TOTAL: 'TOTAL',
-  OTHERS: 'OTHERS',
-  'BTC.D': 'BTC.D',
-  'USDT.D': 'USDT.D',
-  BTCUSDT: 'BTC',
-  ETHUSDT: 'ETH',
-  XAUUSDT: 'XAU',
-  XAGUSDT: 'XAG',
-  BRENT: 'BRENT',
-  TOTAL2: 'TOTAL2',
-  TOTAL3: 'TOTAL3',
-}
-
-const TRILLION_COINS = new Set(['TOTAL', 'TOTAL2', 'TOTAL3'])
-const PCT_COINS = new Set(['BTC.D', 'USDT.D'])
-const TAB_PRIMARY = ['TOTAL', 'BTC.D', 'USDT.D']
 
 function normalizeItem(raw, coin) {
   return {
     coin,
-    supports: raw?.supports || [],
-    resistances: raw?.resistances || [],
+    supports: (raw?.supports || []).map(Number).filter((n) => !Number.isNaN(n)),
+    resistances: (raw?.resistances || []).map(Number).filter((n) => !Number.isNaN(n)),
     snippet: formatMacroSnippet((raw?.snippet || raw?.text || '').trim()),
-    direction: raw?.direction ?? null,
-    source: raw?.source ?? null,
-    updatedAt: raw?.updated_at ?? null,
-    markPrice: raw?.markPrice ?? null,
+    markPrice: raw?.markPrice != null ? Number(raw.markPrice) : null,
     markDisplay: raw?.markDisplay ?? null,
   }
 }
 
-function formatLevel(coin, v) {
-  if (TRILLION_COINS.has(coin)) return `${fmt(v, 3)}T`
-  if (PCT_COINS.has(coin)) return `${fmt(v, 2)}%`
-  if (coin === 'OTHERS') return `${fmt(v, 2)}B`
-  if (coin === 'BTCUSDT' || coin === 'ETHUSDT') return `$${fmt(v, v >= 1000 ? 0 : 2)}`
-  return fmt(v, v >= 1000 ? 0 : 2)
+function formatPrice(coin, v, { trillion, billions } = {}) {
+  if (v == null || Number.isNaN(Number(v))) return '—'
+  const n = Number(v)
+  if (trillion) return `${fmt(n, 3)}T`
+  if (billions) return `${fmt(n, 2)}B`
+  if (coin.includes('BTC') || coin.includes('ETH')) {
+    return n >= 1000 ? `$${fmt(n, 0)}` : `$${fmt(n, 2)}`
+  }
+  return fmt(n, n >= 100 ? 0 : 2)
 }
 
-function proximityZone(price, supports, resistances) {
-  if (price == null || Number.isNaN(Number(price))) {
-    return { zone: 'ok', message: null }
+function levelBarMeta(item, spec) {
+  const supports = item.supports
+  const resistances = item.resistances
+  const price = item.markPrice
+  if (!supports.length && !resistances.length) return null
+
+  const minS = supports.length ? Math.min(...supports) : null
+  const maxR = resistances.length ? Math.max(...resistances) : null
+  let lo = minS ?? maxR ?? price
+  let hi = maxR ?? minS ?? price
+  if (price != null) {
+    lo = Math.min(lo, price)
+    hi = Math.max(hi, price)
   }
-  const p = Number(price)
-  const near = (level) => {
-    const lv = Number(level)
-    if (!lv || Number.isNaN(lv)) return false
-    return Math.abs(p - lv) / lv <= 0.03
+  if (hi <= lo) hi = lo * 1.001 || lo + 1
+
+  let dotPct = 50
+  if (price != null && hi > lo) {
+    dotPct = ((price - lo) / (hi - lo)) * 100
+    dotPct = Math.max(2, Math.min(98, dotPct))
   }
-  if ((resistances || []).some(near)) {
-    return { zone: 'resist', message: 'Direnç bölgesinde' }
+
+  let zone = 'neutral'
+  if (price != null) {
+    const near = (lv) => lv && Math.abs(price - lv) / lv <= 0.03
+    if (resistances.some(near)) zone = 'resist'
+    else if (supports.some(near)) zone = 'support'
   }
-  if ((supports || []).some(near)) {
-    return { zone: 'support', message: 'Destek bölgesine yaklaşıyor' }
+
+  return {
+    lo,
+    hi,
+    minS,
+    maxR,
+    price,
+    dotPct,
+    zone,
+    loLabel: minS != null ? formatPrice(item.coin, minS, spec) : '—',
+    hiLabel: maxR != null ? formatPrice(item.coin, maxR, spec) : '—',
+    midLabel: item.markDisplay || (price != null ? formatPrice(item.coin, price, spec) : '—'),
   }
-  return { zone: 'ok', message: null }
 }
 
-function LevelList({ title, values, cls, coin }) {
-  if (!values?.length) {
+function LevelBar({ item, spec }) {
+  const meta = levelBarMeta(item, spec)
+  if (!meta) {
     return (
-      <div className="macro-level-group">
-        <span className="macro-level-title">{title}</span>
-        <span className="field-hint">—</span>
+      <div className="level-bar-block">
+        <div className="level-bar-head">
+          <span className="level-bar-coin">{spec.label}</span>
+          <span className="level-bar-mid">{item.markDisplay || '—'}</span>
+        </div>
+        <div className="level-bar-empty">—</div>
       </div>
     )
   }
-  return (
-    <div className="macro-level-group">
-      <span className="macro-level-title">{title}</span>
-      <div className="macro-level-tags">
-        {values.map((v) => (
-          <span key={`${title}-${v}`} className={`macro-level-box ${cls}`}>
-            {formatLevel(coin, v)}
-          </span>
-        ))}
-      </div>
-    </div>
-  )
-}
 
-function FundingCard({ funding }) {
-  const display = funding?.display ?? '—'
-  const alert = funding?.alert === true
-  const pct = Number(funding?.avgPct ?? funding?.avgRate ?? 0)
-  const arrow = pct > 0.0001 ? '↑' : pct < -0.0001 ? '↓' : '→'
+  const fillClass =
+    meta.zone === 'support' ? 'level-bar-fill-support' :
+    meta.zone === 'resist' ? 'level-bar-fill-resist' : 'level-bar-fill-neutral'
 
   return (
-    <div className={`macro-card macro-card-filled macro-funding-card macro-funding-simple ${alert ? 'macro-card-zone-resist' : 'macro-card-zone-ok'}`}>
-      <div className="macro-card-head">
-        <strong>Funding</strong>
+    <div className="level-bar-block">
+      <div className="level-bar-head">
+        <span className="level-bar-coin">{spec.label}</span>
+        <span className="level-bar-mid">{meta.midLabel}</span>
       </div>
-      <div className={`macro-funding-row ${alert ? 'text-red' : 'text-green'}`}>
-        <span className="macro-funding-rate">{display}</span>
-        <span className="macro-funding-arrow" aria-hidden>{arrow}</span>
+      <div className="level-bar-labels">
+        <span>{meta.loLabel}</span>
+        <span>{meta.hiLabel}</span>
       </div>
-    </div>
-  )
-}
-
-function MacroCard({ item }) {
-  const label = PANEL_LABELS[item.coin] || item.coin.replace(/USDT$/, '')
-  const dirInfo = formatMacroDirection(item.direction)
-  const hasData = item.snippet || item.supports?.length || item.resistances?.length
-  const { zone, message } = proximityZone(item.markPrice, item.supports, item.resistances)
-  const zoneClass = zone === 'resist' ? 'macro-card-zone-resist' : zone === 'support' ? 'macro-card-zone-support' : 'macro-card-zone-ok'
-  const sourceLabel = formatMacroSource(item.source) || (item.updatedAt ? formatPdfTimestamp(item.updatedAt) : null)
-
-  return (
-    <div className={`macro-card ${hasData ? 'macro-card-filled' : 'macro-card-empty'} ${zoneClass}`}>
-      <div className="macro-card-head">
-        <strong>{label}</strong>
-        <div className="macro-card-meta">
-          {dirInfo && <span className={`macro-dir-tag ${dirInfo.cls}`}>{dirInfo.text}</span>}
-          {sourceLabel && (
-            <span className="macro-source-tag" title="Son güncelleme">
-              {sourceLabel}
-            </span>
-          )}
-        </div>
+      <div className="level-bar-container">
+        <div
+          className={`level-bar-fill ${fillClass}`}
+          style={{ width: `${meta.dotPct}%` }}
+        />
+        <div className="level-bar-dot" style={{ left: `${meta.dotPct}%` }} />
       </div>
-      {item.markDisplay ? (
-        <div className="macro-live-price">Şu an: {item.markDisplay}</div>
-      ) : item.markPrice != null ? (
-        <div className="macro-live-price">Şu an: {formatLevel(item.coin, item.markPrice)}</div>
-      ) : null}
-      {message && <div className="macro-zone-alert">{message}</div>}
-      {item.snippet ? (
-        <p className="macro-snippet macro-snippet-notes">{item.snippet}</p>
-      ) : (
-        <p className="macro-snippet macro-snippet-empty">PDF veya Telegram notu bekleniyor</p>
-      )}
-      <LevelList title="Destek" values={item.supports} cls="macro-support" coin={item.coin} />
-      <LevelList title="Direnç" values={item.resistances} cls="macro-resist" coin={item.coin} />
     </div>
   )
 }
 
 export default function MacroLevelsPanel({
   levels = [],
-  coinsFilter = null,
-  compact = false,
-  layout = 'default',
-  funding = null,
   halukPdfTimestamp = null,
 }) {
   const byCoin = Object.fromEntries((levels || []).map((l) => [l.coin, l]))
-  const isTab = layout === 'tab'
-  const order = coinsFilter || PANEL_ORDER
-  const items = order.map((c) => normalizeItem(byCoin[c], c))
-  const filled = items.filter((i) => i.snippet || i.supports?.length || i.resistances?.length).length
-
-  const primaryItems = isTab
-    ? TAB_PRIMARY.map((c) => normalizeItem(byCoin[c], c))
-    : items
-
-  const halukItems = isTab
-    ? PANEL_ORDER
-        .map((c) => normalizeItem(byCoin[c], c))
-        .filter((i) => i.supports?.length || i.resistances?.length)
-    : []
-
   const pdfWhen = formatPdfTimestamp(halukPdfTimestamp)
-  const title = isTab ? 'Makro Rejim' : compact ? 'Makro Seviyeler' : 'Haluk Makro Panel'
-  const subtitle = isTab
-    ? 'TOTAL · BTC.D · USDT.D · Funding'
-    : compact
-      ? 'TOTAL · OTHERS · BTC.D'
-      : 'PDF + Telegram · işlem sinyali değil'
+
+  const items = LEVEL_COINS.map((spec) => ({
+    spec,
+    item: normalizeItem(byCoin[spec.coin], spec.coin),
+  }))
+
+  const notes = items
+    .map(({ item }) => item.snippet)
+    .filter(Boolean)
+  const noteText = notes.length ? notes.join(' · ') : '—'
 
   return (
-    <div className={`panel panel-macro ${compact ? 'panel-macro-compact' : ''} ${isTab ? 'panel-macro-tab' : ''}`}>
-      <div className="panel-head">
-        <div>
-          <span className="panel-title">{title}</span>
-          <span className="panel-subtitle">{subtitle}</span>
-          {isTab && pdfWhen && (
-            <span className="panel-subtitle macro-pdf-ts">
-              Son PDF: {pdfWhen}
-            </span>
-          )}
-        </div>
-        {!compact && !isTab && <span className="panel-badge">{filled}/{PANEL_ORDER.length}</span>}
+    <div className="panel macro-col-panel macro-compass">
+      <div className="macro-compass-head">
+        <div className="macro-compass-title">Haluk Hoca — Makro Hedefler</div>
+        {pdfWhen && <div className="macro-compass-pdf">{pdfWhen}</div>}
       </div>
 
-      {isTab ? (
-        <>
-          <div className="macro-section-label">Rejim göstergeleri</div>
-          <div className="macro-grid macro-grid-tab-primary">
-            {primaryItems.map((item) => (
-              <MacroCard key={item.coin} item={item} />
-            ))}
-            <FundingCard funding={funding} />
-          </div>
-          {halukItems.length > 0 && (
-            <>
-              <div className="macro-section-label">Haluk PDF — destek / direnç</div>
-              <div className="macro-grid macro-grid-wide">
-                {halukItems.map((item) => (
-                  <MacroCard key={`haluk-${item.coin}`} item={item} />
-                ))}
-              </div>
-            </>
-          )}
-          <div className="macro-section-label">Hoca&apos;nın notları</div>
-          <div className="macro-grid macro-grid-wide">
-            {PANEL_ORDER
-              .map((c) => normalizeItem(byCoin[c], c))
-              .filter((i) => i.snippet && !TAB_PRIMARY.includes(i.coin))
-              .map((item) => (
-                <MacroCard key={`note-${item.coin}`} item={item} />
-              ))}
-          </div>
-        </>
-      ) : (
-        <div className={`macro-grid ${compact ? 'macro-grid-compact' : 'macro-grid-wide'}`}>
-          {items.map((item) => (
-            <MacroCard key={item.coin} item={item} />
-          ))}
-        </div>
-      )}
+      <div className="macro-level-bars">
+        {items.map(({ spec, item }) => (
+          <LevelBar key={spec.coin} item={item} spec={spec} />
+        ))}
+      </div>
+
+      <div className="hoca-note-box">
+        <div className="hoca-note-title">📌 Hoca&apos;nın Notu</div>
+        <div className="hoca-note-body">{noteText}</div>
+      </div>
     </div>
   )
 }
