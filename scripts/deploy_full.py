@@ -68,7 +68,6 @@ FILES = [
     "signal_bot/approval_bot.py",
     "signal_bot/ht_listener.py",
     "scripts/_snapshot.py",
-    "scripts/_snapshot.py",
     "scripts/manual_open.py",
     "scripts/orphan_cleaner.py",
     "scripts/reconcile_derr_ghosts.py",
