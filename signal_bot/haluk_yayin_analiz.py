@@ -100,6 +100,8 @@ CRYPTO_TITLE_KEYWORDS = (
 
     "yayın özeti", "teknik",
 
+    "acil", "çöküş", "ralli", "kan banyosu", "tehlike", "uyarı", "fed", "faiz",
+
 )
 
 
@@ -111,6 +113,10 @@ SKIP_TITLE_KEYWORDS = (
     "vlog", "daily", "hayat", "yemek", "gezi",
 
     "müzik", "film", "spor",
+
+    "bist", "bist100", "bist30", "hisse", "altın", "gold", "gümüş",
+
+    "silver", "dolar", "foreks", "forex", "emtia", "borsa istanbul",
 
 )
 
