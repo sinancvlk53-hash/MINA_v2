@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 import time
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
@@ -49,11 +50,45 @@ def _write_json(path: str, data: Any) -> None:
         print(f"[NEWS WATCHER] state yazma hatası: {exc}")
 
 
+def _fetch_news_rss(limit: int = 20) -> List[dict]:
+    """API anahtarı yoksa RSS fallback."""
+    feeds = (
+        "https://www.coindesk.com/arc/outboundfeeds/rss/",
+        "https://cointelegraph.com/rss",
+    )
+    items: List[dict] = []
+    headers = {"User-Agent": "MINA-news/1.0"}
+    for feed_url in feeds:
+        try:
+            resp = requests.get(feed_url, timeout=10, headers=headers)
+            resp.raise_for_status()
+            root = ET.fromstring(resp.content)
+            for node in root.findall(".//item"):
+                title = (node.findtext("title") or "").strip()
+                link = (node.findtext("link") or "").strip()
+                pub = (node.findtext("pubDate") or "").strip()
+                if not title:
+                    continue
+                items.append({
+                    "id": link or title,
+                    "title": title,
+                    "url": link,
+                    "published": pub,
+                    "source": feed_url.split("/")[2],
+                })
+                if len(items) >= limit:
+                    return items
+        except Exception as exc:
+            print(f"[NEWS WATCHER] RSS hatası ({feed_url}): {exc}")
+    return items
+
+
 def fetch_news(limit: int = 20) -> List[dict]:
     """Son kripto haberlerini çek. Hata → []."""
     try:
         items: List[dict] = []
         token = os.getenv("CRYPTOPANIC_API_KEY", "").strip()
+        cc_key = os.getenv("CRYPTOCOMPARE_API_KEY", "").strip()
         headers = {"User-Agent": "MINA-news/1.0"}
 
         if token:
@@ -76,7 +111,9 @@ def fetch_news(limit: int = 20) -> List[dict]:
                 })
         else:
             url = "https://min-api.cryptocompare.com/data/v2/news/"
-            params = {"lang": "EN", "categories": "BTC,ETH,Trading,Blockchain,Exchange"}
+            params = {"lang": "EN"}
+            if cc_key:
+                params["api_key"] = cc_key
             resp = requests.get(url, params=params, timeout=10, headers=headers)
             resp.raise_for_status()
             for row in resp.json().get("Data", [])[:limit]:
@@ -88,10 +125,18 @@ def fetch_news(limit: int = 20) -> List[dict]:
                     "published": row.get("published_on", ""),
                     "source": src.get("name", "") if isinstance(src, dict) else "",
                 })
+
+        if not items:
+            items = _fetch_news_rss(limit)
+
         return [x for x in items if x.get("title")]
     except Exception as exc:
         print(f"[NEWS WATCHER] fetch_news hatası: {exc}")
-        return []
+        try:
+            return [x for x in _fetch_news_rss(limit) if x.get("title")]
+        except Exception as rss_exc:
+            print(f"[NEWS WATCHER] fetch_news RSS fallback hatası: {rss_exc}")
+            return []
 
 
 def analyze_news_risk(headlines: List[dict]) -> Dict[str, Any]:
