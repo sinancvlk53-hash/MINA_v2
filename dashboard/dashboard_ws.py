@@ -23,6 +23,7 @@ from backend.config import BinanceConfig, AccountManager
 MERTER_STATE_PATH = os.path.join(ROOT, 'signal_bot/merter_dca_state.json')
 _rvol_cache = {}  # symbol -> (value, ts)
 _futures_symbols_cache = {"ts": 0.0, "data": []}
+_last_snapshot_cache: dict = {}
 _FUTURES_SYMBOLS_TTL = 600
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
@@ -526,8 +527,7 @@ def _prune_stale_tracking(open_keys: set) -> None:
     except Exception as exc:
         log.debug("prune tracking: %s", exc)
 
-# ── Binance veri çekimi ──────────────────────────────────────────────────────
-async def get_data():
+def get_data():
     try:
         client  = get_client()
         account = AccountManager(client)
@@ -766,6 +766,23 @@ async def get_data():
             'motorPaused': not get_dashboard_settings().get('motorActive', True),
         }
 
+
+async def fetch_snapshot_data() -> dict:
+    """get_data — thread + timeout; ban/yoğunlukta cache döner."""
+    global _last_snapshot_cache
+    try:
+        data = await asyncio.wait_for(asyncio.to_thread(get_data), timeout=10.0)
+        _last_snapshot_cache = data
+        return data
+    except asyncio.TimeoutError:
+        log.warning("[WS] get_data timeout, cache gönderiliyor")
+        print("[WS] get_data timeout, cache gönderiliyor")
+        return dict(_last_snapshot_cache) if _last_snapshot_cache else {}
+    except Exception as exc:
+        log.error(f"fetch_snapshot_data: {exc}")
+        return dict(_last_snapshot_cache) if _last_snapshot_cache else {}
+
+
 async def update_manual_override(websocket, msg: dict):
     """Manuel yönetim modu — stop/TP kaydet veya kapat."""
     try:
@@ -850,7 +867,7 @@ async def push_broadcast():
     if not CONNECTED:
         return
     try:
-        data = await get_data()
+        data = await fetch_snapshot_data()
         msg = json.dumps(data)
         dead = set()
         for ws in list(CONNECTED):
@@ -1236,7 +1253,7 @@ def _is_authenticated(websocket) -> bool:
 
 
 async def _send_full_snapshot(websocket):
-    data = await get_data()
+    data = await fetch_snapshot_data()
     await websocket.send(json.dumps(data))
     await send_futures_symbols(websocket)
 
@@ -1337,7 +1354,7 @@ async def broadcast_loop():
                 except Exception:
                     pass
             _last_engine_up = running
-            data = await get_data()
+            data = await fetch_snapshot_data()
             msg  = json.dumps(data)
             dead = set()
             for ws in list(CONNECTED):

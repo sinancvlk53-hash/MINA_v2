@@ -68,6 +68,9 @@ export default function useWebSocket(url) {
             setAuthenticated(true)
             setAuthRequired(false)
             setLoginError(null)
+            if (msg.macroLevels != null || msg.positions != null || msg.balance != null) {
+              setData(msg)
+            }
             return
           }
           if (msg.action === 'login_failed' || msg.action === 'auth_failed') {
